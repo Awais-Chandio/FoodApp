@@ -146,6 +146,6 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#1a1918ff",
+    color: "#111110ff",
   },
 });
