@@ -7,18 +7,22 @@ import Onboarding2 from "../screens/Onboarding/Onboarding2";
 import Onboarding3 from "../screens/Onboarding/Onboarding3";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import RegisterScreen from "../screens/Auth/RegisterScreen";
+import HomeScreen from "../screens/Home/HomeScreen";
+import HomeHeader from "../components/HomeHeader";
+import SearchScreen from "../components/SearchScreen";
+import CategoryScreen from "../screens/Cart/CategoryScreen";
+import ProfileScreen from "../screens/Profile/ProfileScreen"
+
 import { create } from "react-native/types_generated/Libraries/ReactNative/ReactFabricPublicInstance/ReactNativeAttributePayload";
 
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
-  useEffect(()=>{
-    createTable()
-  },[])
+
 
   return (
     <Stack.Navigator
-      initialRouteName="Loader"
+      initialRouteName="Home"
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Loader" component={LoaderScreen} />
@@ -27,6 +31,12 @@ export default function AppNavigator() {
       <Stack.Screen name="Onboarding3" component={Onboarding3} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="HomeHeader" component={HomeHeader} />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Category" component={CategoryScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+
 
     </Stack.Navigator>
   );

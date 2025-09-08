@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
 } from "react-native";
+import { registerUser } from "../../database/dbs"; 
 
 const { width } = Dimensions.get("window");
 
@@ -20,8 +21,31 @@ export default function RegisterScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = () => {
-    console.log("Email:", email, "Password:", password, "Confirm:", confirmPassword);
-    navigation.replace("Home"); // Later connect with SQLite
+    if (!email || !password || !confirmPassword) {
+      alert("Please fill all fields");
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    // ✅ Save user into SQLite
+    registerUser(
+      email,
+      password,
+      () => {
+        alert("User registered successfully!");
+        navigation.replace("Login");
+      },
+      (err) => {
+        if (err.message.includes("UNIQUE constraint")) {
+          alert("Email already exists!");
+        } else {
+          alert("Error: " + err.message);
+        }
+      }
+    );
   };
 
   return (
@@ -60,7 +84,7 @@ export default function RegisterScreen({ navigation }) {
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity
-            style={{...styles.eyeIcon, top: "30%",}}
+            style={{ ...styles.eyeIcon, top: "30%" }}
             onPress={() => setShowPassword(!showPassword)}
           >
             <AntIcon name={showPassword ? "eyeo" : "eye"} size={22} color="#666" />
@@ -79,7 +103,7 @@ export default function RegisterScreen({ navigation }) {
             secureTextEntry={!showConfirmPassword}
           />
           <TouchableOpacity
-            style={{...styles.eyeIcon, top: "30%",}}
+            style={{ ...styles.eyeIcon, top: "30%" }}
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
           >
             <AntIcon name={showConfirmPassword ? "eyeo" : "eye"} size={20} color="#666" />

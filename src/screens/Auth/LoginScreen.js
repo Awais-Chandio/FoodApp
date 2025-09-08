@@ -9,17 +9,30 @@ import {
   Image,
   Dimensions,
 } from "react-native";
+import { loginUser } from "../../database/dbs"; 
 
 const { width } = Dimensions.get("window");
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
-    console.log("Email:", email, "Password:", password);
-    navigation.replace("Home"); 
+    if (!email || !password) {
+      alert("Please enter both email and password");
+      return;
+    }
+
+    
+    loginUser(email, password, (success) => {
+      if (success) {
+        alert("Login successful!");
+        navigation.replace("Home");
+      } else {
+        alert("Invalid email or password");
+      }
+    });
   };
 
   return (
@@ -31,6 +44,7 @@ export default function LoginScreen({ navigation }) {
         resizeMode="cover"
       />
 
+      
       <View style={{ flexDirection: "row", justifyContent: "center", marginVertical: 15 }}>
         <Image
           source={require("../../assets/Group-6.png")}
@@ -56,7 +70,7 @@ export default function LoginScreen({ navigation }) {
           keyboardType="email-address"
         />
 
-        
+      
         <Text style={{ alignSelf: "flex-start", marginBottom: 5, color: "#333", fontSize: 14 }}>
           Password:
         </Text>
@@ -67,10 +81,9 @@ export default function LoginScreen({ navigation }) {
             onChangeText={setPassword}
             placeholder="Enter your password"
             placeholderTextColor="#666"
-            secureTextEntry={!showPassword} 
+            secureTextEntry={!showPassword}
           />
 
-          
           <TouchableOpacity
             style={{ position: "absolute", right: 15, top: 10 }}
             onPress={() => setShowPassword(!showPassword)}
@@ -79,16 +92,16 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-       
+        
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>Sign in</Text>
         </TouchableOpacity>
 
-   
+       
         <View style={styles.registerRow}>
           <Text style={styles.registerText}>Don’t have an account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-            <Text style={styles.registerLink}>Register</Text>
+            <Text style={styles.registerLink}> Register</Text>
           </TouchableOpacity>
         </View>
       </View>
