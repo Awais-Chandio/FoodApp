@@ -1,0 +1,66 @@
+import React from "react";
+import { Image } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+import HomeScreen from "../screens/Home/HomeScreen";
+import SearchScreen from "../components/SearchScreen";
+import CategoryScreen from "../screens/Cart/CategoryScreen";
+import ProfileScreen from "../screens/Profile/ProfileScreen";
+
+const Tab = createBottomTabNavigator();
+
+export default function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 13,
+          fontWeight: "600",
+          marginBottom: 4,
+        },
+        tabBarStyle: {
+          backgroundColor: "#fff",
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          height: 65,
+          elevation: 6,
+        },
+        tabBarIcon: ({ focused }) => {
+          let iconSource;
+
+          if (route.name === "Home") {
+            iconSource = require("../assets/home.png");
+          } else if (route.name === "Search") {
+            iconSource = require("../assets/search.png");
+          } else if (route.name === "Category") {
+            iconSource = require("../assets/shopping-cart.png");
+          } else if (route.name === "Profile") {
+            iconSource = require("../assets/user.png");
+          }
+
+          return (
+            <Image
+              source={iconSource}
+              style={{
+                width: 26,
+                height: 26,
+                tintColor: focused ? "#FFD700" : "#888", 
+                marginTop: 6,
+              }}
+              resizeMode="contain"
+            />
+          );
+        },
+        tabBarActiveTintColor: "#FFD700",
+        tabBarInactiveTintColor: "#888",
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Category" component={CategoryScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}

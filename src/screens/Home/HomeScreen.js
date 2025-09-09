@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import HomeHeader from "../../components/HomeHeader";
-
 
 const nearestRestaurants = [
   {
@@ -33,6 +33,27 @@ const nearestRestaurants = [
     image: require("../../assets/Seafood.png"),
     rating: 4.6,
     time: "20 min",
+  },
+  {
+    id: "4",
+    name: "Food Special 1",
+    image: require("../../assets/food1.jpg"),
+    rating: 4.5,
+    time: "18 min",
+  },
+  {
+    id: "5",
+    name: "Food Special 2",
+    image: require("../../assets/food2.jpg"),
+    rating: 4.7,
+    time: "22 min",
+  },
+  {
+    id: "6",
+    name: "Food Special 3",
+    image: require("../../assets/food3.jpg"),
+    rating: 4.9,
+    time: "12 min",
   },
 ];
 
@@ -59,11 +80,37 @@ const popularRestaurants = [
     rating: 4.9,
     time: "20 min",
   },
+  {
+    id: "4",
+    name: "Food Special 1",
+    image: require("../../assets/food1.jpg"),
+    rating: 4.5,
+    time: "18 min",
+  },
+  {
+    id: "5",
+    name: "Food Special 2",
+    image: require("../../assets/food2.jpg"),
+    rating: 4.7,
+    time: "22 min",
+  },
+  {
+    id: "6",
+    name: "Food Special 3",
+    image: require("../../assets/food3.jpg"),
+    rating: 4.9,
+    time: "12 min",
+  },
 ];
 
 export default function HomeScreen() {
+  const navigation = useNavigation();
+
   const renderRestaurant = ({ item }) => (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate("Detail", { restaurant: item })}
+    >
       <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
       {item.offer && (
         <View style={styles.offerTag}>
@@ -74,19 +121,18 @@ export default function HomeScreen() {
       <Text style={styles.cardSub}>
         ⭐ {item.rating} • ⏱ {item.time}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
-        
         <HomeHeader />
 
-    
+        {/* Location */}
         <View style={styles.headerRow}>
           <View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -150,41 +196,6 @@ export default function HomeScreen() {
           />
         </View>
       </ScrollView>
-
-      {/* 🔹 Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require("../../assets/homeIcon.png")}
-            style={styles.navIcon}
-          />
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require("../../assets/search.png")}
-            style={styles.navIcon}
-          />
-          <Text style={styles.navText}>Search</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require("../../assets/shopping-cart.png")}
-            style={styles.navIcon}
-          />
-          <Text style={styles.navText}>Category</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require("../../assets/user.png")}
-            style={styles.navIcon}
-          />
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -195,7 +206,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 20, 
+    marginBottom: 20,
   },
   icon: {
     width: 22,
@@ -288,27 +299,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
     color: "#fff",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#fff",
-  },
-  navItem: {
-    alignItems: "center",
-  },
-  navIcon: {
-    width: 24,
-    height: 24,
-    marginBottom: 6,
-  },
-  navText: {
-    fontSize: 12,
-    color: "#333",
-    marginBottom:10
   },
 });

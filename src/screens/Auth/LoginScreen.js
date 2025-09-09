@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }) {
     loginUser(email, password, (success) => {
       if (success) {
         alert("Login successful!");
-        navigation.replace("Home");
+        navigation.replace("Main");
       } else {
         alert("Invalid email or password");
       }
