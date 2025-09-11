@@ -65,7 +65,7 @@ export default function CategoryScreen() {
   const [selectedFilter, setSelectedFilter] = useState("Best Seller");
   const [cart, setCart] = useState([]);
 
-  // Snackbar state
+  
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
@@ -76,11 +76,11 @@ export default function CategoryScreen() {
     } else {
       setCart([...cart, item]);
 
-      // Show snackbar
+     
       setSnackbarMessage("Successfully Added to Cart");
       setSnackbarVisible(true);
 
-      // Auto hide after 3 seconds
+     
       setTimeout(() => setSnackbarVisible(false), 3000);
     }
   };
@@ -117,7 +117,7 @@ export default function CategoryScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 🔹 Header */}
+   
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backButton}></Text>
@@ -129,7 +129,7 @@ export default function CategoryScreen() {
         <View style={{ width: 30 }} />
       </View>
 
-      {/* Filters */}
+     
       <View style={styles.filterRow}>
         {filters.map((f) => (
           <TouchableOpacity
@@ -160,18 +160,17 @@ export default function CategoryScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
       />
 
-      {/* Cart Bar */}
+  
       {cart.length > 0 && (
         <View style={styles.cartBar}>
           <Text style={styles.cartText}>{cart.length} Item</Text>
           <TouchableOpacity
             style={styles.cartButton}
-            onPress={() =>
-              navigation.navigate("AddToCartScreen", { cartItems: cart })
-            }
+            onPress={() => navigation.navigate("AddToCartScreen", { cartItems: cart })}
           >
             <Text style={styles.cartButtonText}>View Cart</Text>
           </TouchableOpacity>
+
           <Text style={styles.cartPrice}>
             $
             {cart
@@ -181,7 +180,6 @@ export default function CategoryScreen() {
         </View>
       )}
 
-      {/* Simple Snackbar */}
       {snackbarVisible && (
         <View style={styles.snackbar}>
           <Text style={styles.snackbarText}>{snackbarMessage}</Text>

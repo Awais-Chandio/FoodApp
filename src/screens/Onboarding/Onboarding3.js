@@ -4,12 +4,12 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from "rea
 const { width } = Dimensions.get("window");
 
 export default function Onboarding3({ navigation }) {
-  const handleNext = () => navigation.replace("Login"); // last onboarding goes to login
+  const handleNext = () => navigation.replace("Login"); 
   const handleSkip = () => navigation.replace("Login");
 
   return (
     <View style={styles.container}>
-      {/* Center block */}
+   
       <View style={styles.centerContent}>
         <Image
           source={require("../../assets/restaurant-1.png")}
@@ -23,7 +23,7 @@ export default function Onboarding3({ navigation }) {
           Healthy eating means eating a variety of foods that give you the nutrients you need to maintain your health.
         </Text>
 
-        {/* Dots */}
+      
         <View style={styles.dotsContainer}>
           <View style={[styles.dot, styles.dotInactive]} />
           <View style={[styles.dot, styles.dotInactive]} />
@@ -31,7 +31,7 @@ export default function Onboarding3({ navigation }) {
         </View>
       </View>
 
-      {/* Bottom decor image */}
+     
       <View style={styles.bottomContainer}>
         <Image
           source={require("../../assets/Vector-3.png")}

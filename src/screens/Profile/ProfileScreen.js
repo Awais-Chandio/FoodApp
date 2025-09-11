@@ -10,11 +10,11 @@ import {
 
 export default function ProfileScreen() {
   const user = {
-    name: "John Doe",
-    email: "johndoe@example.com",
+    name: "Mr Ahmed Khan",
+    email: "ahmed.khan@example.com",
     phone: "+92 300 1234567",
     address: "Hyderabad, Pakistan",
-    avatar: "https://i.pravatar.cc/150?img=3", // dummy online avatar
+    avatar: "https://i.pravatar.cc/150?img=3",
   };
 
   return (

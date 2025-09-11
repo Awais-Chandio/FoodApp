@@ -12,7 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 
 const filters = ["Best Seller", "Veg", "Non-Veg", "Beverages"];
 
-// Dummy food items (all Best Seller only)
+
 const foodItems = [
   {
     id: "1",
@@ -130,21 +130,21 @@ export default function DetailScreen({ route }) {
   const [activeFilter, setActiveFilter] = useState("Best Seller");
   const [cart, setCart] = useState([]);
 
-  // Ensure restaurant has an ID
+ 
   const restaurantItem = { ...restaurant, id: restaurant.id || "restaurant" };
 
   const toggleCart = (item) => {
     if (cart.find((cartItem) => cartItem.id === item.id)) {
-      setCart(cart.filter((cartItem) => cartItem.id !== item.id)); // remove
+      setCart(cart.filter((cartItem) => cartItem.id !== item.id)); 
     } else {
-      setCart([...cart, item]); // add
+      setCart([...cart, item]); 
     }
   };
 
   return (
     <View style={styles.container}>
       <ScrollView>
-        {/* Restaurant image with back arrow */}
+      
         <View>
           <Image source={restaurant.image} style={styles.image} />
 
@@ -162,7 +162,7 @@ export default function DetailScreen({ route }) {
         </Text>
         {restaurant.offer && <Text style={styles.offer}>{restaurant.offer}</Text>}
 
-        {/* Add to cart for restaurant */}
+       
         <TouchableOpacity
           style={styles.addCartBtn}
           onPress={() => toggleCart(restaurantItem)}
@@ -174,13 +174,13 @@ export default function DetailScreen({ route }) {
           </Text>
         </TouchableOpacity>
 
-        {/* Dummy description */}
+        
         <Text style={styles.description}>
           Welcome to {restaurant.name}! Enjoy a variety of delicious foods
           prepared with love. Fresh, hot, and tasty for every mood.
         </Text>
 
-        {/* Filter Tabs */}
+       
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -207,7 +207,7 @@ export default function DetailScreen({ route }) {
           ))}
         </ScrollView>
 
-        {/* Food Items List */}
+       
         <FlatList
           data={foodItems.filter((item) => item.type === activeFilter)}
           keyExtractor={(item) => item.id}
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   image: { width: "100%", height: 240, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
   backBtn: {
     position: "absolute",
-    top: 40, // adjust depending on status bar
+    top: 40,
     left: 20,
     backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 20,

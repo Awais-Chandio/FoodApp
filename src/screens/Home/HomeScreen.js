@@ -132,7 +132,7 @@ export default function HomeScreen() {
       >
         <HomeHeader />
 
-        {/* Location */}
+       
         <View style={styles.headerRow}>
           <View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -146,7 +146,7 @@ export default function HomeScreen() {
             <Text style={styles.subText}>Hyderabad, Pakistan</Text>
           </View>
 
-          {/* Right side */}
+       
           <TouchableOpacity>
             <Image
               source={require("../../assets/homeIcon.png")}
@@ -156,7 +156,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🔹 Categories Row */}
+      
         <View style={styles.categories}>
           <TouchableOpacity style={styles.categoryActive}>
             <Text style={styles.categoryActiveText}>All</Text>
@@ -172,7 +172,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🔹 Nearest Restaurants */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Nearest Restaurants</Text>
           <FlatList
@@ -184,7 +183,7 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* 🔹 Popular Restaurants */}
+        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Popular Restaurants</Text>
           <FlatList

@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from "react-native";
 export default function LoaderScreen({ navigation }) {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace("Onboarding1"); // after 2s go to onboarding
+      navigation.replace("Onboarding1"); 
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -12,7 +12,7 @@ export default function LoaderScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Custom FOOD Text */}
+      
       <View style={styles.wordRow}>
         <Text style={[styles.letter, { color: "#000" }]}>F</Text>
         <Text style={[styles.letter, { color: "#FFD700" }]}>O</Text>
@@ -20,7 +20,7 @@ export default function LoaderScreen({ navigation }) {
         <Text style={[styles.letter, { color: "#000" }]}>D</Text>
       </View>
 
-      {/* Subtitle */}
+     
       <Text style={styles.subtitle}>No wait for the food</Text>
     </View>
   );
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   letter: {
     fontSize: 48,
     fontWeight: "bold",
-    paddingHorizontal: 0, // no extra spacing
+    paddingHorizontal: 0, 
   },
   subtitle: {
     fontSize: 18,

@@ -9,12 +9,12 @@ export default function Onboarding1({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Center block */}
+    
       <View style={styles.centerContent}>
         <Image
           source={require("../../assets/popcorn-1-1.png")}
           style={styles.image}
-          resizeMode="contain"
+          
         />
 
         <Text style={styles.title}>Choose A Tasty Dish</Text>
@@ -23,7 +23,7 @@ export default function Onboarding1({ navigation }) {
           Order anything you want from your Favourite restaurant
         </Text>
 
-        {/* Dots directly below subtitle */}
+       
         <View style={styles.dotsContainer}>
           <View style={[styles.dot, styles.dotActive]} />
           <View style={[styles.dot, styles.dotInactive]} />
@@ -31,7 +31,7 @@ export default function Onboarding1({ navigation }) {
         </View>
       </View>
 
-      {/* Bottom decor image with buttons overlay */}
+    
       <View style={styles.bottomContainer}>
         <Image
           source={require("../../assets/Vector-3.png")}
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
 
-  /* Center block */
+ 
   centerContent: {
     flex: 1,
     justifyContent: "center",
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  /* Dots */
+
   dotsContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: DOT_INACTIVE,
   },
 
-  /* Bottom image + buttons */
+  
   bottomContainer: {
     position: "absolute",
     bottom: 0,

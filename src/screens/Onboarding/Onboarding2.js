@@ -9,7 +9,7 @@ export default function Onboarding2({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Center block */}
+   
       <View style={styles.centerContent}>
         <Image
           source={require("../../assets/money.png")}
@@ -23,7 +23,7 @@ export default function Onboarding2({ navigation }) {
           Payment made easy through debit card, credit card, and more ways to pay for your food
         </Text>
 
-        {/* Dots */}
+      
         <View style={styles.dotsContainer}>
           <View style={[styles.dot, styles.dotInactive]} />
           <View style={[styles.dot, styles.dotActive]} />
@@ -31,7 +31,6 @@ export default function Onboarding2({ navigation }) {
         </View>
       </View>
 
-      {/* Bottom decor image */}
       <View style={styles.bottomContainer}>
         <Image
           source={require("../../assets/Vector-3.png")}

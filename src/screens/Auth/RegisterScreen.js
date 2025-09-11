@@ -30,7 +30,7 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    // ✅ Save user into SQLite
+   
     registerUser(
       email,
       password,
@@ -50,7 +50,7 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Top image */}
+   
       <Image
         source={require("../../assets/Group-118.png")}
         style={styles.topImage}
@@ -62,7 +62,7 @@ export default function RegisterScreen({ navigation }) {
       </Text>
 
       <View style={styles.content}>
-        {/* Email field */}
+       
         <Text style={styles.label}>Email:</Text>
         <TextInput
           style={styles.input}
@@ -72,7 +72,7 @@ export default function RegisterScreen({ navigation }) {
           keyboardType="email-address"
         />
 
-        {/* Password field */}
+       
         <Text style={styles.label}>Password:</Text>
         <View style={{ width: "100%", position: "relative" }}>
           <TextInput
@@ -91,7 +91,7 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Confirm Password field */}
+       
         <Text style={styles.label}>Confirm Password:</Text>
         <View style={{ width: "100%", position: "relative" }}>
           <TextInput
@@ -110,12 +110,12 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Register button */}
+     
         <TouchableOpacity style={styles.loginButton} onPress={handleRegister}>
           <Text style={styles.loginButtonText}>Register</Text>
         </TouchableOpacity>
 
-        {/* Already have account */}
+       
         <View style={styles.registerRow}>
           <Text style={styles.registerText}>Already have an account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Login")}>

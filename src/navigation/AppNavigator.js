@@ -11,8 +11,9 @@ import HomeHeader from "../components/HomeHeader";
 import DetailScreen from "../components/DetailScreen";
 import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import CategoryScreen from "../screens/Cart/CategoryScreen";
+import TrackOrderScreen from "../screens/Cart/TrackOrderScreen";
 
-// 🔹 Import TabNavigator here
+
 import TabNavigator from "./TabNavigator";
 
 const Stack = createStackNavigator();
@@ -20,10 +21,10 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Main"
+      initialRouteName="Loader"
       screenOptions={{ headerShown: false }}
     >
-      {/* Onboarding/Auth flow */}
+     
       <Stack.Screen name="Loader" component={LoaderScreen} />
       <Stack.Screen name="Onboarding1" component={Onboarding1} />
       <Stack.Screen name="Onboarding2" component={Onboarding2} />
@@ -32,13 +33,16 @@ export default function AppNavigator() {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Category" component={CategoryScreen} />
 
-      {/* 🔹 Main App with Bottom Tabs */}
+     
       <Stack.Screen name="Main" component={TabNavigator} />
 
-      {/* Other stack-only screens */}
+     
       <Stack.Screen name="HomeHeader" component={HomeHeader} />
       <Stack.Screen name="Detail" component={DetailScreen} />
-      <Stack.Screen name="AddedToCartScreen" component={AddToCartScreen} />
+      <Stack.Screen name="AddToCartScreen" component={AddToCartScreen} />
+      <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
+      
+
     </Stack.Navigator>
   );
 }
