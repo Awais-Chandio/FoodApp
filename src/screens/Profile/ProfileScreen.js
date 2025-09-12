@@ -19,19 +19,19 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* 🔹 Header */}
+    
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
-      {/* 🔹 Profile Info */}
+      
       <View style={styles.profileSection}>
         <Image source={{ uri: user.avatar }} style={styles.avatar} />
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
       </View>
 
-      {/* 🔹 Info Cards */}
+    
       <View style={styles.infoCard}>
         <Text style={styles.infoLabel}>Phone</Text>
         <Text style={styles.infoValue}>{user.phone}</Text>
@@ -41,7 +41,6 @@ export default function ProfileScreen() {
         <Text style={styles.infoValue}>{user.address}</Text>
       </View>
 
-      {/* 🔹 Settings Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Settings</Text>
 
@@ -58,7 +57,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 🔹 Logout Button */}
+     
       <TouchableOpacity style={styles.logoutButton}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>

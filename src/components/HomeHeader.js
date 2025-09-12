@@ -1,6 +1,7 @@
 import React from "react";
 import { ImageBackground, View, TextInput, Platform, StyleSheet, Dimensions } from "react-native";
 import AntIcon from "react-native-vector-icons/AntDesign";
+
 const { width } = Dimensions.get("window");
 
 export default function HomeHeader() {

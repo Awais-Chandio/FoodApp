@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,35 +8,35 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { addToCart, removeFromCart, getCartItems } from "../database/dbs"; // ✅ import DB functions
 
 const filters = ["Best Seller", "Veg", "Non-Veg", "Beverages"];
 
-
 const foodItems = [
   {
-    id: "1",
+    id: 2,
     name: "Cheese Burger",
     price: 5.99,
     type: "Best Seller",
     image: require("../assets/food1.jpg"),
   },
   {
-    id: "2",
+    id: 3,
     name: "Veg Pizza",
     price: 7.49,
     type: "Best Seller",
     image: require("../assets/food2.jpg"),
   },
   {
-    id: "3",
+    id: 4,
     name: "Cold Coffee",
     price: 3.99,
     type: "Best Seller",
     image: require("../assets/food3.jpg"),
   },
   {
-    id: "1",
+    id: 5,
     name: "Westway",
     image: require("../assets/Westway.png"),
     rating: 4.6,
@@ -44,49 +44,28 @@ const foodItems = [
     offer: "50% OFF",
   },
   {
-    id: "2",
+    id: 6,
     name: "Fortune",
     image: require("../assets/Fortune.png"),
     rating: 4.8,
     time: "25 min",
   },
   {
-    id: "3",
+    id: 7,
     name: "Seafood",
     image: require("../assets/Seafood.png"),
     rating: 4.6,
     time: "20 min",
   },
   {
-    id: "4",
-    name: "Food Special 1",
-    image: require("../assets/food1.jpg"),
-    rating: 4.5,
-    time: "18 min",
-  },
-  {
-    id: "5",
-    name: "Food Special 2",
-    image: require("../assets/food2.jpg"),
-    rating: 4.7,
-    time: "22 min",
-  },
-  {
-    id: "6",
-    name: "Food Special 3",
-    image: require("../assets/food3.jpg"),
-    rating: 4.9,
-    time: "12 min",
-  },
-   {
-    id: "1",
+    id: 8,
     name: "Moonland",
     image: require("../assets/Moonland.png"),
     rating: 4.6,
     time: "15 min",
   },
   {
-    id: "2",
+    id: 9,
     name: "Starfish",
     image: require("../assets/Starfish.png"),
     rating: 4.8,
@@ -94,60 +73,64 @@ const foodItems = [
     offer: "30% OFF",
   },
   {
-    id: "3",
+    id: 10,
     name: "Black Noodles",
     image: require("../assets/BlackNodles.png"),
     rating: 4.9,
     time: "20 min",
   },
-  {
-    id: "4",
-    name: "Food Special 1",
-    image: require("../assets/food1.jpg"),
-    rating: 4.5,
-    time: "18 min",
-  },
-  {
-    id: "5",
-    name: "Food Special 2",
-    image: require("../assets/food2.jpg"),
-    rating: 4.7,
-    time: "22 min",
-  },
-  {
-    id: "6",
-    name: "Food Special 3",
-    image: require("../assets/food3.jpg"),
-    rating: 4.9,
-    time: "12 min",
-  },
 ];
 
-export default function DetailScreen({ route }) {
+function DetailScreen({ route }) {
   const { restaurant } = route.params;
   const navigation = useNavigation();
 
   const [activeFilter, setActiveFilter] = useState("Best Seller");
   const [cart, setCart] = useState([]);
 
- 
-  const restaurantItem = { ...restaurant, id: restaurant.id || "restaurant" };
+  // ✅ Load cart when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      getCartItems((items) => setCart(items));
+    }, [])
+  );
 
-  const toggleCart = (item) => {
-    if (cart.find((cartItem) => cartItem.id === item.id)) {
-      setCart(cart.filter((cartItem) => cartItem.id !== item.id)); 
+  // ✅ Check if item exists in cart
+  const isInCart = (id) => cart.some((c) => c.id === Number(id));
+
+  // ✅ Add/remove item
+  const handleCart = (item) => {
+    const safeItem = {
+      id: Number(item.id), // force numeric ID
+      name: item.name,
+      price: item.price || 0,
+      image: typeof item.image === "string" ? item.image : "", // DB stores string path
+    };
+
+    if (isInCart(safeItem.id)) {
+      removeFromCart(safeItem.id);
     } else {
-      setCart([...cart, item]); 
+      addToCart(safeItem);
     }
+
+    // refresh cart
+    getCartItems((items) => setCart(items));
+  };
+
+  // ✅ Restaurant object
+  const restaurantItem = {
+    id: Number(restaurant.id) || Date.now(), // fallback unique id
+    name: restaurant.name,
+    price: restaurant.price || 0,
+    image: typeof restaurant.image === "string" ? restaurant.image : "",
   };
 
   return (
     <View style={styles.container}>
       <ScrollView>
-      
+        {/* Restaurant image */}
         <View>
           <Image source={restaurant.image} style={styles.image} />
-
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => navigation.navigate("Main", { screen: "Home" })}
@@ -156,31 +139,29 @@ export default function DetailScreen({ route }) {
           </TouchableOpacity>
         </View>
 
+        {/* Info */}
         <Text style={styles.title}>{restaurant.name}</Text>
         <Text style={styles.details}>
           {restaurant.rating} ⭐ | {restaurant.time}
         </Text>
         {restaurant.offer && <Text style={styles.offer}>{restaurant.offer}</Text>}
 
-       
+        {/* Add/remove restaurant */}
         <TouchableOpacity
           style={styles.addCartBtn}
-          onPress={() => toggleCart(restaurantItem)}
+          onPress={() => handleCart(restaurantItem)}
         >
           <Text style={styles.addCartText}>
-            {cart.find((c) => c.id === restaurantItem.id)
-              ? "Remove from Cart"
-              : "Add to Cart"}
+            {isInCart(restaurantItem.id) ? "Remove from Cart" : "Add to Cart"}
           </Text>
         </TouchableOpacity>
 
-        
         <Text style={styles.description}>
           Welcome to {restaurant.name}! Enjoy a variety of delicious foods
-          prepared with love. Fresh, hot, and tasty for every mood.
+          prepared with love.
         </Text>
 
-       
+        {/* Filters */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -207,23 +188,28 @@ export default function DetailScreen({ route }) {
           ))}
         </ScrollView>
 
-       
+        {/* Food List */}
         <FlatList
           data={foodItems.filter((item) => item.type === activeFilter)}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={styles.foodCard}>
               <Image source={item.image} style={styles.foodImage} />
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodPrice}>${item.price.toFixed(2)}</Text>
+                {item.price ? (
+                  <Text style={styles.foodPrice}>${item.price.toFixed(2)}</Text>
+                ) : (
+                  <Text style={styles.foodPrice}>No Price</Text>
+                )}
               </View>
+
               <TouchableOpacity
                 style={styles.cartBtn}
-                onPress={() => toggleCart(item)}
+                onPress={() => handleCart(item)}
               >
                 <Text style={styles.cartBtnText}>
-                  {cart.find((c) => c.id === item.id) ? "Remove" : "Add"}
+                  {isInCart(item.id) ? "Remove" : "Add"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -236,7 +222,12 @@ export default function DetailScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  image: { width: "100%", height: 240, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
+  image: {
+    width: "100%",
+    height: 240,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
   backBtn: {
     position: "absolute",
     top: 40,
@@ -265,7 +256,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: "center",
   },
-  filterContainer: { flexDirection: "row", marginVertical: 10, paddingLeft: 15 },
+  filterContainer: {
+    flexDirection: "row",
+    marginVertical: 10,
+    paddingLeft: 15,
+  },
   filterBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -298,3 +293,5 @@ const styles = StyleSheet.create({
   },
   cartBtnText: { fontSize: 13, fontWeight: "600" },
 });
+
+export default DetailScreen;

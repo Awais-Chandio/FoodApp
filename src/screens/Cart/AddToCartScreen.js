@@ -2,30 +2,43 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   Image,
   TouchableOpacity,
   TextInput,
   ScrollView,
+  StyleSheet,
   Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
+// 🔹 IMPORT SQLite helper functions
+import {
+  getCartItems,
+  addToCart,
+  removeFromCart,
+  updateCartQuantity,
+} from "../../database/dbs";
+
 const AddToCartScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { cartItems: initialCart = [] } = route.params || {};
-  const [cartItems, setCartItems] = useState(
-    initialCart.map((i) => ({
-      ...i,
-      quantity: i.quantity || 1, 
-      price: i.price || 100, 
-    }))
-  );
-  const [promoCode, setPromoCode] = useState("");
-  const [modalVisible, setModalVisible] = useState(false); 
 
- 
+  const [cartItems, setCartItems] = useState([]);
+  const [promoCode, setPromoCode] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // 🔹 Load cart items when screen opens
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  const loadCart = () => {
+    getCartItems((items) => {
+      setCartItems(items);
+    });
+  };
+
+  // 🔹 If item passed from DetailScreen, add it
   useEffect(() => {
     if (route.params?.item) {
       const newItem = {
@@ -33,42 +46,30 @@ const AddToCartScreen = ({ route }) => {
         quantity: 1,
         price: route.params.item.price || 100,
       };
-      setCartItems((prev) => {
-        const existing = prev.find((i) => i.id === newItem.id);
-        if (existing) {
-          return prev.map((i) =>
-            i.id === newItem.id ? { ...i, quantity: i.quantity + 1 } : i
-          );
-        }
-        return [...prev, newItem];
-      });
+
+      addToCart(newItem, () => loadCart());
     }
   }, [route.params]);
 
- 
-  const increaseQuantity = (id) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
+  // 🔹 Update quantity
+  const increaseQuantity = (id, quantity) => {
+    const newQty = quantity + 1;
+    updateCartQuantity(id, newQty, () => loadCart());
   };
 
-  const decreaseQuantity = (id) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
+  const decreaseQuantity = (id, quantity) => {
+    if (quantity > 1) {
+      const newQty = quantity - 1;
+      updateCartQuantity(id, newQty, () => loadCart());
+    }
   };
 
+  // 🔹 Delete item
   const deleteItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    removeFromCart(id, () => loadCart());
   };
 
-
+  // 🔹 Cart calculations
   const itemTotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -79,29 +80,36 @@ const AddToCartScreen = ({ route }) => {
 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
-      <Image
-        source={typeof item.image === "string" ? { uri: item.image } : item.image}
-        style={styles.itemImage}
-      />
+      {/* ✅ Render only if item.image exists */}
+      {item.image && (
+        <Image
+          source={
+            typeof item.image === "string" ? { uri: item.image } : item.image
+          }
+          style={styles.itemImage}
+        />
+      )}
+
       <View style={{ flex: 1, marginLeft: 10 }}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>${item.price}</Text>
         <View style={styles.quantityContainer}>
           <TouchableOpacity
-            onPress={() => decreaseQuantity(item.id)}
+            onPress={() => decreaseQuantity(item.id, item.quantity)}
             style={styles.qtyButton}
           >
             <Text style={styles.qtyButtonText}>-</Text>
           </TouchableOpacity>
           <Text style={styles.qtyText}>{item.quantity}</Text>
           <TouchableOpacity
-            onPress={() => increaseQuantity(item.id)}
+            onPress={() => increaseQuantity(item.id, item.quantity)}
             style={styles.qtyButton}
           >
             <Text style={styles.qtyButtonText}>+</Text>
           </TouchableOpacity>
         </View>
       </View>
+
       <TouchableOpacity onPress={() => deleteItem(item.id)}>
         <Text style={styles.deleteText}>×</Text>
       </TouchableOpacity>
@@ -110,7 +118,7 @@ const AddToCartScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      
+      {/* Back Button */}
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => navigation.navigate("Main", { screen: "Home" })}
@@ -118,20 +126,19 @@ const AddToCartScreen = ({ route }) => {
         <Text style={styles.backArrow}>←</Text>
       </TouchableOpacity>
 
-    
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Cart</Text>
         <View style={{ width: 30 }} />
       </View>
 
+      {/* Cart Items */}
       <ScrollView contentContainerStyle={{ paddingBottom: 180 }}>
-      
         <View style={styles.addressBox}>
           <Text style={styles.addressText}>Deliver to</Text>
           <Text style={styles.addressDetail}>242 ST Marks Eve, Finland</Text>
         </View>
 
-     
         <FlatList
           data={cartItems}
           keyExtractor={(item) => item.id.toString()}
@@ -139,7 +146,7 @@ const AddToCartScreen = ({ route }) => {
           scrollEnabled={false}
         />
 
-    
+        {/* Promo code */}
         <View style={styles.promoContainer}>
           <TextInput
             placeholder="Enter promo code"
@@ -153,7 +160,7 @@ const AddToCartScreen = ({ route }) => {
         </View>
       </ScrollView>
 
-     
+      {/* Bottom Summary */}
       <View style={styles.bottomContainer}>
         <Image
           source={require("../../assets/Vector-3.png")}
@@ -185,7 +192,7 @@ const AddToCartScreen = ({ route }) => {
         </View>
       </View>
 
-     
+      {/* Confirmation Modal */}
       <Modal
         transparent
         visible={modalVisible}
@@ -194,7 +201,9 @@ const AddToCartScreen = ({ route }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Thanks for buying food with us!</Text>
+            <Text style={styles.modalTitle}>
+              Thanks for buying food with us!
+            </Text>
             <Text style={styles.modalSubtitle}>
               Your food will arrive in 3 minutes.
             </Text>
@@ -202,7 +211,7 @@ const AddToCartScreen = ({ route }) => {
               style={styles.trackButton}
               onPress={() => {
                 setModalVisible(false);
-                navigation.navigate("TrackOrder"); 
+                navigation.navigate("TrackOrder");
               }}
             >
               <Text style={styles.trackButtonText}>Track your order</Text>
@@ -214,105 +223,74 @@ const AddToCartScreen = ({ route }) => {
   );
 };
 
+export default AddToCartScreen;
+
+// ---------------- STYLES ----------------
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-
-  
-  backBtn: {
-    position: "absolute",
-    top: 15,
-    left: 15,
-    zIndex: 10,
-    padding: 5,
-  },
-  backArrow: { fontSize: 26, fontWeight: "bold", color: "#000" },
-
+  backBtn: { padding: 10 },
+  backArrow: { fontSize: 22 },
   header: {
-    marginTop: 50,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "center",
-    padding: 15,
-    backgroundColor: "#fff",
-    elevation: 3,
+    marginVertical: 10,
   },
-  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#000" },
-
-  addressBox: {
-    backgroundColor: "#FF7F32",
-    padding: 15,
-    borderRadius: 8,
-    margin: 15,
-  },
-  addressText: { color: "#fff", fontSize: 14 },
-  addressDetail: { color: "#fff", fontWeight: "bold", marginTop: 3 },
-
+  headerTitle: { fontSize: 20, fontWeight: "bold" },
   itemContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 15,
-    marginBottom: 16,
-    backgroundColor: "#fff",
-    borderRadius: 10,
     padding: 10,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
   },
   itemImage: { width: 60, height: 60, borderRadius: 8 },
-  itemName: { fontSize: 14, fontWeight: "bold" },
-  itemPrice: { fontSize: 12, color: "#555" },
-  quantityContainer: { flexDirection: "row", alignItems: "center", marginTop: 5 },
-  qtyButton: {
-    width: 25,
-    height: 25,
-    backgroundColor: "#eee",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 4,
-  },
-  qtyButtonText: { fontSize: 16, fontWeight: "bold" },
-  qtyText: { marginHorizontal: 8, fontSize: 14 },
-  deleteText: { color: "red", fontSize: 20, paddingHorizontal: 6 },
-
-  promoContainer: {
+  itemName: { fontSize: 16, fontWeight: "600" },
+  itemPrice: { color: "gray", marginTop: 4 },
+  quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 15,
-    marginTop: 10,
+    marginTop: 8,
+  },
+  qtyButton: {
+    paddingHorizontal: 10,
+    backgroundColor: "#ddd",
+    borderRadius: 4,
+  },
+  qtyButtonText: { fontSize: 18 },
+  qtyText: { marginHorizontal: 8, fontSize: 16 },
+  deleteText: { fontSize: 22, color: "red", marginLeft: 10 },
+  addressBox: {
+    padding: 15,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 8,
+    margin: 10,
+  },
+  addressText: { fontSize: 14, color: "gray" },
+  addressDetail: { fontSize: 16, fontWeight: "bold" },
+  promoContainer: {
+    flexDirection: "row",
+    margin: 15,
+    alignItems: "center",
   },
   promoInput: {
     flex: 1,
     borderWidth: 1,
     borderColor: "#ccc",
+    borderRadius: 6,
     padding: 10,
-    borderRadius: 8,
   },
   promoAddButton: {
-    marginLeft: 10,
+    marginLeft: 8,
     backgroundColor: "#eee",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
   },
-
-  bottomContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    justifyContent: "flex-end",
-  },
-  bottomDecoration: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
+  bottomContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
+  bottomDecoration: { width: "100%", height: 80, resizeMode: "cover" },
   summaryWrapper: {
-    padding: 20,
+    position: "absolute",
+    bottom: 10,
+    left: 20,
+    right: 20,
   },
   summaryRow: {
     flexDirection: "row",
@@ -320,15 +298,12 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   continueButton: {
-    marginTop: 10,
-    backgroundColor: "#fff",
-    padding: 14,
+    backgroundColor: "#ff9900",
+    padding: 15,
     borderRadius: 10,
-    alignItems: "center",
+    marginTop: 10,
   },
-  continueText: { fontWeight: "bold", color: "#000" },
-
-
+  continueText: { color: "#fff", textAlign: "center", fontWeight: "bold" },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -336,32 +311,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalBox: {
-    width: "80%",
     backgroundColor: "#fff",
-    borderRadius: 10,
     padding: 20,
+    borderRadius: 12,
     alignItems: "center",
-    elevation: 5,
+    width: "80%",
   },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  trackButton: {
-    backgroundColor: "#FF7F32",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  modalSubtitle: { fontSize: 14, color: "gray", marginBottom: 20 },
+  trackButton: { backgroundColor: "#ff9900", padding: 12, borderRadius: 8 },
   trackButtonText: { color: "#fff", fontWeight: "bold" },
 });
-
-export default AddToCartScreen;

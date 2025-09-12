@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import HomeScreen from "../screens/Home/HomeScreen";
 import SearchScreen from "../components/SearchScreen";
-import CategoryScreen from "../screens/Cart/CategoryScreen";
+import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
@@ -34,7 +34,7 @@ export default function TabNavigator() {
             iconSource = require("../assets/home.png");
           } else if (route.name === "Search") {
             iconSource = require("../assets/search.png");
-          } else if (route.name === "Category") {
+          } else if (route.name === "Cart") {
             iconSource = require("../assets/shopping-cart.png");
           } else if (route.name === "Profile") {
             iconSource = require("../assets/user.png");
@@ -59,7 +59,7 @@ export default function TabNavigator() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen name="Category" component={CategoryScreen} />
+      <Tab.Screen name="Cart" component={AddToCartScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

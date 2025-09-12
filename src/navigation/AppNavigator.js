@@ -9,8 +9,6 @@ import LoginScreen from "../screens/Auth/LoginScreen";
 import RegisterScreen from "../screens/Auth/RegisterScreen";
 import HomeHeader from "../components/HomeHeader";
 import DetailScreen from "../components/DetailScreen";
-import AddToCartScreen from "../screens/Cart/AddToCartScreen";
-import CategoryScreen from "../screens/Cart/CategoryScreen";
 import TrackOrderScreen from "../screens/Cart/TrackOrderScreen";
 
 
@@ -31,7 +29,6 @@ export default function AppNavigator() {
       <Stack.Screen name="Onboarding3" component={Onboarding3} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="Category" component={CategoryScreen} />
 
      
       <Stack.Screen name="Main" component={TabNavigator} />
@@ -39,7 +36,6 @@ export default function AppNavigator() {
      
       <Stack.Screen name="HomeHeader" component={HomeHeader} />
       <Stack.Screen name="Detail" component={DetailScreen} />
-      <Stack.Screen name="AddToCartScreen" component={AddToCartScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       
 

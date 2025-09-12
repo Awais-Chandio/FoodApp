@@ -106,7 +106,7 @@ const popularRestaurants = [
 export default function HomeScreen() {
   const navigation = useNavigation();
 
-  const renderRestaurant = ({ item }) => (
+  const renderRestaurant = ({ item  }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate("Detail", { restaurant: item })}
