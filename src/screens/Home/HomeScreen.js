@@ -1,302 +1,89 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  FlatList,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import HomeHeader from "../../components/HomeHeader";
+import { getRestaurants } from "../../database/dbs";
 
-const nearestRestaurants = [
-  {
-    id: "1",
-    name: "Westway",
-    image: require("../../assets/Westway.png"),
-    rating: 4.6,
-    time: "15 min",
-    offer: "50% OFF",
-  },
-  {
-    id: "2",
-    name: "Fortune",
-    image: require("../../assets/Fortune.png"),
-    rating: 4.8,
-    time: "25 min",
-  },
-  {
-    id: "3",
-    name: "Seafood",
-    image: require("../../assets/Seafood.png"),
-    rating: 4.6,
-    time: "20 min",
-  },
-  {
-    id: "4",
-    name: "Food Special 1",
-    image: require("../../assets/food1.jpg"),
-    rating: 4.5,
-    time: "18 min",
-  },
-  {
-    id: "5",
-    name: "Food Special 2",
-    image: require("../../assets/food2.jpg"),
-    rating: 4.7,
-    time: "22 min",
-  },
-  {
-    id: "6",
-    name: "Food Special 3",
-    image: require("../../assets/food3.jpg"),
-    rating: 4.9,
-    time: "12 min",
-  },
-];
-
-const popularRestaurants = [
-  {
-    id: "1",
-    name: "Moonland",
-    image: require("../../assets/Moonland.png"),
-    rating: 4.6,
-    time: "15 min",
-  },
-  {
-    id: "2",
-    name: "Starfish",
-    image: require("../../assets/Starfish.png"),
-    rating: 4.8,
-    time: "25 min",
-    offer: "30% OFF",
-  },
-  {
-    id: "3",
-    name: "Black Noodles",
-    image: require("../../assets/BlackNodles.png"),
-    rating: 4.9,
-    time: "20 min",
-  },
-  {
-    id: "4",
-    name: "Food Special 1",
-    image: require("../../assets/food1.jpg"),
-    rating: 4.5,
-    time: "18 min",
-  },
-  {
-    id: "5",
-    name: "Food Special 2",
-    image: require("../../assets/food2.jpg"),
-    rating: 4.7,
-    time: "22 min",
-  },
-  {
-    id: "6",
-    name: "Food Special 3",
-    image: require("../../assets/food3.jpg"),
-    rating: 4.9,
-    time: "12 min",
-  },
-];
-
-export default function HomeScreen() {
+const HomeScreen = () => {
   const navigation = useNavigation();
+  const [nearest, setNearest] = useState([]);
+  const [popular, setPopular] = useState([]);
 
-  const renderRestaurant = ({ item  }) => (
+  useEffect(() => {
+    // Load restaurants from SQLite
+    getRestaurants("nearest", setNearest);
+    getRestaurants("popular", setPopular);
+  }, []);
+
+  const renderRestaurant = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate("Detail", { restaurant: item })}
+      onPress={() =>
+        navigation.navigate("Detail", {
+          item: {
+            id: item.id,
+            name: item.name,
+            image: require("../assets/food1.jpg"), // 👈 fallback if relative path fails
+            price: 200, // 👈 You can replace with real price later
+          },
+        })
+      }
     >
-      <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
-      {item.offer && (
-        <View style={styles.offerTag}>
-          <Text style={styles.offerText}>{item.offer}</Text>
-        </View>
-      )}
-      <Text style={styles.cardTitle}>{item.name}</Text>
-      <Text style={styles.cardSub}>
-        ⭐ {item.rating} • ⏱ {item.time}
-      </Text>
+      <Image
+        source={
+          item.image.includes("http") ? { uri: item.image } : require("../assets/food1.jpg")
+        }
+        style={styles.image}
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.sub}>
+          ⭐ {item.rating} | ⏱ {item.time}
+        </Text>
+        {item.offer ? <Text style={styles.offer}>{item.offer}</Text> : null}
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        <HomeHeader />
+    <View style={styles.container}>
+      {/* Nearest Section */}
+      <Text style={styles.heading}>Nearest Restaurants</Text>
+      <FlatList
+        data={nearest}
+        horizontal
+        keyExtractor={(item) => item.id}
+        renderItem={renderRestaurant}
+        showsHorizontalScrollIndicator={false}
+      />
 
-       
-        <View style={styles.headerRow}>
-          <View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Image
-                source={require("../../assets/location.png")}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-              <Text style={styles.locationText}>Home</Text>
-            </View>
-            <Text style={styles.subText}>Hyderabad, Pakistan</Text>
-          </View>
-
-       
-          <TouchableOpacity>
-            <Image
-              source={require("../../assets/homeIcon.png")}
-              style={styles.icon}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        </View>
-
-      
-        <View style={styles.categories}>
-          <TouchableOpacity style={styles.categoryActive}>
-            <Text style={styles.categoryActiveText}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.category}>
-            <Text style={styles.categoryText}>Pizza</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.category}>
-            <Text style={styles.categoryText}>Beverages</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.category}>
-            <Text style={styles.categoryText}>Asian</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nearest Restaurants</Text>
-          <FlatList
-            data={nearestRestaurants}
-            horizontal
-            renderItem={renderRestaurant}
-            keyExtractor={(item) => item.id}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Popular Restaurants</Text>
-          <FlatList
-            data={popularRestaurants}
-            horizontal
-            renderItem={renderRestaurant}
-            keyExtractor={(item) => item.id}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-      </ScrollView>
+      {/* Popular Section */}
+      <Text style={styles.heading}>Popular Restaurants</Text>
+      <FlatList
+        data={popular}
+        horizontal
+        keyExtractor={(item) => item.id}
+        renderItem={renderRestaurant}
+        showsHorizontalScrollIndicator={false}
+      />
     </View>
   );
-}
+};
+
+export default HomeScreen;
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  icon: {
-    width: 22,
-    height: 22,
-  },
-  locationText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000",
-    marginLeft: 6,
-    letterSpacing: 0.5,
-  },
-  subText: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 2,
-    fontWeight: "500",
-    marginLeft: 26,
-    letterSpacing: 0.3,
-  },
-  categories: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 15,
-    paddingHorizontal: 10,
-  },
-  category: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-  },
-  categoryText: {
-    color: "#333",
-    fontSize: 14,
-  },
-  categoryActive: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFD700",
-    borderRadius: 12,
-  },
-  categoryActiveText: {
-    fontWeight: "bold",
-    color: "#000",
-  },
-  section: {
-    marginVertical: 10,
-    paddingHorizontal: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
+  container: { flex: 1, padding: 16, backgroundColor: "#f9f9f9" },
+  heading: { fontSize: 20, fontWeight: "bold", marginVertical: 10 },
   card: {
-    width: 140,
-    marginRight: 15,
     backgroundColor: "#fff",
-    borderRadius: 12,
+    marginRight: 12,
+    borderRadius: 10,
     overflow: "hidden",
-    elevation: 3,
+    width: 180,
+    elevation: 2,
   },
-  cardImage: {
-    width: "100%",
-    height: 100,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginTop: 6,
-    marginLeft: 8,
-  },
-  cardSub: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 8,
-    marginLeft: 8,
-  },
-  offerTag: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    backgroundColor: "#FF6347",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  offerText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#fff",
-  },
+  image: { width: "100%", height: 120 },
+  name: { fontSize: 16, fontWeight: "bold", margin: 6 },
+  sub: { fontSize: 14, color: "gray", marginHorizontal: 6 },
+  offer: { fontSize: 14, color: "tomato", fontWeight: "600", margin: 6 },
 });
