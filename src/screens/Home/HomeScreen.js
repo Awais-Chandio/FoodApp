@@ -4,7 +4,6 @@ import { useNavigation } from "@react-navigation/native";
 import { getRestaurants } from "../../database/dbs";
 
 const HomeScreen = () => {
-  const navigation = useNavigation();
   const [nearest, setNearest] = useState([]);
   const [popular, setPopular] = useState([]);
 

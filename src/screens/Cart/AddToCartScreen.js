@@ -20,6 +20,19 @@ import {
   updateCartQuantity,
 } from "../../database/dbs";
 
+// Same mapping as other screens (adjust paths if needed)
+const imageMap = {
+  food1: require("../../assets/food1.jpg"),
+  food2: require("../../assets/food2.jpg"),
+  food3: require("../../assets/food3.jpg"),
+  Westway: require("../../assets/Westway.png"),
+  Fortune: require("../../assets/Fortune.png"),
+  Seafood: require("../../assets/Seafood.png"),
+  Moonland: require("../../assets/Moonland.png"),
+  Starfish: require("../../assets/Starfish.png"),
+  BlackNodles: require("../../assets/BlackNodles.png"),
+};
+
 const AddToCartScreen = ({ route }) => {
   const navigation = useNavigation();
 
@@ -27,7 +40,6 @@ const AddToCartScreen = ({ route }) => {
   const [promoCode, setPromoCode] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
-  // 🔹 Load cart items when screen opens
   useEffect(() => {
     loadCart();
   }, []);
