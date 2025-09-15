@@ -1,88 +1,72 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { getRestaurants } from "../../database/dbs";
+import { View, Text, FlatList, Image, StyleSheet } from "react-native";
+import { getRestaurants, createTables } from "../../database/dbs";
+
+const restaurantImages = {
+  "1": require("../../assets/Westway.png"),
+  "2": require("../../assets/Fortune.png"),
+  "3": require("../../assets/Seafood.png"),
+  "4": require("../../assets/food1.jpg"),
+  "5": require("../../assets/food2.jpg"),
+  "6": require("../../assets/food3.jpg"),
+  "7": require("../../assets/Moonland.png"),
+  "8": require("../../assets/Starfish.png"),
+  "9": require("../../assets/BlackNodles.png"),
+};
 
 const HomeScreen = () => {
   const [nearest, setNearest] = useState([]);
   const [popular, setPopular] = useState([]);
 
   useEffect(() => {
-    // Load restaurants from SQLite
-    getRestaurants("nearest", setNearest);
-    getRestaurants("popular", setPopular);
+  
+    createTables(() => {
+      getRestaurants("nearest", setNearest);
+      getRestaurants("popular", setPopular);
+    });
   }, []);
 
   const renderRestaurant = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() =>
-        navigation.navigate("Detail", {
-          item: {
-            id: item.id,
-            name: item.name,
-            image: require("../assets/food1.jpg"), // 👈 fallback if relative path fails
-            price: 200, // 👈 You can replace with real price later
-          },
-        })
-      }
-    >
+    <View style={styles.card}>
       <Image
-        source={
-          item.image.includes("http") ? { uri: item.image } : require("../assets/food1.jpg")
-        }
+        source={restaurantImages[item.id]}
         style={styles.image}
       />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.sub}>
-          ⭐ {item.rating} | ⏱ {item.time}
-        </Text>
-        {item.offer ? <Text style={styles.offer}>{item.offer}</Text> : null}
-      </View>
-    </TouchableOpacity>
+      <Text style={styles.name}>{item.name}</Text>
+      <Text>Rating: {item.rating} | Time: {item.time}</Text>
+      {item.offer ? <Text>Offer: {item.offer}</Text> : null}
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Nearest Section */}
-      <Text style={styles.heading}>Nearest Restaurants</Text>
+      <Text style={styles.title}>Nearest Restaurants</Text>
       <FlatList
         data={nearest}
-        horizontal
         keyExtractor={(item) => item.id}
-        renderItem={renderRestaurant}
+        horizontal
         showsHorizontalScrollIndicator={false}
+        renderItem={renderRestaurant}
       />
 
-      {/* Popular Section */}
-      <Text style={styles.heading}>Popular Restaurants</Text>
+      <Text style={styles.title}>Popular Restaurants</Text>
       <FlatList
         data={popular}
-        horizontal
         keyExtractor={(item) => item.id}
-        renderItem={renderRestaurant}
+        horizontal
         showsHorizontalScrollIndicator={false}
+        renderItem={renderRestaurant}
       />
     </View>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f9f9f9" },
-  heading: { fontSize: 20, fontWeight: "bold", marginVertical: 10 },
-  card: {
-    backgroundColor: "#fff",
-    marginRight: 12,
-    borderRadius: 10,
-    overflow: "hidden",
-    width: 180,
-    elevation: 2,
-  },
-  image: { width: "100%", height: 120 },
-  name: { fontSize: 16, fontWeight: "bold", margin: 6 },
-  sub: { fontSize: 14, color: "gray", marginHorizontal: 6 },
-  offer: { fontSize: 14, color: "tomato", fontWeight: "600", margin: 6 },
+  container: { flex: 1, padding: 10, backgroundColor: "#fff" },
+  title: { fontSize: 18, fontWeight: "bold", marginVertical: 10 },
+  card: { marginRight: 15, width: 140 },
+  image: { width: 140, height: 100, borderRadius: 8 },
+  name: { fontWeight: "bold", marginTop: 5 },
 });
+
+export default HomeScreen;

@@ -4,7 +4,7 @@ import AppNavigator from "./src/navigation/AppNavigator";
 import { useEffect } from "react";
 import { createTables } from "./src/database/dbs";
 
-export default function App() {
+const App=()=> {
   useEffect(() => {
     createTables();
   }, []);
@@ -14,3 +14,6 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+export default App
+

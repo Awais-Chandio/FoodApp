@@ -19,10 +19,10 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Loader"
+      initialRouteName="Main"
       screenOptions={{ headerShown: false }}
     >
-     
+
       <Stack.Screen name="Loader" component={LoaderScreen} />
       <Stack.Screen name="Onboarding1" component={Onboarding1} />
       <Stack.Screen name="Onboarding2" component={Onboarding2} />
@@ -30,14 +30,14 @@ export default function AppNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
 
-     
+
       <Stack.Screen name="Main" component={TabNavigator} />
 
-     
+
       <Stack.Screen name="HomeHeader" component={HomeHeader} />
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
-      
+
 
     </Stack.Navigator>
   );
