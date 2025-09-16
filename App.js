@@ -1,13 +1,15 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
-import { useEffect } from "react";
-import { createTables } from "./src/database/dbs";
+import { useCreateTables } from "./src/database/dbs";
+
 
 const App=()=> {
-  useEffect(() => {
-    createTables();
-  }, []);
+  // useEffect(() => {
+  //   createTables();
+  // }, []);
+  useCreateTables(); 
+
   return (
     <NavigationContainer>
       <AppNavigator />

@@ -2,7 +2,7 @@ import React from "react";
 import { Image } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-import HomeScreen from "../screens/Home/HomeScreen";
+import HomeStack from "../navigation/HomeStack";
 import SearchScreen from "../components/SearchScreen";
 import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
@@ -30,7 +30,7 @@ export default function TabNavigator() {
         tabBarIcon: ({ focused }) => {
           let iconSource;
 
-          if (route.name === "Home") {
+          if (route.name === "HomeStack") {
             iconSource = require("../assets/home.png");
           } else if (route.name === "Search") {
             iconSource = require("../assets/search.png");
@@ -57,7 +57,7 @@ export default function TabNavigator() {
         tabBarInactiveTintColor: "#888",
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="HomeStack" component={HomeStack} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Cart" component={AddToCartScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
