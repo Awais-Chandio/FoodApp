@@ -19,7 +19,7 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Main"
+      initialRouteName="Tab"
       screenOptions={{ headerShown: false }}
     >
 
@@ -31,12 +31,13 @@ export default function AppNavigator() {
       <Stack.Screen name="Register" component={RegisterScreen} />
 
 
-      <Stack.Screen name="Main" component={TabNavigator} />
+      <Stack.Screen name="Tab" component={TabNavigator} />
 
 
       <Stack.Screen name="HomeHeader" component={HomeHeader} />
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
+
 
 
     </Stack.Navigator>
