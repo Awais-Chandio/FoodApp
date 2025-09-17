@@ -2,7 +2,6 @@ import SQLite from "react-native-sqlite-storage";
 import { useEffect } from "react";
 
 
-// Disable promise mode for simpler callbacks
 SQLite.enablePromise(false);
 
 // ✅ Open / create the database
