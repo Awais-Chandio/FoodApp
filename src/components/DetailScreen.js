@@ -25,7 +25,7 @@ const imageMap = {
 export default function DetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const restaurant = route?.params?.restaurant; // ✅ safe access
+  const restaurant = route?.params?.restaurant; 
 
   if (!restaurant) {
     return (
@@ -165,3 +165,5 @@ const styles = StyleSheet.create({
   menuLinkRight: { alignItems: "flex-end", marginHorizontal: 20, marginVertical: 20 },
   menuText: { color: "#FF7000", fontWeight: "600", fontSize: 15 },
 });
+
+//Detail Screen before SQLITE DATABASE

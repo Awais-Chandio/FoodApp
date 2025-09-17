@@ -59,7 +59,7 @@ export default function TabNavigator() {
     >
       <Tab.Screen name="HomeStack" component={HomeStack} />
       <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen name="Cart" component={AddToCartScreen} />
+      <Tab.Screen name="AddToCartScreen" component={AddToCartScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
