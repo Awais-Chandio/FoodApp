@@ -1,107 +1,207 @@
-// src/screens/AddToCartScreen.js
+// import React, { useState } from "react";
+// import {
+//   View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView
+// } from "react-native";
+// import { useNavigation, useRoute } from "@react-navigation/native";
+
+// const imageMap = {
+//   food1: require("../../assets/food1.jpg"),
+//   food2: require("../../assets/food2.jpg"),
+//   food3: require("../../assets/food3.jpg"),
+//   Moonland: require("../../assets/Moonland.png"),
+//   Starfish: require("../../assets/Starfish.png"),
+//   BlackNodles: require("../../assets/BlackNodles.png"),
+// };
+
+// export default function AddToCartScreen() {
+//   const navigation = useNavigation();
+//   const route = useRoute();
+
+//   // 👇 cart comes directly from MenuScreen
+//   const [cartItems, setCartItems] = useState(route.params?.cart || []);
+
+//   const increaseQuantity = (id) => {
+//     setCartItems((prev) =>
+//       prev.map((item) =>
+//         item.id === id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+//       )
+//     );
+//   };
+
+//   const decreaseQuantity = (id) => {
+//     setCartItems((prev) =>
+//       prev
+//         .map((item) =>
+//           item.id === id && (item.quantity || 1) > 1
+//             ? { ...item, quantity: item.quantity - 1 }
+//             : item
+//         )
+//         .filter((i) => i.quantity !== 0)
+//     );
+//   };
+
+//   const deleteItem = (id) => {
+//     setCartItems((prev) => prev.filter((item) => item.id !== id));
+//   };
+
+//   const itemTotal = cartItems.reduce(
+//     (sum, item) => sum + item.price * (item.quantity || 1),
+//     0
+//   );
+
+//   const renderItem = ({ item }) => {
+//     const imgSource = imageMap[item.image_key] || require("../../assets/food1.jpg");
+//     return (
+//       <View style={styles.itemContainer}>
+//         <Image source={imgSource} style={styles.itemImage} />
+//         <View style={{ flex: 1, marginLeft: 10 }}>
+//           <Text style={styles.itemName}>{item.name}</Text>
+//           <Text style={styles.itemPrice}>Rs. {item.price}</Text>
+//           <View style={styles.quantityContainer}>
+//             <TouchableOpacity onPress={() => decreaseQuantity(item.id)} style={styles.qtyButton}>
+//               <Text style={styles.qtyButtonText}>-</Text>
+//             </TouchableOpacity>
+//             <Text style={styles.qtyText}>{item.quantity || 1}</Text>
+//             <TouchableOpacity onPress={() => increaseQuantity(item.id)} style={styles.qtyButton}>
+//               <Text style={styles.qtyButtonText}>+</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+//         <TouchableOpacity onPress={() => deleteItem(item.id)}>
+//           <Text style={styles.deleteText}>×</Text>
+//         </TouchableOpacity>
+//       </View>
+//     );
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+//         <Text style={styles.backArrow}>←</Text>
+//       </TouchableOpacity>
+
+//       <View style={styles.header}>
+//         <Text style={styles.headerTitle}>Cart</Text>
+//       </View>
+
+//       {/* ✅ NEW header container directly below Cart */}
+//       <View style={styles.deliveryHeader}>
+//         <Text style={styles.deliveryLabel}>Deliver to</Text>
+//         <Text style={styles.deliveryAddress}>242 ST Marks Eve,{'\n'}Finland</Text>
+//       </View>
+
+//       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+//         <FlatList
+//           data={cartItems}
+//           keyExtractor={(item) => String(item.id)}
+//           renderItem={renderItem}
+//           scrollEnabled={false}
+//         />
+//       </ScrollView>
+
+//       <View style={styles.summaryRow}>
+//         <Text style={{ fontWeight: "bold" }}>Total</Text>
+//         <Text style={{ fontWeight: "bold" }}>Rs. {itemTotal}</Text>
+//       </View>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, backgroundColor: "#fff" },
+//   backBtn: { padding: 10 },
+//   backArrow: { fontSize: 22 },
+//   header: { flexDirection: "row", justifyContent: "center", marginVertical: 10 },
+//   headerTitle: { fontSize: 20, fontWeight: "bold" },
+
+//   /* 🔹 Added styles for the new delivery header */
+//   deliveryHeader: {
+//     backgroundColor: "#f6f6f6",
+//     marginHorizontal: 16,
+//     marginBottom: 10,
+//     borderRadius: 8,
+//     paddingVertical: 12,
+//     paddingHorizontal: 16,
+//   },
+//   deliveryLabel: { fontSize: 14, color: "gray", marginBottom: 4, fontWeight: "600" },
+//   deliveryAddress: { fontSize: 16, fontWeight: "bold", lineHeight: 20 },
+
+//   itemContainer: { flexDirection: "row", padding: 10, borderBottomWidth: 1, borderColor: "#eee" },
+//   itemImage: { width: 60, height: 60, borderRadius: 8 },
+//   itemName: { fontSize: 16, fontWeight: "600" },
+//   itemPrice: { color: "gray", marginTop: 4 },
+//   quantityContainer: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+//   qtyButton: { paddingHorizontal: 10, backgroundColor: "#ddd", borderRadius: 4 },
+//   qtyButtonText: { fontSize: 18 },
+//   qtyText: { marginHorizontal: 8, fontSize: 16 },
+//   deleteText: { fontSize: 22, color: "red", marginLeft: 10 },
+//   summaryRow: { flexDirection: "row", justifyContent: "space-between", padding: 16 },
+// });
+// before sqlite working addtocartscreen
+
 import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  StyleSheet,
-  Modal,
+  View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import {
-  getCartItems,
-  addToCart,
-  removeFromCart,
-  updateCartQuantity,
-} from "../../database/dbs";
+import { updateQuantity, removeFromCart, fetchCart } from "../../database/dbs";
 
-// Same mapping as other screens (adjust paths if needed)
 const imageMap = {
   food1: require("../../assets/food1.jpg"),
   food2: require("../../assets/food2.jpg"),
   food3: require("../../assets/food3.jpg"),
-  Westway: require("../../assets/Westway.png"),
-  Fortune: require("../../assets/Fortune.png"),
-  Seafood: require("../../assets/Seafood.png"),
   Moonland: require("../../assets/Moonland.png"),
   Starfish: require("../../assets/Starfish.png"),
   BlackNodles: require("../../assets/BlackNodles.png"),
 };
 
-const AddToCartScreen = ({ route }) => {
+export default function AddToCartScreen() {
   const navigation = useNavigation();
   const [cartItems, setCartItems] = useState([]);
-  const [promoCode, setPromoCode] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    loadCart();
+    fetchCart(setCartItems);
   }, []);
 
-  const loadCart = () => {
-    getCartItems((items) => {
-      setCartItems(items);
-    });
+  const increaseQuantity = (id) => {
+    updateQuantity(id, 1);
+    fetchCart(setCartItems);
   };
 
-  // optional: allow adding via route.params.item when navigating directly to Cart with an item
-  useEffect(() => {
-    if (route.params?.item) {
-      const newItem = {
-        ...route.params.item,
-        id: String(route.params.item.id),
-        image_key: route.params.item.image_key || route.params.item.imageKey || route.params.item.image || "",
-        price: route.params.item.price || 0,
-      };
-      addToCart(newItem, () => loadCart());
-    }
-  }, [route.params]);
-
-  const increaseQuantity = (id, quantity) => {
-    updateCartQuantity(id, Number(quantity) + 1, () => loadCart());
-  };
-
-  const decreaseQuantity = (id, quantity) => {
-    if (quantity > 1) updateCartQuantity(id, Number(quantity) - 1, () => loadCart());
+  const decreaseQuantity = (id) => {
+    updateQuantity(id, -1);
+    fetchCart(setCartItems);
   };
 
   const deleteItem = (id) => {
-    removeFromCart(id, () => loadCart());
+    removeFromCart(id);
+    fetchCart(setCartItems);
   };
 
   const itemTotal = cartItems.reduce(
-    (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1),
+    (sum, item) => sum + item.price * (item.quantity || 1),
     0
   );
-  const discount = promoCode === "SAVE10" ? 10 : 0;
-  const tax = 2;
-  const total = itemTotal - discount + tax;
 
   const renderItem = ({ item }) => {
-    const imgKey = item.image_key || item.imageKey || item.image || "";
-    const imgSource = imageMap[imgKey] || require("../../assets/food1.jpg");
-
+    const imgSource = imageMap[item.image_key] || require("../../assets/food1.jpg");
     return (
       <View style={styles.itemContainer}>
         <Image source={imgSource} style={styles.itemImage} />
         <View style={{ flex: 1, marginLeft: 10 }}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemPrice}>${Number(item.price).toFixed(2)}</Text>
+          <Text style={styles.itemPrice}>Rs. {item.price}</Text>
           <View style={styles.quantityContainer}>
-            <TouchableOpacity onPress={() => decreaseQuantity(item.id, item.quantity)} style={styles.qtyButton}>
+            <TouchableOpacity onPress={() => decreaseQuantity(item.menu_item_id)} style={styles.qtyButton}>
               <Text style={styles.qtyButtonText}>-</Text>
             </TouchableOpacity>
-            <Text style={styles.qtyText}>{item.quantity}</Text>
-            <TouchableOpacity onPress={() => increaseQuantity(item.id, item.quantity)} style={styles.qtyButton}>
+            <Text style={styles.qtyText}>{item.quantity || 1}</Text>
+            <TouchableOpacity onPress={() => increaseQuantity(item.menu_item_id)} style={styles.qtyButton}>
               <Text style={styles.qtyButtonText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity onPress={() => deleteItem(item.id)}>
+        <TouchableOpacity onPress={() => deleteItem(item.menu_item_id)}>
           <Text style={styles.deleteText}>×</Text>
         </TouchableOpacity>
       </View>
@@ -118,77 +218,37 @@ const AddToCartScreen = ({ route }) => {
         <Text style={styles.headerTitle}>Cart</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 180 }}>
-        <View style={styles.addressBox}>
-          <Text style={styles.addressText}>Deliver to</Text>
-          <Text style={styles.addressDetail}>242 ST Marks Eve, Finland</Text>
-        </View>
-
-        <FlatList data={cartItems} keyExtractor={(item) => String(item.id)} renderItem={renderItem} scrollEnabled={false} />
-
-        <View style={styles.promoContainer}>
-          <TextInput placeholder="Enter promo code" value={promoCode} onChangeText={setPromoCode} style={styles.promoInput} />
-          <TouchableOpacity style={styles.promoAddButton}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>+</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      <View style={styles.bottomContainer}>
-        <Image source={require("../../assets/Vector-3.png")} style={styles.bottomDecoration} />
-        <View style={styles.summaryWrapper}>
-          <View style={styles.summaryRow}>
-            <Text>Item total</Text>
-            <Text>${itemTotal.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text>Discount</Text>
-            <Text>- ${discount.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text>Tax</Text>
-            <Text>${tax.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={{ fontWeight: "bold" }}>Total</Text>
-            <Text style={{ fontWeight: "bold" }}>${total.toFixed(2)}</Text>
-          </View>
-          <TouchableOpacity style={styles.continueButton} onPress={() => setModalVisible(true)}>
-            <Text style={styles.continueText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.deliveryHeader}>
+        <Text style={styles.deliveryLabel}>Deliver to</Text>
+        <Text style={styles.deliveryAddress}>242 ST Marks Eve,{'\n'}Finland</Text>
       </View>
 
-      <Modal transparent visible={modalVisible} animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Thanks for buying food with us!</Text>
-            <Text style={styles.modalSubtitle}>Your food will arrive in 3 minutes.</Text>
-            <TouchableOpacity
-              style={styles.trackButton}
-              onPress={() => {
-                setModalVisible(false);
-                navigation.navigate("TrackOrder");
-              }}
-            >
-              <Text style={styles.trackButtonText}>Track your order</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        <FlatList
+          data={cartItems}
+          keyExtractor={(item) => String(item.menu_item_id)}
+          renderItem={renderItem}
+          scrollEnabled={false}
+        />
+      </ScrollView>
+
+      <View style={styles.summaryRow}>
+        <Text style={{ fontWeight: "bold" }}>Total</Text>
+        <Text style={{ fontWeight: "bold" }}>Rs. {itemTotal}</Text>
+      </View>
     </View>
   );
-};
+}
 
-export default AddToCartScreen;
-
-// styles (same as previous)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   backBtn: { padding: 10 },
   backArrow: { fontSize: 22 },
   header: { flexDirection: "row", justifyContent: "center", marginVertical: 10 },
   headerTitle: { fontSize: 20, fontWeight: "bold" },
+  deliveryHeader: { backgroundColor: "#f6f6f6", marginHorizontal: 16, marginBottom: 10, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16 },
+  deliveryLabel: { fontSize: 14, color: "gray", marginBottom: 4, fontWeight: "600" },
+  deliveryAddress: { fontSize: 16, fontWeight: "bold", lineHeight: 20 },
   itemContainer: { flexDirection: "row", padding: 10, borderBottomWidth: 1, borderColor: "#eee" },
   itemImage: { width: 60, height: 60, borderRadius: 8 },
   itemName: { fontSize: 16, fontWeight: "600" },
@@ -198,22 +258,5 @@ const styles = StyleSheet.create({
   qtyButtonText: { fontSize: 18 },
   qtyText: { marginHorizontal: 8, fontSize: 16 },
   deleteText: { fontSize: 22, color: "red", marginLeft: 10 },
-  addressBox: { padding: 15, backgroundColor: "#f9f9f9", borderRadius: 8, margin: 10 },
-  addressText: { fontSize: 14, color: "gray" },
-  addressDetail: { fontSize: 16, fontWeight: "bold" },
-  promoContainer: { flexDirection: "row", margin: 15, alignItems: "center" },
-  promoInput: { flex: 1, borderWidth: 1, borderColor: "#ccc", borderRadius: 6, padding: 10 },
-  promoAddButton: { marginLeft: 8, backgroundColor: "#eee", padding: 10, borderRadius: 6 },
-  bottomContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
-  bottomDecoration: { width: "100%", height: 80, resizeMode: "cover" },
-  summaryWrapper: { position: "absolute", bottom: 10, left: 20, right: 20 },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: 4 },
-  continueButton: { backgroundColor: "#ff9900", padding: 15, borderRadius: 10, marginTop: 10 },
-  continueText: { color: "#fff", textAlign: "center", fontWeight: "bold" },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
-  modalBox: { backgroundColor: "#fff", padding: 20, borderRadius: 12, alignItems: "center", width: "80%" },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  modalSubtitle: { fontSize: 14, color: "gray", marginBottom: 20 },
-  trackButton: { backgroundColor: "#ff9900", padding: 12, borderRadius: 8 },
-  trackButtonText: { color: "#fff", fontWeight: "bold" },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", padding: 16 },
 });
