@@ -1,116 +1,3 @@
-// import SQLite from "react-native-sqlite-storage";
-// import { useEffect, useState } from "react";
-
-// SQLite.enablePromise(false);
-
-// // ✅ Open or create the DB
-// const db = SQLite.openDatabase(
-//   { name: "foodapp.db", location: "default" },
-//   () => console.log("Database opened ✅"),
-//   (e) => console.log("DB open error ❌", e)
-// );
-
-// // ✅ Create tables and seed data (call this ONCE, e.g. in HomeScreen)
-// export const useCreateTables = () => {
-//   useEffect(() => {
-//     db.transaction((tx) => {
-//       // --- Users table ---
-//       tx.executeSql(
-//         `CREATE TABLE IF NOT EXISTS users (
-//           id INTEGER PRIMARY KEY AUTOINCREMENT,
-//           email TEXT UNIQUE,
-//           password TEXT
-//         );`
-//       );
-
-//       // --- Restaurants table ---
-//       tx.executeSql(
-//         `CREATE TABLE IF NOT EXISTS restaurants (
-//           id INTEGER PRIMARY KEY,
-//           name TEXT,
-//           rating REAL,
-//           time TEXT,
-//           offer TEXT,
-//           category TEXT
-//         );`
-//       );
-
-//       // --- Seed data only if empty ---
-//       tx.executeSql(
-//         "SELECT COUNT(*) as count FROM restaurants",
-//         [],
-//         (_t, { rows }) => {
-//           const count = rows.item(0).count;
-//           console.log("Restaurant table count:", count);
-//           if (count === 0) {
-//             console.log("Seeding restaurants…");
-//             const seed = [
-//               [1, "Westway", 4.6, "15 min", "50% OFF", "nearest"],
-//               [2, "Fortune", 4.8, "25 min", null, "nearest"],
-//               [3, "Seafood", 4.6, "20 min", null, "nearest"],
-//               [7, "Moonland", 4.6, "15 min", null, "popular"],
-//               [8, "Starfish", 4.8, "25 min", "30% OFF", "popular"],
-//               [9, "Black Noodles", 4.9, "20 min", null, "popular"],
-//             ];
-//             seed.forEach((r) =>
-//               tx.executeSql(
-//                 "INSERT INTO restaurants (id,name,rating,time,offer,category) VALUES (?,?,?,?,?,?)",
-//                 r,
-//                 () => console.log("Inserted:", r[1]),
-//                 (_e, err) => console.log("Insert error:", err)
-//               )
-//             );
-//           }
-//         },
-//         (_e, err) => console.log("Count query error:", err)
-//       );
-//     });
-//   }, []);
-// };
-
-
-// // ✅ Hook to fetch nearest & popular restaurants
-// export const useRestaurants = () => {
-//   const [nearest, setNearest] = useState([]);
-//   const [popular, setPopular] = useState([]);
-
-//   useEffect(() => {
-//     db.transaction((tx) => {
-//       tx.executeSql(
-//         "SELECT * FROM restaurants WHERE category='nearest'",
-//         [],
-//         (_t, result) => {
-//           const arr = [];
-//           for (let i = 0; i < result.rows.length; i++) {
-//             arr.push(result.rows.item(i));
-//           }
-//           console.log("Fetched nearest:", arr);
-//           setNearest(arr);
-//         },
-//         (_e, err) => console.log("Nearest query error:", err)
-//       );
-
-//       tx.executeSql(
-//         "SELECT * FROM restaurants WHERE category='popular'",
-//         [],
-//         (_t, result) => {
-//           const arr = [];
-//           for (let i = 0; i < result.rows.length; i++) {
-//             arr.push(result.rows.item(i));
-//           }
-//           console.log("Fetched popular:", arr);
-//           setPopular(arr);
-//         },
-//         (_e, err) => console.log("Popular query error:", err)
-//       );
-//     });
-//   }, []);
-
-//   return { nearest, popular };
-// };
-
-// export default db;
-//  working with the homescreen sqlite and user login and register i think 
 import SQLite from "react-native-sqlite-storage";
 import { useEffect, useState } from "react";
 
@@ -122,7 +9,7 @@ const db = SQLite.openDatabase(
   (e) => console.log("DB open error ❌", e)
 );
 
-// ✅ Create tables and seed data
+
 export const useCreateTables = () => {
   useEffect(() => {
     db.transaction((tx) => {
@@ -135,7 +22,7 @@ export const useCreateTables = () => {
         );`
       );
 
-      // Restaurants table
+    
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS restaurants (
           id INTEGER PRIMARY KEY,
@@ -147,7 +34,7 @@ export const useCreateTables = () => {
         );`
       );
 
-      // Menu Items table
+      
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS menu_items (
           id INTEGER PRIMARY KEY AUTOINCREMENT,

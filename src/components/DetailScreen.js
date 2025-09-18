@@ -1,4 +1,3 @@
-// src/screens/DetailScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -166,4 +165,4 @@ const styles = StyleSheet.create({
   menuText: { color: "#FF7000", fontWeight: "600", fontSize: 15 },
 });
 
-//Detail Screen before SQLITE DATABASE
+
