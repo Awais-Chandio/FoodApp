@@ -249,15 +249,29 @@ export const toggleCartItem = (item, callback) => {
   });
 };
 
+// dbs.js
 export const updateQuantity = (menuItemId, delta) => {
-  db.transaction((tx) => {
-    tx.executeSql(
-      `UPDATE cart SET quantity = MAX(quantity + ?, 0) WHERE menu_item_id=?`,
-      [delta, menuItemId]
+  return new Promise((resolve, reject) => {
+    db.transaction(
+      (tx) => {
+        // increment or decrement
+        tx.executeSql(
+          `UPDATE cart 
+           SET quantity = MAX(quantity + ?, 0) 
+           WHERE menu_item_id = ?`,
+          [delta, menuItemId]
+        );
+        // remove rows that hit 0
+        tx.executeSql(
+          `DELETE FROM cart WHERE quantity = 0`
+        );
+      },
+      (err) => reject(err),
+      () => resolve()   // <- resolve only after the whole transaction commits
     );
-    tx.executeSql(`DELETE FROM cart WHERE quantity = 0`);
   });
 };
+
 
 export const removeFromCart = (menuItemId) => {
   db.transaction((tx) => {
@@ -265,15 +279,29 @@ export const removeFromCart = (menuItemId) => {
   });
 };
 
-export const getCartItems = (setState) => {
-  db.transaction((tx) => {
-    tx.executeSql("SELECT * FROM cart", [], (_t, res) => {
-      const arr = [];
-      for (let i = 0; i < res.rows.length; i++) arr.push(res.rows.item(i));
-      setState(arr);
-    });
+export const getCartItems = () => {
+  return new Promise((resolve, reject) => {
+    db.transaction(
+      (tx) => {
+        tx.executeSql(
+          "SELECT * FROM cart",
+          [],
+          (_t, res) => {
+            const arr = [];
+            for (let i = 0; i < res.rows.length; i++) {
+              arr.push(res.rows.item(i));
+            }
+            resolve(arr);
+          },
+          (_t, err) => reject(err)
+        );
+      },
+      (err) => reject(err)
+    );
   });
 };
+
+
 
 // ✅ Hook to fetch menu items for a restaurant
 export const useMenuItems = (restaurantId) => {
@@ -324,6 +352,53 @@ export const useRestaurants = () => {
   }, []);
 
   return { nearest, popular };
+};
+
+
+// ✅ ===== USER AUTH HELPERS =====
+
+// Register a new user
+export const registerUser = (email, password, onSuccess, onError) => {
+  db.transaction(
+    (tx) => {
+      tx.executeSql(
+        `INSERT INTO users (email, password) VALUES (?, ?)`,
+        [email, password],
+        () => onSuccess && onSuccess(),
+        (_, err) => {
+          // Email must be unique; handle constraint errors
+          onError && onError(err);
+          return false;
+        }
+      );
+    },
+    (err) => onError && onError(err)
+  );
+};
+
+// Login existing user
+export const loginUser = (email, password, onSuccess, onError) => {
+  db.transaction(
+    (tx) => {
+      tx.executeSql(
+        `SELECT * FROM users WHERE email = ? AND password = ?`,
+        [email, password],
+        (_t, res) => {
+          if (res.rows.length > 0) {
+            // success → send back the first matching row
+            onSuccess && onSuccess(res.rows.item(0));
+          } else {
+            onError && onError(new Error("Invalid email or password"));
+          }
+        },
+        (_, err) => {
+          onError && onError(err);
+          return false;
+        }
+      );
+    },
+    (err) => onError && onError(err)
+  );
 };
 
 export default db;

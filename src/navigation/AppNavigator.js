@@ -19,7 +19,7 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Tab"
+      initialRouteName="Loader"
       screenOptions={{ headerShown: false }}
     >
 
@@ -37,8 +37,6 @@ export default function AppNavigator() {
       <Stack.Screen name="HomeHeader" component={HomeHeader} />
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
-
-
 
     </Stack.Navigator>
   );

@@ -232,6 +232,14 @@
 //   cartView: { fontSize: 16, fontWeight: "700", color: "#000" },
 // });
 // MENU Screen Without SQLITE 
+
+
+
+
+
+
+
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -242,7 +250,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
-import { useMenuItems, db } from "../database/dbs";   // ✅ db is used for cart operations
+import db, { useMenuItems } from "../database/dbs";
+   // ✅ db is used for cart operations
 
 const imageMap = {
   food1: require("../assets/food1.jpg"),
