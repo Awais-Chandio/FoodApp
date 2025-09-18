@@ -38,13 +38,12 @@ export default function DetailScreen() {
 
   const [activeFilter, setActiveFilter] = useState("Best Seller");
 
-  // Restaurant image
   const imgKey = restaurant.image_key || restaurant.name;
   const imgSource =
     imageMap[imgKey] ||
     (typeof restaurant.image === "string" && restaurant.image.startsWith("http")
       ? { uri: restaurant.image }
-      : require("../assets/food1.jpg")); // fallback
+      : require("../assets/food1.jpg")); 
 
   const bestSellers = [
     { id: "1", name: "Margherita Pizza", price: "$12", image: imageMap.food3 },
@@ -80,7 +79,6 @@ export default function DetailScreen() {
           </Text>
         </View>
 
-        {/* Filter Buttons */}
         <View style={styles.filterContainer}>
           {["Best Seller", "Veg", "Non-Veg", "Beverages"].map((label) => (
             <TouchableOpacity

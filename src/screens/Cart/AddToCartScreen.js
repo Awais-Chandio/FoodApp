@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -7,7 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native"; // ✅ useFocusEffect
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { updateQuantity, removeFromCart, getCartItems } from "../../database/dbs";
 
 const imageMap = {
@@ -28,12 +29,10 @@ export default function AddToCartScreen() {
     setCartItems(items);
   };
 
-  // 🔑 1. Initial load
   useEffect(() => {
     refreshCart();
   }, []);
 
-  // 🔑 2. Refresh every time screen gains focus
   useFocusEffect(
     useCallback(() => {
       refreshCart();
@@ -63,13 +62,16 @@ export default function AddToCartScreen() {
   const renderItem = ({ item }) => {
     const imgSource =
       imageMap[item.image_key] || require("../../assets/food1.jpg");
+
     return (
-      <View style={styles.itemContainer}>
+      <View style={styles.itemCard}>
+        {/* Left: product image */}
         <Image source={imgSource} style={styles.itemImage} />
-        <View style={{ flex: 1, marginLeft: 10 }}>
+
+        {/* Middle: name + quantity controls */}
+        <View style={styles.middleSection}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemPrice}>Rs. {item.price}</Text>
-          <View style={styles.quantityContainer}>
+          <View style={styles.quantityRow}>
             <TouchableOpacity
               onPress={() => decreaseQuantity(item.menu_item_id)}
               style={styles.qtyButton}
@@ -85,9 +87,14 @@ export default function AddToCartScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity onPress={() => deleteItem(item.menu_item_id)}>
-          <Text style={styles.deleteText}>×</Text>
-        </TouchableOpacity>
+
+        {/* Right: delete icon on top, price below */}
+        <View style={styles.rightSection}>
+          <TouchableOpacity onPress={() => deleteItem(item.menu_item_id)}>
+            <Text style={styles.deleteText}>×</Text>
+          </TouchableOpacity>
+          <Text style={styles.itemPrice}>Rs. {item.price}</Text>
+        </View>
       </View>
     );
   };
@@ -123,6 +130,8 @@ export default function AddToCartScreen() {
         <Text style={{ fontWeight: "bold" }}>Total</Text>
         <Text style={{ fontWeight: "bold" }}>Rs. {itemTotal}</Text>
       </View>
+
+      
     </View>
   );
 }
@@ -134,28 +143,71 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "center", marginVertical: 10 },
   headerTitle: { fontSize: 20, fontWeight: "bold" },
   deliveryHeader: {
-    backgroundColor: "#f6f6f6",
+    backgroundColor: "#FF7000",
     marginHorizontal: 16,
     marginBottom: 10,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  deliveryLabel: { fontSize: 14, color: "gray", marginBottom: 4, fontWeight: "600" },
-  deliveryAddress: { fontSize: 16, fontWeight: "bold", lineHeight: 20 },
-  itemContainer: {
-    flexDirection: "row",
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
+  deliveryLabel: {
+    fontSize: 14,
+    color: "white",
+    marginBottom: 4,
+    fontWeight: "600",
   },
-  itemImage: { width: 60, height: 60, borderRadius: 8 },
-  itemName: { fontSize: 16, fontWeight: "600" },
-  itemPrice: { color: "gray", marginTop: 4 },
-  quantityContainer: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  qtyButton: { paddingHorizontal: 10, backgroundColor: "#ddd", borderRadius: 4 },
+  deliveryAddress: {
+    fontSize: 16,
+    fontWeight: "bold",
+    lineHeight: 20,
+    color: "white",
+  },
+  /* ----- New Card Layout Styles ----- */
+  itemCard: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  itemImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+  },
+  middleSection: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: "center",
+  },
+  itemName: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
+  quantityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  qtyButton: {
+    paddingHorizontal: 10,
+    backgroundColor: "#ddd",
+    borderRadius: 4,
+  },
   qtyButtonText: { fontSize: 18 },
   qtyText: { marginHorizontal: 8, fontSize: 16 },
-  deleteText: { fontSize: 22, color: "red", marginLeft: 10 },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between", padding: 16 },
+  rightSection: {
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  deleteText: { fontSize: 22, color: "red", marginBottom: 8 },
+  itemPrice: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 16,
+  },
 });

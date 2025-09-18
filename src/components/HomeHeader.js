@@ -39,14 +39,14 @@ export default function HomeHeader() {
 
                 }}
             >
-                
+
                 <TextInput
                     placeholder="Find your taste"
                     placeholderTextColor="#888"
                     style={{ flex: 1, marginLeft: 8, paddingVertical: Platform.OS === "ios" ? 10 : 8 }}
                 />
 
-                
+
             </View>
         </ImageBackground>
     );
