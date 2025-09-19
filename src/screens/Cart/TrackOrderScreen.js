@@ -7,32 +7,33 @@ const TrackOrderScreen = () => {
 
   return (
     <View style={styles.container}>
-      
+
+
       <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
         <Text style={styles.backArrow}>←</Text>
       </TouchableOpacity>
 
-      
+
       <Image
         source={{
-          uri: "https://i.ibb.co/X7tV3RC/map-sample.png", 
+          uri: "https://i.ibb.co/X7tV3RC/map-sample.png",
         }}
         style={styles.map}
       />
 
-   
+
       <View style={styles.bottomSheet}>
-     
+
         <View style={styles.row}>
           <Text style={styles.timeIcon}></Text>
           <Text style={styles.deliveryTime}>20 Min</Text>
         </View>
 
-      
+
         <View style={styles.personBox}>
           <Image
             source={{
-              uri: "https://randomuser.me/api/portraits/men/41.jpg", 
+              uri: "https://randomuser.me/api/portraits/men/41.jpg",
             }}
             style={styles.personImage}
           />
@@ -45,7 +46,7 @@ const TrackOrderScreen = () => {
           </TouchableOpacity>
         </View>
 
-     
+
         <View style={styles.statusBox}>
           <View style={styles.statusRow}>
             <Text style={styles.checkIcon}></Text>
@@ -79,7 +80,7 @@ const TrackOrderScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
 
-  
+
   backBtn: {
     position: "absolute",
     top: 15,
@@ -89,14 +90,14 @@ const styles = StyleSheet.create({
   },
   backArrow: { fontSize: 26, fontWeight: "bold", color: "#000" },
 
-  
+
   map: {
     width: "100%",
     height: "50%",
     resizeMode: "cover",
   },
 
- 
+
   bottomSheet: {
     flex: 1,
     backgroundColor: "#FFD700",
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
   timeIcon: { fontSize: 22, marginRight: 8 },
   deliveryTime: { fontSize: 18, fontWeight: "bold", color: "#000" },
 
- 
+
   personBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
 
-  
+
   statusBox: { marginTop: 10 },
   statusRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 15 },
   checkIcon: { fontSize: 20, marginRight: 10, color: "green" },

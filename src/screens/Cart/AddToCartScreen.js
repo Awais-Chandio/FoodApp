@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from "react";
+import Snackbar from "react-native-snackbar";
 import {
   View,
   Text,
@@ -58,6 +58,9 @@ export default function AddToCartScreen() {
     (sum, item) => sum + item.price * (item.quantity || 1),
     0
   );
+  const discount = 10;
+  const tax = 2;
+  const grandTotal = itemTotal - discount + tax;
 
   const renderItem = ({ item }) => {
     const imgSource =
@@ -65,10 +68,7 @@ export default function AddToCartScreen() {
 
     return (
       <View style={styles.itemCard}>
-        {/* Left: product image */}
         <Image source={imgSource} style={styles.itemImage} />
-
-        {/* Middle: name + quantity controls */}
         <View style={styles.middleSection}>
           <Text style={styles.itemName}>{item.name}</Text>
           <View style={styles.quantityRow}>
@@ -88,7 +88,6 @@ export default function AddToCartScreen() {
           </View>
         </View>
 
-        {/* Right: delete icon on top, price below */}
         <View style={styles.rightSection}>
           <TouchableOpacity onPress={() => deleteItem(item.menu_item_id)}>
             <Text style={styles.deleteText}>×</Text>
@@ -101,6 +100,7 @@ export default function AddToCartScreen() {
 
   return (
     <View style={styles.container}>
+
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => navigation.goBack()}
@@ -123,15 +123,60 @@ export default function AddToCartScreen() {
         data={cartItems}
         keyExtractor={(item) => String(item.menu_item_id)}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 180 }}
       />
 
-      <View style={styles.summaryRow}>
-        <Text style={{ fontWeight: "bold" }}>Total</Text>
-        <Text style={{ fontWeight: "bold" }}>Rs. {itemTotal}</Text>
-      </View>
 
-      
+      <Image
+        source={require("../../assets/BottamBar.png")}
+        style={styles.bottomBarImage}
+        resizeMode="stretch"
+      />
+
+
+      <View style={styles.bottomOverlay}>
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>Items Total</Text>
+          <Text style={styles.priceValue}>${itemTotal.toFixed(2)}</Text>
+        </View>
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>Discount</Text>
+          <Text style={styles.priceValue}>- $ {discount.toFixed(2)}</Text>
+        </View>
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>Tax</Text>
+          <Text style={styles.priceValue}>$ {tax.toFixed(2)}</Text>
+        </View>
+        <View style={[styles.priceRow, { marginTop: 6 }]}>
+          <Text style={[styles.priceLabel, { fontWeight: "bold" }]}>Total</Text>
+          <Text style={[styles.priceValue, { fontWeight: "bold" }]}>
+            ${grandTotal.toFixed(2)}
+          </Text>
+        </View>
+
+
+        <TouchableOpacity
+          style={styles.continueBtn}
+          onPress={() => {
+            Snackbar.show({
+              text:
+                "Thanks for Buying Food with Us\nYour food will arrive in 3 mint",
+              duration: Snackbar.LENGTH_INDEFINITE,
+              numberOfLines: 3,
+              textColor: "white",
+              backgroundColor: "#333",
+              position: "center",
+              action: {
+                text: "Track Your Order",
+                textColor: "yellow",
+                onPress: () => navigation.navigate("TrackOrder"),
+              },
+            });
+          }}
+        >
+          <Text style={styles.continueBtnText}>Continue</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -162,7 +207,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "white",
   },
-  /* ----- New Card Layout Styles ----- */
   itemCard: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -177,21 +221,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  itemImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-  },
-  middleSection: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: "center",
-  },
+  itemImage: { width: 70, height: 70, borderRadius: 8 },
+  middleSection: { flex: 1, marginLeft: 12, justifyContent: "center" },
   itemName: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
-  quantityRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  quantityRow: { flexDirection: "row", alignItems: "center" },
   qtyButton: {
     paddingHorizontal: 10,
     backgroundColor: "#ddd",
@@ -199,15 +232,44 @@ const styles = StyleSheet.create({
   },
   qtyButtonText: { fontSize: 18 },
   qtyText: { marginHorizontal: 8, fontSize: 16 },
-  rightSection: {
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
+  rightSection: { justifyContent: "space-between", alignItems: "flex-end" },
   deleteText: { fontSize: 22, color: "red", marginBottom: 8 },
   itemPrice: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  summaryRow: {
+
+  /* --- Bottom Bar --- */
+  bottomBarImage: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    height: 250,
+  },
+  bottomOverlay: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+  },
+  priceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 16,
+    marginBottom: 4,
+  },
+  priceLabel: { fontSize: 16, fontWeight: "700", color: "#181717ff" },
+  priceValue: { fontSize: 16, fontWeight: "700", color: "#201f1fff" },
+
+
+  continueBtn: {
+    backgroundColor: "#fff",
+    marginTop: 5,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginBottom: 20
+  },
+  continueBtnText: {
+    color: "black",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 });
