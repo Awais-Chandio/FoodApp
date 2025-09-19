@@ -183,7 +183,16 @@ export default function AddToCartScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  backBtn: { padding: 10 },
+  backBtn: {  width: 40,
+    height: 40,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    marginTop:10,
+    marginLeft:10
+  },
   backArrow: { fontSize: 22 },
   header: { flexDirection: "row", justifyContent: "center", marginVertical: 10 },
   headerTitle: { fontSize: 20, fontWeight: "bold" },
