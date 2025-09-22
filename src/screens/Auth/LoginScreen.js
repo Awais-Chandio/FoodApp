@@ -25,14 +25,25 @@ export default function LoginScreen({ navigation }) {
     }
 
     
-    loginUser(email, password, (success) => {
-      if (success) {
-        alert("Login successful!");
-        navigation.replace("Tab");
-      } else {
-        alert("Invalid email or password");
-      }
-    });
+    // loginUser(email, password, (success) => {
+    //   if (success) {
+    //     alert("Login successful!");
+    //     navigation.replace("Tab");
+    //   } else {
+    //     alert("Invalid email or password");
+    //   }
+    // });
+    loginUser(email, password,
+  (user) => {
+    if (user.role === 'admin') {
+      navigation.replace('AdminHome');   // Admin dashboard
+    } else {
+      navigation.replace('Home');        // Normal user flow
+    }
+  },
+  (err) => Alert.alert('Login failed', err.message)
+);
+
   };
 
   return (
