@@ -10,6 +10,7 @@ import RegisterScreen from "../screens/Auth/RegisterScreen";
 import HomeHeader from "../components/HomeHeader";
 import DetailScreen from "../components/DetailScreen";
 import TrackOrderScreen from "../screens/Cart/TrackOrderScreen";
+import AdminScreen from "../Admin/AdminScreen";
 
 
 import TabNavigator from "./TabNavigator";
@@ -37,7 +38,7 @@ export default function AppNavigator() {
       <Stack.Screen name="HomeHeader" component={HomeHeader} />
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
-
+      <Stack.Screen name="AdminScreen" component={AdminScreen} />
     </Stack.Navigator>
   );
 }

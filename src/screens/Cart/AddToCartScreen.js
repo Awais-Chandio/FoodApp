@@ -282,3 +282,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
+
+
+// This code is working fine before the admin changes 
+

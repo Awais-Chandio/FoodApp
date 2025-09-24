@@ -7,8 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function ProfileScreen() {
+  const navigation = useNavigation();   // ✅ get navigation instance
+
   const user = {
     name: "Mr Ahmed Khan",
     email: "ahmed.khan@example.com",
@@ -17,21 +20,23 @@ export default function ProfileScreen() {
     avatar: "https://i.pravatar.cc/150?img=3",
   };
 
+  const handleLogout = () => {
+    // Here you can also clear AsyncStorage/session if you use it
+    navigation.replace("Login");        // ✅ go to Login screen
+  };
+
   return (
     <ScrollView style={styles.container}>
-    
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
-      
       <View style={styles.profileSection}>
         <Image source={{ uri: user.avatar }} style={styles.avatar} />
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
       </View>
 
-    
       <View style={styles.infoCard}>
         <Text style={styles.infoLabel}>Phone</Text>
         <Text style={styles.infoValue}>{user.phone}</Text>
@@ -57,8 +62,8 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-     
-      <TouchableOpacity style={styles.logoutButton}>
+      {/* ✅ Logout Button */}
+      <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -73,10 +78,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: { fontSize: 18, fontWeight: "bold", color: "#fff" },
-  profileSection: {
-    alignItems: "center",
-    marginVertical: 20,
-  },
+  profileSection: { alignItems: "center", marginVertical: 20 },
   avatar: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
   name: { fontSize: 18, fontWeight: "bold", color: "#000" },
   email: { fontSize: 14, color: "#666", marginBottom: 10 },
