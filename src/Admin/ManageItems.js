@@ -11,7 +11,6 @@
 // import { insertRestaurant, updateRestaurant } from "../database/dbs";
 
 // export default function ManageItems({ navigation, route }) {
-//   // If editing, pre-fill fields
 //   const editingItem = route.params?.restaurant || null;
 
 //   const [name, setName] = useState(editingItem?.name || "");
@@ -19,23 +18,25 @@
 //   const [time, setTime] = useState(editingItem?.time || "");
 //   const [offer, setOffer] = useState(editingItem?.offer || "");
 //   const [category, setCategory] = useState(editingItem?.category || "");
-
-//   /**
-//    * imagePath can be either:
-//    *  - a network URL (https://..., http://..., file://..., data:)
-//    *  - OR an asset key present in imageMap.js (e.g. "pizza", "burger")
-//    */
 //   const [imagePath, setImagePath] = useState(editingItem?.image_path || "");
+//   const [price, setPrice] = useState(String(editingItem?.price || "")); // <-- new price field
 
 //   const handleSave = () => {
 //     // ---- Validation ----
-//     if (!name.trim() || !rating.trim() || !time.trim() || !category.trim()) {
-//       Alert.alert("Validation", "Please fill all required fields");
+//     if (!name.trim() || !rating.trim() || !time.trim() || !category.trim() || !price.trim()) {
+//       Alert.alert("Validation", "Please fill all required fields including price");
 //       return;
 //     }
+
 //     const ratingVal = parseFloat(rating);
 //     if (isNaN(ratingVal)) {
 //       Alert.alert("Validation", "Rating must be a number");
+//       return;
+//     }
+
+//     const priceVal = parseFloat(price);
+//     if (isNaN(priceVal)) {
+//       Alert.alert("Validation", "Price must be a number");
 //       return;
 //     }
 
@@ -44,10 +45,11 @@
 //     const onSuccess = () => {
 //       Alert.alert(
 //         "Success",
-//         editingItem ? "Restaurant updated" : "Restaurant added",
+//         editingItem ? "Item updated" : "Item added",
 //         [{ text: "OK", onPress: () => navigation.goBack() }]
 //       );
 //     };
+
 //     const onError = (err) =>
 //       Alert.alert("Error", err?.message || "Database operation failed");
 
@@ -59,9 +61,10 @@
 //         time.trim(),
 //         offer.trim(),
 //         category.trim(),
-//         keyOrUrl,        // <-- store key or URL as-is
+//         keyOrUrl,
 //         onSuccess,
-//         onError
+//         onError,
+//         priceVal // <-- pass price for update
 //       );
 //     } else {
 //       insertRestaurant(
@@ -70,9 +73,10 @@
 //         time.trim(),
 //         offer.trim(),
 //         category.trim(),
-//         keyOrUrl,        // <-- store key or URL as-is
+//         keyOrUrl,
 //         onSuccess,
-//         onError
+//         onError,
+//         priceVal  // <-- pass price for insert
 //       );
 //     }
 //   };
@@ -80,7 +84,7 @@
 //   return (
 //     <ScrollView contentContainerStyle={styles.container}>
 //       <Text style={styles.title}>
-//         {editingItem ? "Edit Restaurant" : "Add Restaurant"}
+//         {editingItem ? "Edit Item" : "Add Item"}
 //       </Text>
 
 //       <Text style={styles.label}>Name *</Text>
@@ -108,15 +112,22 @@
 //       />
 
 //       {/* 🔑 Image field */}
-//       <Text style={styles.label}>
-//         Image (asset key or full URL)
-//       </Text>
+//       <Text style={styles.label}>Image (asset key or full URL)</Text>
 //       <TextInput
 //         style={styles.input}
 //         value={imagePath}
 //         onChangeText={setImagePath}
 //         placeholder="e.g. pizza  OR  https://example.com/pic.jpg"
 //         autoCapitalize="none"
+//       />
+
+//       {/* 💰 Price field */}
+//       <Text style={styles.label}>Price (Rs.) *</Text>
+//       <TextInput
+//         style={styles.input}
+//         value={price}
+//         onChangeText={setPrice}
+//         keyboardType="numeric"
 //       />
 
 //       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
@@ -152,6 +163,27 @@
 // });
 
 
+// above code is old file ManageItems.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -172,42 +204,38 @@ export default function ManageItems({ navigation, route }) {
   const editingItem = route.params?.restaurant || null;
 
   const [name, setName] = useState(editingItem?.name || "");
-  const [rating, setRating] = useState(String(editingItem?.rating || ""));
+  const [rating, setRating] = useState(String(editingItem?.rating ?? ""));
   const [time, setTime] = useState(editingItem?.time || "");
   const [offer, setOffer] = useState(editingItem?.offer || "");
   const [category, setCategory] = useState(editingItem?.category || "");
   const [imagePath, setImagePath] = useState(editingItem?.image_path || "");
-  const [price, setPrice] = useState(String(editingItem?.price || "")); // <-- new price field
 
   const handleSave = () => {
-    // ---- Validation ----
-    if (!name.trim() || !rating.trim() || !time.trim() || !category.trim() || !price.trim()) {
-      Alert.alert("Validation", "Please fill all required fields including price");
+    // ---- Validation: make fields optional if you want; keep basic checks for name/category/rating if desired ----
+    if (!name.trim() || !category.trim()) {
+      Alert.alert("Validation", "Please fill name and category (at minimum)");
       return;
     }
 
-    const ratingVal = parseFloat(rating);
-    if (isNaN(ratingVal)) {
-      Alert.alert("Validation", "Rating must be a number");
-      return;
+    // rating is optional — if provided, validate it's a number
+    let ratingVal = null;
+    if (rating !== "") {
+      ratingVal = parseFloat(rating);
+      if (isNaN(ratingVal)) {
+        Alert.alert("Validation", "Rating must be a number");
+        return;
+      }
     }
 
-    const priceVal = parseFloat(price);
-    if (isNaN(priceVal)) {
-      Alert.alert("Validation", "Price must be a number");
-      return;
-    }
-
-    const keyOrUrl = imagePath.trim();
+    const keyOrUrl = imagePath.trim() || null;
 
     const onSuccess = () => {
       Alert.alert(
         "Success",
-        editingItem ? "Item updated" : "Item added",
+        editingItem ? "Restaurant updated" : "Restaurant added",
         [{ text: "OK", onPress: () => navigation.goBack() }]
       );
     };
-
     const onError = (err) =>
       Alert.alert("Error", err?.message || "Database operation failed");
 
@@ -221,8 +249,7 @@ export default function ManageItems({ navigation, route }) {
         category.trim(),
         keyOrUrl,
         onSuccess,
-        onError,
-        priceVal // <-- pass price for update
+        onError
       );
     } else {
       insertRestaurant(
@@ -233,8 +260,7 @@ export default function ManageItems({ navigation, route }) {
         category.trim(),
         keyOrUrl,
         onSuccess,
-        onError,
-        priceVal // <-- pass price for insert
+        onError
       );
     }
   };
@@ -242,21 +268,22 @@ export default function ManageItems({ navigation, route }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>
-        {editingItem ? "Edit Item" : "Add Item"}
+        {editingItem ? "Edit Restaurant" : "Add Restaurant"}
       </Text>
 
       <Text style={styles.label}>Name *</Text>
       <TextInput style={styles.input} value={name} onChangeText={setName} />
 
-      <Text style={styles.label}>Rating *</Text>
+      <Text style={styles.label}>Rating</Text>
       <TextInput
         style={styles.input}
         value={rating}
         onChangeText={setRating}
         keyboardType="numeric"
+        placeholder="optional"
       />
 
-      <Text style={styles.label}>Time (e.g. 20 min) *</Text>
+      <Text style={styles.label}>Time (e.g. 20 min)</Text>
       <TextInput style={styles.input} value={time} onChangeText={setTime} />
 
       <Text style={styles.label}>Offer</Text>
@@ -277,15 +304,6 @@ export default function ManageItems({ navigation, route }) {
         onChangeText={setImagePath}
         placeholder="e.g. pizza  OR  https://example.com/pic.jpg"
         autoCapitalize="none"
-      />
-
-      {/* 💰 Price field */}
-      <Text style={styles.label}>Price (Rs.) *</Text>
-      <TextInput
-        style={styles.input}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
       />
 
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
@@ -316,6 +334,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
+    marginBottom: 40,
   },
   saveText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

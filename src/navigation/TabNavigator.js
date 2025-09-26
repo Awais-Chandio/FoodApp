@@ -34,8 +34,8 @@ export default function TabNavigator() {
             iconSource = require("../assets/home.png");
           } else if (route.name === "Search") {
             iconSource = require("../assets/search.png");
-          } else if (route.name === "Cart") {
-            iconSource = require("../assets/shopping-cart.png");
+          } else if (route.name === "AddToCartScreen") {
+            iconSource = require("../assets/cart.png");
           } else if (route.name === "Profile") {
             iconSource = require("../assets/user.png");
           }

@@ -4,6 +4,7 @@ import HomeScreen from "../screens/Home/HomeScreen";
 import DetailsScreen from "../components/DetailScreen";
 import MenuScreen from "../components/MenuScreen";
 import ManageItems from "../Admin/ManageItems";
+import ManageMenuItem from "../Admin/ManageMenuItems";
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ const HomeStack=()=> {
       <Stack.Screen name="Details" component={DetailsScreen} />
       <Stack.Screen name="MenuScreen" component={MenuScreen} />
       <Stack.Screen name="ManageItems" component={ManageItems} />
+      <Stack.Screen name="ManageMenuItem" component={ManageMenuItem} />
     </Stack.Navigator>
   );
 }
