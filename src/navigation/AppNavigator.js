@@ -39,6 +39,8 @@ export default function AppNavigator() {
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       <Stack.Screen name="AdminScreen" component={AdminScreen} />
+       <Stack.Screen name="AdminScreen" component={AdminScreen} />
+
     </Stack.Navigator>
   );
 }

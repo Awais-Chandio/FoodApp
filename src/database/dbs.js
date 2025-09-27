@@ -1882,6 +1882,8 @@ const db = SQLite.openDatabase(
 export const useCreateTables = () => {
   useEffect(() => {
     db.transaction((tx) => {
+     
+
       // USERS table
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS users (
@@ -1907,6 +1909,7 @@ export const useCreateTables = () => {
           }
         }
       );
+  
 
       // Restaurants table (NO price column here: restaurants don't own prices)
       tx.executeSql(`
