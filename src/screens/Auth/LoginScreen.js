@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AntIcon from "react-native-vector-icons/AntDesign";
 import {
@@ -40,7 +39,8 @@ export default function LoginScreen({ navigation }) {
             navigation.navigate("AdminScreen");
           } else {
             alert("Login successful!");
-            navigation.replace("Tab");
+           navigation.navigate("Tab", { screen: "AddToCartScreen" });
+
           }
         } else {
           alert("Invalid email or password");

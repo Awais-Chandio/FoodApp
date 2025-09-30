@@ -243,22 +243,27 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginRight: 16,
     marginTop: 8,
-    marginBottom: 4,
+    backgroundColor: "#050503ff",
+    
+
   },
+
+
+    
   addIcon: { width: 24, height: 24, marginRight: 6, resizeMode: "contain" },
   addText: { fontSize: 16, fontWeight: "600", color: "#000" },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    marginBottom: 16,
+    marginBottom: 30,
   },
   locationIcon: { width: 22, height: 22, resizeMode: "contain" },
   locationText: { marginLeft: 6, fontSize: 16 },
   categoriesList: {
     flexDirection: "row",
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 30,
   },
   categoryBtn: { alignItems: "center", marginHorizontal: 8 },
   categoryIcon: { width: 28, height: 28 },
@@ -272,6 +277,7 @@ const styles = StyleSheet.create({
     padding: 6,
     flex: 1,
     paddingBottom: 36,
+    marginTop: 4,
   },
   image: { width: "100%", height: 90, borderRadius: 10 },
   textContainer: { marginTop: 6 },
