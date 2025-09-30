@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import db from "../database/dbs";
+import { useAuth } from "../screens/Auth/AuthContext"; 
 
 const imageMap = {
   Westway: require("../assets/Westway.png"),
@@ -31,12 +32,14 @@ export default function MenuScreen() {
   const route = useRoute();
   const restaurant = route?.params?.restaurant || { id: 1, name: "Westway" };
 
+  const { role } = useAuth();                 
+  const isAdmin = role === "admin";           
+
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [activeFilter, setActiveFilter] = useState("Best Seller");
   const filters = ["Best Seller", "Veg", "Non-Veg", "Beverages"];
 
-  // ✅ Corrected DB schema: use image_key column
   useEffect(() => {
     db.transaction((tx) => {
       tx.executeSql(
@@ -61,7 +64,6 @@ export default function MenuScreen() {
     });
   }, []);
 
-  // Reload when screen focused
   useFocusEffect(
     React.useCallback(() => {
       loadData();
@@ -88,7 +90,7 @@ export default function MenuScreen() {
   };
 
   const resolveImageForRow = (row) => {
-    const path = (row?.image_key || "").trim();   // ✅ use image_key
+    const path = (row?.image_key || "").trim();
     if (!path) return imageMap.food1;
     if (/^(https?:|file:|content:|data:)/i.test(path)) return { uri: path };
     const key = path.replace(/\.(png|jpe?g|webp)$/i, "");
@@ -119,13 +121,15 @@ export default function MenuScreen() {
   };
 
   const editItem = (item) => {
-    navigation.navigate("ManageMenuItem", {
+    if (!isAdmin) return;
+    navigation.navigate("ManageMenuItems", {
       restaurantId: restaurant.id,
       menuItem: item,
     });
   };
 
   const deleteItem = (id) => {
+    if (!isAdmin) return;
     Alert.alert("Delete Item", "Are you sure you want to remove this item?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -151,7 +155,7 @@ export default function MenuScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+       
         <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.backArrowContainer}
@@ -165,17 +169,19 @@ export default function MenuScreen() {
             <Text style={styles.menuText}>Menu</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.addItemBtn}
-            onPress={() =>
-              navigation.navigate("ManageMenuItem", { restaurantId: restaurant.id })
-            }
-          >
-            <Text style={styles.addItemText}>Add Item</Text>
-          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.addItemBtn}
+              onPress={() =>
+                navigation.navigate("ManageMenuItems", { restaurantId: restaurant.id })
+              }
+            >
+              <Text style={styles.addItemText}>Add Item</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Filters */}
+   
         <View style={styles.filterRow}>
           {filters.map((f) => (
             <TouchableOpacity
@@ -197,7 +203,6 @@ export default function MenuScreen() {
 
         <Text style={styles.sectionTitle}>{activeFilter}</Text>
 
-        {/* Menu Items */}
         {menuItems.map((item) => {
           const img = resolveImageForRow(item);
           const inCart = cart.some((c) => c.menu_item_id === item.id);
@@ -210,19 +215,21 @@ export default function MenuScreen() {
                 <Text style={styles.itemPrice}>Rs. {item.price}</Text>
               </View>
 
-              <View style={styles.editDeleteRow}>
-                <TouchableOpacity onPress={() => editItem(item)}>
-                  <Image source={editIcon} style={styles.icon} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteItem(item.id)}>
-                  <Image source={deleteIcon} style={[styles.icon, { marginLeft: 8 }]} />
-                </TouchableOpacity>
-              </View>
+              {isAdmin && (
+                <View style={styles.editDeleteRow}>
+                  <TouchableOpacity onPress={() => editItem(item)}>
+                    <Image source={editIcon} style={styles.icon} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => deleteItem(item.id)}>
+                    <Image source={deleteIcon} style={[styles.icon, { marginLeft: 8 }]} />
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <TouchableOpacity
                 style={styles.addBtn}
                 onPress={() =>
-                  toggleCart(item.id, item.name, item.price, item.image_key) // ✅ use image_key
+                  toggleCart(item.id, item.name, item.price, item.image_key)
                 }
               >
                 <Text style={styles.addBtnText}>{inCart ? "−" : "+"}</Text>
@@ -232,7 +239,6 @@ export default function MenuScreen() {
         })}
       </ScrollView>
 
-      {/* Cart bar */}
       <TouchableOpacity
         style={styles.cartCard}
         onPress={() => navigation.navigate("AddToCartScreen")}

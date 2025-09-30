@@ -16,8 +16,9 @@ import {
   fetchRestaurants,
   deleteRestaurant,
 } from "../../database/dbs";
+import { useAuth } from "../Auth/AuthContext";   
 
-// ---------- fallback bundled images ----------
+
 const restaurantImages = {
   "1": require("../../assets/Westway.png"),
   "2": require("../../assets/Fortune.png"),
@@ -31,7 +32,7 @@ const restaurantImages = {
   chicken: require("../../assets/chicken.jpg"),
 };
 
-// ---------- asset icons ----------
+
 const Icons = {
   mapMarker: require("../../assets/location.png"),
   home: require("../../assets/home.png"),
@@ -53,15 +54,15 @@ const categories = [
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-
-  // ensure tables exist
   useCreateTables();
+
+  const { role } = useAuth();               
+  const isAdmin = role === "admin";        
 
   const [nearest, setNearest] = useState([]);
   const [popular, setPopular] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // -------- fetch restaurants from DB --------
   const loadRestaurants = useCallback(async () => {
     setLoading(true);
     try {
@@ -95,6 +96,7 @@ export default function HomeScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
+            if (!isAdmin) return; 
             deleteRestaurant(
               item.id,
               () => {
@@ -109,11 +111,9 @@ export default function HomeScreen() {
     );
   };
 
-  // decide which image to display
   const getImageSource = (item) => {
     if (!item) return restaurantImages["1"];
     const path = item.image_path;
-
     if (path) {
       if (/^(https?:|file:|content:|data:)/i.test(path)) {
         return { uri: path };
@@ -142,23 +142,26 @@ export default function HomeScreen() {
       <View style={styles.textContainer}>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.subText}>⭐ {item.rating} • {item.time}</Text>
-        {/* 🔴 Price removed completely */}
       </View>
 
-      <View style={styles.bottomIcons}>
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation.navigate("ManageItems", { restaurant: item })}
-        >
-          <Image source={Icons.edit} style={styles.assetIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.iconBtn, { marginLeft: 6 }]}
-          onPress={() => confirmDelete(item)}
-        >
-          <Image source={Icons.delete} style={styles.assetIcon} />
-        </TouchableOpacity>
-      </View>
+      {isAdmin && (
+        <View style={styles.bottomIcons}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() =>
+              navigation.navigate("ManageItems", { restaurant: item })
+            }
+          >
+            <Image source={Icons.edit} style={styles.assetIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconBtn, { marginLeft: 6 }]}
+            onPress={() => confirmDelete(item)}
+          >
+            <Image source={Icons.delete} style={styles.assetIcon} />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 
@@ -173,15 +176,16 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <HomeHeader />
 
-      {/* Add new restaurant */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate("ManageItems")}
-        activeOpacity={0.7}
-      >
-        <Image source={Icons.add} style={styles.addIcon} />
-        <Text style={styles.addText}>Add</Text>
-      </TouchableOpacity>
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate("ManageItems")}
+          activeOpacity={0.7}
+        >
+          <Image source={Icons.add} style={styles.addIcon} />
+          <Text style={styles.addText}>Add</Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.topSection}>
         <View style={styles.locationRow}>
@@ -251,7 +255,11 @@ const styles = StyleSheet.create({
   },
   locationIcon: { width: 22, height: 22, resizeMode: "contain" },
   locationText: { marginLeft: 6, fontSize: 16 },
-  categoriesList: { flexDirection: "row", paddingHorizontal: 16, marginBottom: 16 },
+  categoriesList: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
   categoryBtn: { alignItems: "center", marginHorizontal: 8 },
   categoryIcon: { width: 28, height: 28 },
   categoryText: { marginTop: 4, fontSize: 12 },

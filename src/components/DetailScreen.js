@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   View,
@@ -39,7 +38,6 @@ export default function DetailScreen() {
 
   const [activeFilter, setActiveFilter] = useState("Best Seller");
 
-  // ✅ UPDATED: prefer DB image_path if present, else look in imageMap, else default placeholder
   const imgSource =
     restaurant.image_path
       ? { uri: restaurant.image_path }
@@ -102,7 +100,7 @@ export default function DetailScreen() {
           ))}
         </View>
 
-        {/* Best Seller Section */}
+       
         <Text style={styles.sectionTitle}>Best Seller</Text>
         {bestSellers.map((item) => (
           <View key={item.id} style={styles.itemRow}>
@@ -118,7 +116,7 @@ export default function DetailScreen() {
           </View>
         ))}
 
-        {/* Right-aligned "See our menu" */}
+       
         <TouchableOpacity
           style={styles.menuLinkRight}
           onPress={() => navigation.navigate("MenuScreen")}

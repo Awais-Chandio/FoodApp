@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import db from "../../database/dbs";
+import { useAuth } from "../Auth/AuthContext";   
 
-// Image map same as MenuScreen
+
 const imageMap = {
   Westway: require("../../assets/Westway.png"),
   Fortune: require("../../assets/Fortune.png"),
@@ -26,6 +27,7 @@ const imageMap = {
 
 export default function AddToCartScreen() {
   const navigation = useNavigation();
+  const { isLoggedIn } = useAuth();        
   const [cartItems, setCartItems] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
 
@@ -111,14 +113,18 @@ export default function AddToCartScreen() {
     0
   );
 
-  // ✅ Show dialog on checkout
+  
   const handleCheckout = () => {
-    setShowDialog(true);
+    if (isLoggedIn) {
+      navigation.navigate("TrackOrder");
+    } else {
+      navigation.navigate("Login");  
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Top Header */}
+  
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backArrow}>
           <Text style={{ fontSize: 22 }}>←</Text>
@@ -174,36 +180,6 @@ export default function AddToCartScreen() {
           </TouchableOpacity>
         </View>
       )}
-
-      {/* ✅ Checkout Dialog */}
-      <Modal
-        visible={showDialog}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDialog(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.dialog}>
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setShowDialog(false)}
-            >
-              <Text style={{ fontSize: 22 }}>×</Text>
-            </TouchableOpacity>
-            <Text style={styles.dialogText}>
-              Thank you! Your order looks amazing! 🎉
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setShowDialog(false);
-                navigation.navigate("TrackOrder");
-              }}
-            >
-              <Text style={styles.trackText}>Click here to Track your order</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -271,22 +247,4 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   checkoutText: { color: "#fff", fontWeight: "700" },
-
-  // ✅ Dialog styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dialog: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 24,
-    alignItems: "center",
-  },
-  closeBtn: { position: "absolute", top: 12, right: 12 },
-  dialogText: { fontSize: 18, fontWeight: "600", textAlign: "center", marginVertical: 16 },
-  trackText: { fontSize: 16, color: "#FF7F32", fontWeight: "700", marginTop: 16 },
 });

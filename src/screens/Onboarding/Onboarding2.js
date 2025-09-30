@@ -5,7 +5,7 @@ const { width } = Dimensions.get("window");
 
 export default function Onboarding2({ navigation }) {
   const handleNext = () => navigation.navigate("Onboarding3");
-  const handleSkip = () => navigation.replace("Login");
+  const handleSkip = () => navigation.replace("Tab");
 
   return (
     <View style={styles.container}>

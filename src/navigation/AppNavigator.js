@@ -11,9 +11,12 @@ import HomeHeader from "../components/HomeHeader";
 import DetailScreen from "../components/DetailScreen";
 import TrackOrderScreen from "../screens/Cart/TrackOrderScreen";
 import AdminScreen from "../Admin/AdminScreen";
+import ManageMenuItem from "../Admin/ManageMenuItems";
+
 
 
 import TabNavigator from "./TabNavigator";
+import { AuthProvider } from "../screens/Auth/AuthContext";
 
 const Stack = createStackNavigator();
 
@@ -39,6 +42,10 @@ export default function AppNavigator() {
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       <Stack.Screen name="AdminScreen" component={AdminScreen} />
+      <Stack.Screen name="AuthContext" component={AuthProvider} />
+      <Stack.Screen name="ManageMenuItems" component={ManageMenuItem} />
+      
+
     </Stack.Navigator>
   );
 }

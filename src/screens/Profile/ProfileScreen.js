@@ -8,9 +8,10 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage"; 
 
 export default function ProfileScreen() {
-  const navigation = useNavigation();   // ✅ get navigation instance
+  const navigation = useNavigation(); 
 
   const user = {
     name: "Mr Ahmed Khan",
@@ -20,9 +21,13 @@ export default function ProfileScreen() {
     avatar: "https://i.pravatar.cc/150?img=3",
   };
 
-  const handleLogout = () => {
-    // Here you can also clear AsyncStorage/session if you use it
-    navigation.replace("Login");        // ✅ go to Login screen
+  const handleLogout = async () => {
+  
+    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("userRole");
+    
+
+    navigation.replace("Login"); 
   };
 
   return (
@@ -62,7 +67,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ✅ Logout Button */}
+     
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
