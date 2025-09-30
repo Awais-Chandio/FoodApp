@@ -13,7 +13,7 @@ const db = SQLite.openDatabase(
 export const useCreateTables = () => {
   useEffect(() => {
     db.transaction((tx) => {
-    
+      // USERS table
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +38,7 @@ export const useCreateTables = () => {
           }
         }
       );
+  
 
       
       tx.executeSql(`

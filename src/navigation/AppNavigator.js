@@ -42,10 +42,6 @@ export default function AppNavigator() {
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       <Stack.Screen name="AdminScreen" component={AdminScreen} />
-      <Stack.Screen name="AuthContext" component={AuthProvider} />
-      <Stack.Screen name="ManageMenuItems" component={ManageMenuItem} />
-      
-
     </Stack.Navigator>
   );
 }
