@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginRight: 16,
     marginTop: 8,
-    backgroundColor: "#050503ff",
+    backgroundColor: "#f7f7e4ff",
     
 
   },

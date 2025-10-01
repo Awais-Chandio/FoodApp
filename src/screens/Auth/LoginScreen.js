@@ -36,7 +36,7 @@ export default function LoginScreen({ navigation }) {
 
           if (user.role === "admin") {
             alert("Welcome Admin!");
-            navigation.navigate("AdminScreen");
+            navigation.navigate("Tab");
           } else {
             alert("Login successful!");
            navigation.navigate("Tab", { screen: "AddToCartScreen" });

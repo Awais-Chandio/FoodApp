@@ -121,3 +121,8 @@ dependencies {
 
 
 
+project.ext.vectoricons = [
+    iconFontNames: [ 'Ionicons.ttf' ] // add here if missing
+]
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
