@@ -1,9 +1,9 @@
 import React, { useEffect, useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ThemeContext } from "../../Context/ThemeProvider";   // 👈 import theme
+import { ThemeContext } from "../../Context/ThemeProvider";  
 
 export default function LoaderScreen({ navigation }) {
-  const { colors } = useContext(ThemeContext);   // 👈 get theme colors
+  const { colors } = useContext(ThemeContext);   
 
   useEffect(() => {
     const timer = setTimeout(() => {

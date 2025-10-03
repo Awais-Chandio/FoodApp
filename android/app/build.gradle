@@ -85,6 +85,8 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -93,7 +95,27 @@ android {
             keyPassword 'android'
         }
     }
+
+    signingConfigs {
+        release {
+            storeFile file("my-release-key.keystore")
+            storePassword "awais2002"
+            keyAlias "my-key-alias"
+            keyPassword "awais2002"
+        }
+    }
+
+    
     buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+
+  buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
@@ -104,8 +126,8 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
-    }
-}
+    }}
+
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin

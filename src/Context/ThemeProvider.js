@@ -1,11 +1,10 @@
-// src/theme/ThemeProvider.js
 import React, { createContext, useState, useEffect,useContext } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const ThemeContext = createContext({
-  mode: "system", // 'system' | 'light' | 'dark'
-  theme: "light", // resolved 'light'|'dark'
+  mode: "system",
+  theme: "light", 
   colors: {},
   toggleTheme: () => {},
   setMode: () => {},
@@ -16,11 +15,11 @@ export const useTheme = () => useContext(ThemeContext);
 const STORAGE_KEY = "app_theme_mode";
 
 export const ThemeProvider = ({ children }) => {
-  const system = useColorScheme(); // 'light' | 'dark' | null
-  const [mode, setMode] = useState("system"); // 'system' | 'light' | 'dark'
+  const system = useColorScheme(); 
+  const [mode, setMode] = useState("system");
   const resolvedTheme = mode === "system" ? (system ?? "light") : mode;
 
-  // load saved mode (if any)
+  
   useEffect(() => {
     (async () => {
       try {
@@ -34,7 +33,7 @@ export const ThemeProvider = ({ children }) => {
     })();
   }, []);
 
-  // update storage when user explicitly sets a mode (not system)
+  
   const persistMode = async (newMode) => {
     try {
       if (newMode === "system") {
@@ -48,7 +47,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   const toggleTheme = async () => {
-    // toggle between light/dark. If currently 'system', toggle based on resolvedTheme.
+   
     const next =
       mode === "system"
         ? (resolvedTheme === "light" ? "dark" : "light")
@@ -90,8 +89,8 @@ export const ThemeProvider = ({ children }) => {
   return (
     <ThemeContext.Provider
       value={{
-        mode, // what user chose: 'system'|'light'|'dark'
-        theme: resolvedTheme, // final resolved 'light'|'dark'
+        mode, 
+        theme: resolvedTheme, 
         colors,
         toggleTheme,
         setMode,
