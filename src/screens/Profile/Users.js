@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,13 +14,15 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { insertAdminUser, updateAdminUser } from "../../database/dbs";
 
-const formSchema = {
+
+export const formSchema = {
   form_id: "user_registration_001",
   title: "User Registration Form",
   fields: [
     { id: "first_name", label: "First Name", type: "text", required: true, placeholder: "Enter first name" },
     { id: "last_name", label: "Last Name", type: "text", placeholder: "Enter last name" },
-    { id: "name", label: "nick name", type: "text", placeholder: "Enter last name extra" },
+    { id: "first_name1", label: "First Name1", type: "text", required: true, placeholder: "Enter first name1" },
+    { id: "name", label: "Nick Name", type: "text", placeholder: "Enter nick name" },
     { id: "age", label: "Age", type: "number" },
     { id: "gender", label: "Gender", type: "radio", options: ["Male", "Female", "Other"], required: true },
     { id: "hobbies", label: "Hobbies", type: "checkbox", options: ["Reading", "Sports", "Music", "Traveling", "Swimming"] },
@@ -34,11 +36,10 @@ const formSchema = {
 const Users = ({ navigation, route }) => {
   const editingUser = route.params?.user || null;
 
-  // 🔹 Dynamic initial state based on JSON schema
   const getInitialFormData = () => {
     const data = {};
     formSchema.fields.forEach((f) => {
-      if (f.type === "checkbox") data[f.id] = [];
+      if (f.type === "checkbox") data[f.id] = []; 
       else if (f.type === "date") data[f.id] = new Date();
       else data[f.id] = "";
     });
@@ -48,13 +49,19 @@ const Users = ({ navigation, route }) => {
   const [formData, setFormData] = useState(getInitialFormData());
   const [showDatePickerField, setShowDatePickerField] = useState(null);
 
-  // Load existing user dynamically
+
   useEffect(() => {
     if (editingUser) {
       const newData = getInitialFormData();
       Object.keys(newData).forEach((key) => {
         if (editingUser[key] !== undefined) {
-          newData[key] = key === "dob" ? new Date(editingUser[key]) : editingUser[key];
+          if (key === "dob") {
+        
+            const d = new Date(editingUser[key]);
+            newData[key] = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          } else {
+            newData[key] = editingUser[key];
+          }
         }
       });
       setFormData(newData);
@@ -71,7 +78,6 @@ const Users = ({ navigation, route }) => {
   };
 
   const handleSave = () => {
-    // Validate required fields
     for (let field of formSchema.fields) {
       if (field.required && !formData[field.id] && field.type !== "button") {
         Alert.alert("Validation", `${field.label} is required`);
@@ -81,8 +87,14 @@ const Users = ({ navigation, route }) => {
 
     const userToSave = {};
     Object.keys(formData).forEach((key) => {
-      if (key === "submit") return; // skip submit field
-      userToSave[key] = formData[key] instanceof Date ? formData[key].toISOString() : formData[key];
+      if (key === "submit") return; 
+      if (key === "dob" && formData[key] instanceof Date) {
+     
+        const d = formData[key];
+        userToSave[key] = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      } else {
+        userToSave[key] = formData[key];
+      }
     });
 
     if (editingUser) {
@@ -102,7 +114,6 @@ const Users = ({ navigation, route }) => {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{formSchema.title}</Text>
 
-      {/* Render only non-button fields in order */}
       {formSchema.fields
         .filter((f) => f.type !== "button")
         .map((field) => (
@@ -178,7 +189,13 @@ const Users = ({ navigation, route }) => {
                     display="default"
                     onChange={(e, selectedDate) => {
                       setShowDatePickerField(null);
-                      if (selectedDate) setFormData({ ...formData, [field.id]: selectedDate });
+                      if (selectedDate) {
+                    
+                        setFormData({
+                          ...formData,
+                          [field.id]: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()),
+                        });
+                      }
                     }}
                   />
                 )}
@@ -198,7 +215,7 @@ const Users = ({ navigation, route }) => {
           </View>
         ))}
 
-      {/* Render submit button at bottom */}
+   
       <Button title={editingUser ? "Update User" : "Register"} onPress={handleSave} />
     </ScrollView>
   );

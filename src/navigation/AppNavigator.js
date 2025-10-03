@@ -44,7 +44,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       <Stack.Screen name="AdminScreen" component={AdminScreen} />
-      <Stack.Screen name="ManageMenuItem" component={ManageMenuItem} />
+      <Stack.Screen name="ManageMenuItems" component={ManageMenuItem} />
       <Stack.Screen name="ManageUsers" component={ManageUsers} />
       <Stack.Screen name="Users" component={Users} />
 

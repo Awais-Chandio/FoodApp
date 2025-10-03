@@ -19,7 +19,7 @@ const cleanObject = (obj) => {
     } else if (value instanceof Date) {
       cleaned[key] = value.toISOString();
     } else if (typeof value === "function") {
-      continue; // skip functions
+      continue; 
     } else {
       cleaned[key] = value;
     }
@@ -27,13 +27,13 @@ const cleanObject = (obj) => {
   return cleaned;
 };
 
-// 🔹 New reusable init function (for Users/ManageUsers screens)
+
 
 
 export const useCreateTables = () => {
   useEffect(() => {
     db.transaction((tx) => {
-      // USERS table
+   
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +68,7 @@ export const useCreateTables = () => {
         }
       );
 
-      // Restaurants table
+
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS restaurants (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +81,7 @@ export const useCreateTables = () => {
         );
       `);
 
-      // Menu items table
+  
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS menu_items (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,7 +94,7 @@ export const useCreateTables = () => {
         );
       `);
 
-      // Cart table
+   
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS cart (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,11 +106,11 @@ export const useCreateTables = () => {
         );
       `);
 
-      // Admin users table
+ 
       
       
 
-      // Seed restaurants
+  
       tx.executeSql("SELECT COUNT(*) as count FROM restaurants", [], (_t, { rows }) => {
         if (rows.item(0).count === 0) {
           const seed = [
@@ -130,7 +130,6 @@ export const useCreateTables = () => {
         }
       });
 
-      // Seed menu items
       tx.executeSql("SELECT COUNT(*) as count FROM menu_items", [], (_t, { rows }) => {
         if (rows.item(0).count === 0) {
           const menuSeed = [
@@ -151,9 +150,9 @@ export const useCreateTables = () => {
   }, []);
 };
 
-// 🔹 Admin user insert
+
 export const insertAdminUser = (userObj, onSuccess) => {
-  const safeUser = { ...userObj }; // You can clean object if needed
+  const safeUser = { ...userObj };
   db.transaction((tx) => {
     tx.executeSql(
       `INSERT INTO admin_users (data) VALUES (?)`,
@@ -170,7 +169,6 @@ export const insertAdminUser = (userObj, onSuccess) => {
   });
 };
 
-// ---------- GET ALL USERS ----------
 export const getAdminUsers = (callback) => {
   db.transaction((tx) => {
     tx.executeSql(
@@ -194,7 +192,7 @@ export const getAdminUsers = (callback) => {
   });
 };
 
-// ---------- DELETE USER ----------
+
 export const deleteAdminUser = (id, onSuccess) => {
   db.transaction((tx) => {
     tx.executeSql(
@@ -209,7 +207,7 @@ export const deleteAdminUser = (id, onSuccess) => {
   });
 };
 
-// ---------- UPDATE USER ----------
+
 export const updateAdminUser = (id, userObj, onSuccess) => {
   db.transaction((tx) => {
     tx.executeSql(
@@ -224,7 +222,7 @@ export const updateAdminUser = (id, userObj, onSuccess) => {
   });
 };
 
-// 🔹 Remaining code untouched (cart, menu, restaurant, user auth etc.)
+
 
 export const toggleCartItem = (item, callback) => {
   db.transaction((tx) => {

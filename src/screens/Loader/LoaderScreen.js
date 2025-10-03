@@ -1,7 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { ThemeContext } from "../../Context/ThemeProvider";   // 👈 import theme
 
 export default function LoaderScreen({ navigation }) {
+  const { colors } = useContext(ThemeContext);   // 👈 get theme colors
+
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.replace("Onboarding1"); 
@@ -11,17 +14,17 @@ export default function LoaderScreen({ navigation }) {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.wordRow}>
-        <Text style={[styles.letter, { color: "#000" }]}>F</Text>
+        <Text style={[styles.letter, { color: colors.text }]}>F</Text>
         <Text style={[styles.letter, { color: "#FFD700" }]}>O</Text>
         <Text style={[styles.letter, { color: "#FFD700" }]}>O</Text>
-        <Text style={[styles.letter, { color: "#000" }]}>D</Text>
+        <Text style={[styles.letter, { color: colors.text }]}>D</Text>
       </View>
 
-     
-      <Text style={styles.subtitle}>No wait for the food</Text>
+      <Text style={[styles.subtitle, { color: colors.text }]}>
+        No wait for the food
+      </Text>
     </View>
   );
 }
@@ -29,7 +32,6 @@ export default function LoaderScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -43,7 +45,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 18,
-    color: "#666",
     marginTop: 10,
   },
 });
