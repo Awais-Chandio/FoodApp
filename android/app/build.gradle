@@ -279,9 +279,9 @@ android {
         release {
             // ✅ Correct: Read from GitHub Actions secrets
             storeFile file("my-release-key.keystore")
-            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: ""
-            keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: ""
-            keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias System.getenv("KEY_ALIAS") ?: ""
+            keyPassword System.getenv("KEY_PASSWORD") ?: ""
         }
     }
 
