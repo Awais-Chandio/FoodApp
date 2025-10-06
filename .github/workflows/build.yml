@@ -37,11 +37,15 @@ jobs:
           mkdir -p android/app
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/my-release-key.keystore
 
-      # ✅ Build the release APK
+      # ✅ Build the release APK (with signing credentials passed as environment variables)
       - name: Build Release APK
         run: |
           cd android
           ./gradlew assembleRelease --stacktrace --info --warning-mode all
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       # ✅ Upload generated APK
       - name: Upload Release APK
