@@ -149,6 +149,17 @@
 // apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
 
+
+
+
+
+
+
+
+
+
+
+
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
@@ -166,6 +177,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.foodapp"
+
     defaultConfig {
         applicationId "com.foodapp"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -182,11 +194,11 @@ android {
             keyPassword 'android'
         }
         release {
-            // Read from GitHub Actions secrets (injected as env variables)
+            // For GitHub Actions: use secrets as environment variables
             storeFile file("my-release-key.keystore")
-            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: ""
-            keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: ""
-            keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+            storePassword System.getenv("awais2002")
+            keyAlias System.getenv("my-key-alias")
+            keyPassword System.getenv("awais2002")
         }
     }
 
@@ -197,6 +209,7 @@ android {
         release {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources false
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
