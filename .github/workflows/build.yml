@@ -31,21 +31,19 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # Decode and create the keystore file from the GitHub secret
+      # ✅ Decode and create the keystore file from the GitHub secret
       - name: Decode Keystore
         run: |
+          mkdir -p android/app
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/my-release-key.keystore
 
-      # Build the release APK
+      # ✅ Build the release APK
       - name: Build Release APK
         run: |
           cd android
-          ./gradlew assembleRelease --stacktrace --info --warning-mode all \
-            -Pandroid.injected.signing.store.file=my-release-key.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}
+          ./gradlew assembleRelease --stacktrace --info --warning-mode all
 
+      # ✅ Upload generated APK
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
