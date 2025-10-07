@@ -1,10 +1,10 @@
 import React from "react";
-import { NavigationContainer} from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useCreateTables } from "./src/database/dbs";
 import { AuthProvider } from "./src/screens/Auth/AuthContext";
-import Toast from "react-native-toast-message"; 
-import { ThemeProvider } from "./src/Context/ThemeProvider"; 
+import Toast from "react-native-toast-message";
+import { ThemeProvider } from "./src/Context/ThemeProvider";
 
 const App = () => {
   useCreateTables();
@@ -12,11 +12,11 @@ const App = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-        <Toast /> 
-      </NavigationContainer>
-    </AuthProvider>
+        <NavigationContainer>
+          <AppNavigator />
+          <Toast />
+        </NavigationContainer>
+      </AuthProvider>
     </ThemeProvider>
   );
 };
