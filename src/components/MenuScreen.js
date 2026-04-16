@@ -1,130 +1,147 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
   Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import AntDesign from "@react-native-vector-icons/ant-design";
+import Toast from "react-native-toast-message";
 import db from "../database/dbs";
-import { useAuth } from "../screens/Auth/AuthContext"; 
-import { ThemeContext } from "../Context/ThemeProvider"; 
+import { useAuth } from "../screens/Auth/AuthContext";
+import EmptyState from "./ui/EmptyState";
+import SectionHeader from "./ui/SectionHeader";
+import { useTheme } from "../Context/ThemeProvider";
+import {
+  createShadow,
+  layout,
+  radius,
+  spacing,
+} from "../constants/designSystem";
+import { resolveFoodImage } from "../constants/imageRegistry";
 
-const imageMap = {
-  Westway: require("../assets/Westway.png"),
-  Fortune: require("../assets/Fortune.png"),
-  Seafood: require("../assets/Seafood.png"),
-  food1: require("../assets/food1.jpg"),
-  food2: require("../assets/food2.jpg"),
-  food3: require("../assets/food3.jpg"),
-  BlackNodles: require("../assets/BlackNodles.png"),
-  Starfish: require("../assets/Starfish.png"),
-  Moonland: require("../assets/Moonland.png"),
-};
-
-const editIcon = require("../assets/edit.png");
-const deleteIcon = require("../assets/delete.png");
+const filters = [
+  { id: "all", label: "All items" },
+  { id: "budget", label: "Under Rs. 200" },
+  { id: "premium", label: "Premium" },
+];
 
 export default function MenuScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const restaurant = route?.params?.restaurant || { id: 1, name: "Westway" };
-
   const { role } = useAuth();
+  const { colors } = useTheme();
   const isAdmin = role === "admin";
-
-  const { colors } = useContext(ThemeContext); 
+  const restaurant = route?.params?.restaurant || { id: 1, name: "Westway" };
 
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("Best Seller");
-  const filters = ["Best Seller", "Veg", "Non-Veg", "Beverages"];
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  useEffect(() => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS menu_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            restaurant_id INTEGER,
-            name TEXT,
-            price REAL,
-            image_key TEXT
-        );`
-      );
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS cart (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            menu_item_id INTEGER UNIQUE,
-            name TEXT,
-            price REAL,
-            image_key TEXT,
-            quantity INTEGER
-        );`
-      );
-    });
-  }, []);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData();
-    }, [restaurant.id])
-  );
-
-  const loadData = () => {
+  const loadData = useCallback(() => {
     db.transaction((tx) => {
       tx.executeSql(
         "SELECT * FROM menu_items WHERE restaurant_id=?",
         [restaurant.id],
-        (_t, res) => {
-          const arr = [];
-          for (let i = 0; i < res.rows.length; i++) arr.push(res.rows.item(i));
-          setMenuItems(arr);
+        (_t, result) => {
+          const items = [];
+          for (let i = 0; i < result.rows.length; i += 1) {
+            items.push(result.rows.item(i));
+          }
+          setMenuItems(items);
         }
       );
-      tx.executeSql("SELECT * FROM cart", [], (_t, resCart) => {
-        const arr = [];
-        for (let i = 0; i < resCart.rows.length; i++) arr.push(resCart.rows.item(i));
-        setCart(arr);
+
+      tx.executeSql("SELECT * FROM cart", [], (_t, result) => {
+        const items = [];
+        for (let i = 0; i < result.rows.length; i += 1) {
+          items.push(result.rows.item(i));
+        }
+        setCart(items);
       });
     });
-  };
+  }, [restaurant.id]);
 
-  const resolveImageForRow = (row) => {
-    const path = (row?.image_key || "").trim();
-    if (!path) return imageMap.food1;
-    if (/^(https?:|file:|content:|data:)/i.test(path)) return { uri: path };
-    const key = path.replace(/\.(png|jpe?g|webp)$/i, "");
-    return imageMap[key] || imageMap.food1;
-  };
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
-  const toggleCart = (id, name, price = 0, image_key = null) => {
-    const inCart = cart.find((c) => c.menu_item_id === id);
-    db.transaction((tx) => {
-      if (inCart) {
-        tx.executeSql("DELETE FROM cart WHERE menu_item_id=?", [id], () =>
-          setCart((prev) => prev.filter((c) => c.menu_item_id !== id))
-        );
-      } else {
-        tx.executeSql(
-          `INSERT OR REPLACE INTO cart
-           (menu_item_id,name,price,image_key,quantity)
-           VALUES (?,?,?,?,COALESCE((SELECT quantity FROM cart WHERE menu_item_id=?),0)+1)`,
-          [id, name, price, image_key, id],
-          () =>
-            setCart((prev) => [
-              ...prev,
-              { menu_item_id: id, name, price, image_key, quantity: 1 },
-            ])
-        );
+  const filteredItems = useMemo(() => {
+    switch (activeFilter) {
+      case "budget":
+        return menuItems.filter((item) => Number(item.price || 0) <= 200);
+      case "premium":
+        return menuItems.filter((item) => Number(item.price || 0) > 200);
+      default:
+        return menuItems;
+    }
+  }, [activeFilter, menuItems]);
+
+  const getCartRow = (id) => cart.find((item) => item.menu_item_id === id);
+  const getQuantity = (id) => getCartRow(id)?.quantity || 0;
+
+  const increaseQty = (item) => {
+    const existing = getCartRow(item.id);
+
+    db.transaction(
+      (tx) => {
+        if (existing) {
+          tx.executeSql(
+            "UPDATE cart SET quantity = quantity + 1 WHERE menu_item_id=?",
+            [item.id]
+          );
+        } else {
+          tx.executeSql(
+            `INSERT INTO cart (menu_item_id, name, price, image_key, quantity)
+             VALUES (?, ?, ?, ?, 1)`,
+            [item.id, item.name, item.price, item.image_key || null]
+          );
+        }
+      },
+      (error) => console.log("increase cart error", error),
+      () => {
+        loadData();
+        Toast.show({
+          type: "success",
+          text1: existing ? "Quantity updated" : "Added to cart",
+          text2: `${item.name} is ready for checkout.`,
+        });
       }
-    });
+    );
+  };
+
+  const decreaseQty = (item) => {
+    const existing = getCartRow(item.id);
+    if (!existing) {
+      return;
+    }
+
+    db.transaction(
+      (tx) => {
+        if ((existing.quantity || 0) <= 1) {
+          tx.executeSql("DELETE FROM cart WHERE menu_item_id=?", [item.id]);
+        } else {
+          tx.executeSql(
+            "UPDATE cart SET quantity = quantity - 1 WHERE menu_item_id=?",
+            [item.id]
+          );
+        }
+      },
+      (error) => console.log("decrease cart error", error),
+      () => loadData()
+    );
   };
 
   const editItem = (item) => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      return;
+    }
     navigation.navigate("ManageMenuItems", {
       restaurantId: restaurant.id,
       menuItem: item,
@@ -132,7 +149,10 @@ export default function MenuScreen() {
   };
 
   const deleteItem = (id) => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      return;
+    }
+
     Alert.alert("Delete Item", "Are you sure you want to remove this item?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -141,7 +161,7 @@ export default function MenuScreen() {
         onPress: () => {
           db.transaction((tx) => {
             tx.executeSql("DELETE FROM menu_items WHERE id=?", [id], () => {
-              setMenuItems((prev) => prev.filter((m) => m.id !== id));
+              setMenuItems((current) => current.filter((item) => item.id !== id));
             });
           });
         },
@@ -149,110 +169,246 @@ export default function MenuScreen() {
     ]);
   };
 
-  const totalItems = cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const totalPrice = cart.reduce(
-    (sum, i) => sum + (i.price || 0) * (i.quantity || 1),
+    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
 
-  return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-       
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.backArrowContainer}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
+  const renderMenuItem = ({ item }) => {
+    const quantity = getQuantity(item.id);
 
-          <View style={styles.headerCenter}>
-            <Text style={styles.restaurantName}>{restaurant.name}</Text>
-            <Text style={styles.menuText}>Menu</Text>
+    return (
+      <View
+        style={[
+          styles.itemCard,
+          createShadow(colors.shadow, 10),
+          { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+        ]}
+      >
+        <Image
+          source={resolveFoodImage(item.image_key || item.name)}
+          style={styles.itemImage}
+        />
+        <View style={styles.itemContent}>
+          <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
+            Freshly prepared and balanced for quick delivery
+          </Text>
+          <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
+            Rs. {item.price}
+          </Text>
+        </View>
+
+        {isAdmin ? (
+          <View style={styles.adminColumn}>
+            <TouchableOpacity
+              style={[styles.adminButton, { backgroundColor: colors.badge }]}
+              onPress={() => editItem(item)}
+            >
+              <AntDesign name="edit" size={16} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.adminButton, { backgroundColor: colors.surfaceMuted }]}
+              onPress={() => deleteItem(item.id)}
+            >
+              <AntDesign name="delete" size={16} color={colors.danger} />
+            </TouchableOpacity>
           </View>
+        ) : null}
 
-          {isAdmin && (
-            <TouchableOpacity
-              style={styles.addItemBtn}
-              onPress={() =>
-                navigation.navigate("ManageMenuItems", { restaurantId: restaurant.id })
-              }
-            >
-              <Text style={styles.addItemText}>Add Item</Text>
+        {quantity > 0 ? (
+          <View style={[styles.qtyStepper, { backgroundColor: colors.badge }]}>
+            <TouchableOpacity onPress={() => decreaseQty(item)} hitSlop={8}>
+              <AntDesign name="minus" size={16} color={colors.primaryStrong} />
             </TouchableOpacity>
-          )}
-        </View>
+            <Text style={[styles.qtyValue, { color: colors.text }]}>{quantity}</Text>
+            <TouchableOpacity onPress={() => increaseQty(item)} hitSlop={8}>
+              <AntDesign name="plus" size={16} color={colors.primaryStrong} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
+            onPress={() => increaseQty(item)}
+          >
+            <AntDesign name="plus" size={16} color={colors.white} />
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
-   
-        <View style={styles.filterRow}>
-          {filters.map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.filterBtn, activeFilter === f && styles.activeFilter]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  activeFilter === f && styles.activeFilterText,
-                ]}
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <FlatList
+        data={filteredItems}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderMenuItem}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <>
+            <View style={styles.headerRow}>
+              <TouchableOpacity
+                style={[styles.headerIcon, { backgroundColor: colors.surface }]}
+                onPress={() => navigation.goBack()}
               >
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <AntDesign name="arrow-left" size={20} color={colors.text} />
+              </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>{activeFilter}</Text>
-
-        {menuItems.map((item) => {
-          const img = resolveImageForRow(item);
-          const inCart = cart.some((c) => c.menu_item_id === item.id);
-          return (
-            <View key={item.id} style={styles.itemCard}>
-              <Image source={img} style={styles.itemImage} />
-
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemPrice}>Rs. {item.price}</Text>
+              <View style={styles.headerCenter}>
+                <Text style={[styles.restaurantName, { color: colors.text }]}>
+                  {restaurant.name}
+                </Text>
+                <Text style={[styles.headerMeta, { color: colors.textSecondary }]}>
+                  Curated menu
+                </Text>
               </View>
 
-              {isAdmin && (
-                <View style={styles.editDeleteRow}>
-                  <TouchableOpacity onPress={() => editItem(item)}>
-                    <Image source={editIcon} style={styles.icon} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => deleteItem(item.id)}>
-                    <Image source={deleteIcon} style={[styles.icon, { marginLeft: 8 }]} />
-                  </TouchableOpacity>
-                </View>
+              {isAdmin ? (
+                <TouchableOpacity
+                  style={[
+                    styles.headerAction,
+                    { backgroundColor: colors.primaryStrong },
+                  ]}
+                  onPress={() =>
+                    navigation.navigate("ManageMenuItems", {
+                      restaurantId: restaurant.id,
+                    })
+                  }
+                >
+                  <Text style={styles.headerActionText}>Add</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.headerPlaceholder} />
               )}
-
-              <TouchableOpacity
-                style={styles.addBtn}
-                onPress={() =>
-                  toggleCart(item.id, item.name, item.price, item.image_key)
-                }
-              >
-                <Text style={styles.addBtnText}>{inCart ? "−" : "+"}</Text>
-              </TouchableOpacity>
             </View>
-          );
-        })}
-      </ScrollView>
+
+            <View
+              style={[
+                styles.heroCard,
+                createShadow(colors.shadow, 12),
+                { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+              ]}
+            >
+              <SectionHeader
+                title="Menu highlights"
+                subtitle="Clearer cards, better spacing, and quicker cart controls."
+              />
+              <View style={styles.quickStatsRow}>
+                <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
+                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                    {menuItems.length}
+                  </Text>
+                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                    Items
+                  </Text>
+                </View>
+                <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
+                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                    {totalItems}
+                  </Text>
+                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                    In cart
+                  </Text>
+                </View>
+                <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
+                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                    Rs. {totalPrice}
+                  </Text>
+                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                    Running total
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <SectionHeader
+              title="Browse items"
+              subtitle="Use the quick filters to scan the menu faster."
+            />
+            <View style={styles.filterRow}>
+              {filters.map((filter) => {
+                const isActive = activeFilter === filter.id;
+                return (
+                  <TouchableOpacity
+                    key={filter.id}
+                    style={[
+                      styles.filterChip,
+                      {
+                        backgroundColor: isActive ? colors.primaryStrong : colors.surface,
+                        borderColor: isActive ? colors.primaryStrong : colors.border,
+                      },
+                    ]}
+                    onPress={() => setActiveFilter(filter.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterLabel,
+                        { color: isActive ? colors.white : colors.text },
+                      ]}
+                    >
+                      {filter.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            title="No menu items yet"
+            message={
+              isAdmin
+                ? "Add a few dishes to start taking orders from this restaurant."
+                : "This restaurant will show dishes here once the menu is available."
+            }
+            icon="profile"
+            actionLabel={isAdmin ? "Add item" : undefined}
+            onActionPress={
+              isAdmin
+                ? () =>
+                    navigation.navigate("ManageMenuItems", {
+                      restaurantId: restaurant.id,
+                    })
+                : undefined
+            }
+          />
+        }
+        ListFooterComponent={<View style={styles.listFooter} />}
+        showsVerticalScrollIndicator={false}
+      />
 
       <TouchableOpacity
-        style={styles.cartCard}
+        activeOpacity={totalItems ? 0.9 : 0.95}
+        style={[
+          styles.cartCard,
+          createShadow(colors.shadow, 14),
+          {
+            backgroundColor: totalItems ? colors.primaryStrong : colors.surface,
+            borderColor: totalItems ? colors.primaryStrong : colors.borderSoft,
+          },
+        ]}
         onPress={() => navigation.navigate("AddToCartScreen")}
       >
-        {totalItems === 0 ? (
-          <Text style={styles.cartView}>Select any item you want</Text>
+        {totalItems ? (
+          <>
+            <View>
+              <Text style={styles.cartTitle}>{totalItems} items selected</Text>
+              <Text style={styles.cartSubtitle}>Ready for checkout</Text>
+            </View>
+            <View style={styles.cartRight}>
+              <Text style={styles.cartPrice}>Rs. {totalPrice}</Text>
+              <Text style={styles.cartLink}>View cart</Text>
+            </View>
+          </>
         ) : (
           <>
-            <Text style={styles.cartText}>{totalItems} items</Text>
-            <Text style={styles.cartView}>View Cart</Text>
-            <Text style={styles.cartText}>Rs. {totalPrice}</Text>
+            <Text style={[styles.emptyCartPrompt, { color: colors.text }]}>
+              Select any item you want
+            </Text>
+            <AntDesign name="shopping-cart" size={20} color={colors.text} />
           </>
         )}
       </TouchableOpacity>
@@ -261,100 +417,207 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: layout.pagePadding,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 60,
-    marginHorizontal: 16,
+    marginBottom: spacing.xl,
   },
-  backArrowContainer: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    justifyContent: "center",
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
-    elevation: 2,
+    justifyContent: "center",
   },
-  backArrow: { fontSize: 22, color: "#000", fontWeight: "700" },
-  headerCenter: { alignItems: "center" },
-  restaurantName: { fontSize: 18, fontWeight: "700", color: "#222" },
-  menuText: { fontSize: 14, color: "#555", marginTop: 2 },
-  addItemBtn: {
-    backgroundColor: "#FF7000",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
   },
-  addItemText: { color: "#fff", fontWeight: "700" },
+  restaurantName: {
+    fontSize: 21,
+    fontWeight: "800",
+  },
+  headerMeta: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+  },
+  headerAction: {
+    minWidth: 58,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  headerActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  headerPlaceholder: {
+    width: 58,
+  },
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    marginBottom: layout.sectionGap,
+  },
+  quickStatsRow: {
+    flexDirection: "row",
+    marginTop: spacing.md,
+  },
+  quickStat: {
+    flex: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    marginRight: spacing.sm,
+  },
+  quickStatValue: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  quickStatLabel: {
+    marginTop: spacing.xs,
+    fontSize: 12,
+  },
   filterRow: {
     flexDirection: "row",
-    justifyContent: "space-evenly",
-    marginTop: 16,
-    marginBottom: 10,
+    flexWrap: "wrap",
+    marginTop: -spacing.xs,
+    marginBottom: spacing.lg,
   },
-  filterBtn: {
+  filterChip: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 1,
+    marginRight: spacing.sm,
+    marginTop: spacing.sm,
   },
-  activeFilter: { backgroundColor: "#FF7000", borderColor: "#FF7000" },
-  filterText: { fontSize: 14, color: "#555" },
-  activeFilterText: { color: "#fff", fontWeight: "600" },
-  sectionTitle: {
-    fontSize: 20,
+  filterLabel: {
+    fontSize: 13,
     fontWeight: "700",
-    color: "#222",
-    marginHorizontal: 20,
-    marginVertical: 12,
   },
   itemCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fafafa",
-    marginHorizontal: 20,
-    marginVertical: 8,
-    padding: 12,
-    borderRadius: 12,
-  },
-  itemImage: { width: 70, height: 70, borderRadius: 8 },
-  itemName: { fontSize: 16, fontWeight: "600", color: "#333" },
-  itemPrice: { fontSize: 14, color: "#888", marginTop: 4 },
-  editDeleteRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 8,
-  },
-  icon: { width: 20, height: 20, tintColor: "#333" },
-  addBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ccc",
-    marginLeft: 6,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
   },
-  addBtnText: { fontSize: 18, fontWeight: "bold", color: "#000" },
+  itemImage: {
+    width: 84,
+    height: 84,
+    borderRadius: radius.md,
+  },
+  itemContent: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  itemSubtitle: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  itemPrice: {
+    marginTop: spacing.sm,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  adminColumn: {
+    justifyContent: "space-between",
+    marginRight: spacing.sm,
+    height: 84,
+  },
+  adminButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  qtyStepper: {
+    height: 42,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  qtyValue: {
+    minWidth: 24,
+    textAlign: "center",
+    fontSize: 15,
+    fontWeight: "800",
+    marginHorizontal: spacing.sm,
+  },
   cartCard: {
     position: "absolute",
-    bottom: 10,
-    left: 20,
-    right: 20,
-    backgroundColor: "#d4f5d4",
+    left: layout.pagePadding,
+    right: layout.pagePadding,
+    bottom: spacing.lg,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    minHeight: 72,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    elevation: 3,
+    justifyContent: "space-between",
   },
-  cartText: { fontSize: 16, fontWeight: "600", color: "#222" },
-  cartView: { fontSize: 16, fontWeight: "700", color: "#000" },
+  cartTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  cartSubtitle: {
+    marginTop: spacing.xs,
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 13,
+  },
+  cartRight: {
+    alignItems: "flex-end",
+  },
+  cartPrice: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  cartLink: {
+    marginTop: spacing.xs,
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  emptyCartPrompt: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  listFooter: {
+    height: 128,
+  },
 });

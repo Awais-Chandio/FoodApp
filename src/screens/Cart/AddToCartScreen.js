@@ -1,242 +1,567 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
   Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import AntDesign from "@react-native-vector-icons/ant-design";
+import Toast from "react-native-toast-message";
 import db from "../../database/dbs";
-import { useAuth } from "../Auth/AuthContext";   
-import { ThemeContext } from "../../Context/ThemeProvider";  
+import EmptyState from "../../components/ui/EmptyState";
+import SectionHeader from "../../components/ui/SectionHeader";
+import { useAuth } from "../Auth/AuthContext";
+import { useTheme } from "../../Context/ThemeProvider";
+import {
+  createShadow,
+  layout,
+  radius,
+  spacing,
+} from "../../constants/designSystem";
+import { resolveFoodImage } from "../../constants/imageRegistry";
 
-const imageMap = {
-  Westway: require("../../assets/Westway.png"),
-  Fortune: require("../../assets/Fortune.png"),
-  Seafood: require("../../assets/Seafood.png"),
-  food1: require("../../assets/food1.jpg"),
-  food2: require("../../assets/food2.jpg"),
-  food3: require("../../assets/food3.jpg"),
-  BlackNoodles: require("../../assets/BlackNodles.png"),
-  Starfish: require("../../assets/Starfish.png"),
-  Moonland: require("../../assets/Moonland.png"),
+const VALID_PROMOS = {
+  SAVE10: 0.1,
+  FOOD5: 0.05,
 };
 
 export default function AddToCartScreen() {
   const navigation = useNavigation();
-  const { isLoggedIn } = useAuth();        
-  const { colors } = useContext(ThemeContext);   
-  const [cartItems, setCartItems] = useState([]);
-  const [showDialog, setShowDialog] = useState(false);
+  const { isLoggedIn } = useAuth();
+  const { colors } = useTheme();
 
-  const fetchCart = () => {
+  const [cartItems, setCartItems] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState(null);
+
+  const fetchCart = useCallback(() => {
     db.transaction((tx) => {
       tx.executeSql(
         "SELECT * FROM cart",
         [],
-        (_t, res) => {
-          const arr = [];
-          for (let i = 0; i < res.rows.length; i++) arr.push(res.rows.item(i));
-          setCartItems(arr);
+        (_t, result) => {
+          const items = [];
+          for (let i = 0; i < result.rows.length; i += 1) {
+            items.push(result.rows.item(i));
+          }
+          setCartItems(items);
         },
-        (_t, err) => console.log("Cart fetch error", err)
+        (_t, error) => console.log("Cart fetch error", error)
       );
     });
-  };
+  }, []);
 
   useEffect(() => {
     fetchCart();
-  }, []);
+  }, [fetchCart]);
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       fetchCart();
-    }, [])
+    }, [fetchCart])
   );
 
-  const removeItem = (menu_item_id) => {
+  const refreshCart = async () => {
+    setRefreshing(true);
+    fetchCart();
+    setRefreshing(false);
+  };
+
+  const removeItem = (menuItemId) => {
     db.transaction(
       (tx) => {
-        tx.executeSql("DELETE FROM cart WHERE menu_item_id=?", [menu_item_id]);
+        tx.executeSql("DELETE FROM cart WHERE menu_item_id=?", [menuItemId]);
       },
-      (err) => console.log(err),
+      (error) => console.log("remove cart error", error),
       () => fetchCart()
     );
   };
 
-  const increaseQty = (menu_item_id) => {
+  const increaseQty = (menuItemId) => {
     db.transaction(
       (tx) => {
         tx.executeSql(
           "UPDATE cart SET quantity = quantity + 1 WHERE menu_item_id=?",
-          [menu_item_id]
+          [menuItemId]
         );
       },
-      (err) => console.log(err),
+      (error) => console.log("increase qty error", error),
       () => fetchCart()
     );
   };
 
-  const decreaseQty = (menu_item_id) => {
+  const decreaseQty = (menuItemId) => {
     db.transaction(
       (tx) => {
         tx.executeSql(
           "UPDATE cart SET quantity = quantity - 1 WHERE menu_item_id=? AND quantity > 1",
-          [menu_item_id]
+          [menuItemId]
         );
         tx.executeSql("DELETE FROM cart WHERE quantity <= 0 AND menu_item_id=?", [
-          menu_item_id,
+          menuItemId,
         ]);
       },
-      (err) => console.log(err),
+      (error) => console.log("decrease qty error", error),
       () => fetchCart()
     );
   };
 
-  const resolveImageForRow = (item) => {
-    if (!item) return imageMap.food1;
-    const dbPath = (item.image_path || item.image_key || "").trim();
-    if (dbPath) {
-      if (/^(https?:|file:|data:)/i.test(dbPath)) return { uri: dbPath };
-      if (imageMap[dbPath]) return imageMap[dbPath];
-      const key = dbPath.replace(/\.(png|jpg|jpeg|webp)$/i, "");
-      if (imageMap[key]) return imageMap[key];
-    }
-    if (item.name && imageMap[item.name]) return imageMap[item.name];
-    return imageMap.food1;
-  };
-
-  const totalPrice = cartItems.reduce(
-    (sum, i) => sum + (i.price || 0) * (i.quantity || 1),
-    0
+  const subtotal = useMemo(
+    () =>
+      cartItems.reduce(
+        (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
+        0
+      ),
+    [cartItems]
   );
+
+  const discount = appliedPromo
+    ? Math.round(subtotal * VALID_PROMOS[appliedPromo])
+    : 0;
+  const deliveryFee = cartItems.length ? 120 : 0;
+  const totalPrice = subtotal + deliveryFee - discount;
 
   const handleCheckout = () => {
     if (isLoggedIn) {
       navigation.navigate("TrackOrder");
     } else {
-      navigation.navigate("Login");  
+      navigation.navigate("Login");
     }
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backArrow}>
-          <Text style={{ fontSize: 22, color: colors.text }}>←</Text>
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Cart</Text>
-        <View style={{ width: 40 }} />
-      </View>
+  const applyPromoCode = () => {
+    const normalized = promoCode.trim().toUpperCase();
 
-      {cartItems.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: colors.text }]}>Your cart is empty</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={cartItems}
-          keyExtractor={(item) => item.menu_item_id.toString()}
-          contentContainerStyle={{ paddingBottom: 120 }}
-          renderItem={({ item }) => (
-            <View style={[styles.itemRow, { backgroundColor: colors.card }]}>
-              <Image source={resolveImageForRow(item)} style={styles.itemImage} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.itemPrice, { color: colors.text }]}>Rs. {item.price}</Text>
-                <View style={styles.qtyRow}>
-                  <TouchableOpacity
-                    style={[styles.qtyBtn, { borderColor: colors.border }]}
-                    onPress={() => decreaseQty(item.menu_item_id)}
-                  >
-                    <Text style={[styles.qtyText, { color: colors.text }]}>−</Text>
-                  </TouchableOpacity>
-                  <Text style={[styles.qtyValue, { color: colors.text }]}>{item.quantity || 1}</Text>
-                  <TouchableOpacity
-                    style={[styles.qtyBtn, { borderColor: colors.border }]}
-                    onPress={() => increaseQty(item.menu_item_id)}
-                  >
-                    <Text style={[styles.qtyText, { color: colors.text }]}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => removeItem(item.menu_item_id)}>
-                <Text style={[styles.removeBtn, { color: colors.danger }]}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-      )}
+    if (!normalized) {
+      Toast.show({
+        type: "error",
+        text1: "Enter a promo code first",
+      });
+      return;
+    }
 
-      {cartItems.length > 0 && (
-        <View style={[styles.checkoutCard, { backgroundColor: colors.secondary }]}>
-          <Text style={[styles.totalText, { color: colors.text }]}>Total: Rs. {totalPrice}</Text>
-          <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: colors.primary }]} onPress={handleCheckout}>
-            <Text style={styles.checkoutText}>Checkout</Text>
+    if (!VALID_PROMOS[normalized]) {
+      Toast.show({
+        type: "error",
+        text1: "Promo code not valid",
+        text2: "Try SAVE10 or FOOD5.",
+      });
+      return;
+    }
+
+    setAppliedPromo(normalized);
+    Toast.show({
+      type: "success",
+      text1: "Promo applied",
+      text2: `${normalized} is now active.`,
+    });
+  };
+
+  const renderCartItem = ({ item }) => (
+    <View
+      style={[
+        styles.itemRow,
+        createShadow(colors.shadow, 10),
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.borderSoft,
+        },
+      ]}
+    >
+      <Image
+        source={resolveFoodImage(item.image_path || item.image_key || item.name)}
+        style={styles.itemImage}
+      />
+
+      <View style={styles.itemContent}>
+        <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
+        <Text style={[styles.itemMeta, { color: colors.textSecondary }]}>
+          Prepared fresh for checkout
+        </Text>
+        <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
+          Rs. {item.price}
+        </Text>
+
+        <View style={[styles.qtyRow, { backgroundColor: colors.badge }]}>
+          <TouchableOpacity onPress={() => decreaseQty(item.menu_item_id)} hitSlop={8}>
+            <AntDesign name="minus" size={16} color={colors.primaryStrong} />
+          </TouchableOpacity>
+          <Text style={[styles.qtyValue, { color: colors.text }]}>
+            {item.quantity || 1}
+          </Text>
+          <TouchableOpacity onPress={() => increaseQty(item.menu_item_id)} hitSlop={8}>
+            <AntDesign name="plus" size={16} color={colors.primaryStrong} />
           </TouchableOpacity>
         </View>
-      )}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.removeButton, { backgroundColor: colors.surfaceMuted }]}
+        onPress={() => removeItem(item.menu_item_id)}
+      >
+        <AntDesign name="delete" size={16} color={colors.danger} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <FlatList
+        data={cartItems}
+        keyExtractor={(item) => String(item.menu_item_id)}
+        renderItem={renderCartItem}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshCart}
+            tintColor={colors.primary}
+          />
+        }
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <>
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={[styles.headerButton, { backgroundColor: colors.surface }]}
+                onPress={() => navigation.goBack()}
+              >
+                <AntDesign name="arrow-left" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <View style={styles.headerContent}>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Your cart</Text>
+                <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+                  {cartItems.length
+                    ? `${cartItems.length} selected dishes ready for checkout`
+                    : "Add dishes to start building your order"}
+                </Text>
+              </View>
+            </View>
+
+            {cartItems.length ? (
+              <>
+                <View
+                  style={[
+                    styles.summaryStrip,
+                    createShadow(colors.shadow, 10),
+                    { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+                  ]}
+                >
+                  <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
+                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                      {cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+                    </Text>
+                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                      Items
+                    </Text>
+                  </View>
+                  <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
+                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                      Rs. {subtotal}
+                    </Text>
+                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                      Subtotal
+                    </Text>
+                  </View>
+                  <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
+                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                      {isLoggedIn ? "Express" : "Login"}
+                    </Text>
+                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                      Checkout
+                    </Text>
+                  </View>
+                </View>
+
+                <SectionHeader
+                  title="Promo code"
+                  subtitle="Optional frontend-only discount preview."
+                />
+                <View style={styles.promoRow}>
+                  <TextInput
+                    value={promoCode}
+                    onChangeText={setPromoCode}
+                    placeholder="Try SAVE10 or FOOD5"
+                    placeholderTextColor={colors.textSecondary}
+                    style={[
+                      styles.promoInput,
+                      {
+                        backgroundColor: colors.surface,
+                        color: colors.text,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    autoCapitalize="characters"
+                  />
+                  <TouchableOpacity
+                    style={[styles.applyButton, { backgroundColor: colors.primaryStrong }]}
+                    onPress={applyPromoCode}
+                  >
+                    <Text style={styles.applyButtonText}>Apply</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <SectionHeader
+                  title="Order items"
+                  subtitle="Adjust quantities before checkout."
+                />
+              </>
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            title="Your cart is empty"
+            message="Browse the menu and add a few dishes to see your summary here."
+            icon="shopping-cart"
+            actionLabel="Browse menu"
+            onActionPress={() => navigation.navigate("HomeStack")}
+          />
+        }
+        ListFooterComponent={
+          <View style={cartItems.length ? styles.footerLarge : styles.footerSmall} />
+        }
+      />
+
+      {cartItems.length ? (
+        <View
+          style={[
+            styles.checkoutCard,
+            createShadow(colors.shadow, 14),
+            { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+          ]}
+        >
+          <SectionHeader title="Payment summary" />
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+              Subtotal
+            </Text>
+            <Text style={[styles.summaryText, { color: colors.text }]}>Rs. {subtotal}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+              Delivery
+            </Text>
+            <Text style={[styles.summaryText, { color: colors.text }]}>
+              Rs. {deliveryFee}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+              Discount
+            </Text>
+            <Text style={[styles.summaryText, { color: colors.success }]}>
+              - Rs. {discount}
+            </Text>
+          </View>
+          <View style={[styles.summaryRow, styles.totalRow]}>
+            <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
+            <Text style={[styles.totalValue, { color: colors.text }]}>
+              Rs. {Math.max(totalPrice, 0)}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.checkoutButton, { backgroundColor: colors.primaryStrong }]}
+            onPress={handleCheckout}
+          >
+            <Text style={styles.checkoutButtonText}>
+              {isLoggedIn ? "Proceed to tracking" : "Login to checkout"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: layout.pagePadding,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    marginBottom: spacing.xxl,
   },
-  backArrow: { width: 40, justifyContent: "center", alignItems: "flex-start" },
-  headerTitle: { fontSize: 20, fontWeight: "700" },
-  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  emptyText: { fontSize: 18 },
-  itemRow: {
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  headerSubtitle: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+  },
+  summaryStrip: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    marginBottom: layout.sectionGap,
+  },
+  summaryBubble: {
+    flex: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    marginRight: spacing.sm,
+  },
+  summaryValue: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  summaryLabel: {
+    marginTop: spacing.xs,
+    fontSize: 12,
+  },
+  promoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 20,
-    marginVertical: 8,
-    padding: 12,
-    borderRadius: 12,
+    marginBottom: layout.sectionGap,
   },
-  itemImage: { width: 70, height: 70, borderRadius: 8 },
-  itemName: { fontSize: 16, fontWeight: "600" },
-  itemPrice: { fontSize: 14, marginTop: 4 },
-  qtyRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  promoInput: {
+    flex: 1,
+    height: 54,
     borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    marginRight: spacing.sm,
+    fontSize: 15,
+  },
+  applyButton: {
+    height: 54,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.md,
+    alignItems: "center",
     justifyContent: "center",
+  },
+  applyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  itemRow: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  itemImage: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.md,
+  },
+  itemContent: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  itemMeta: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+  },
+  itemPrice: {
+    marginTop: spacing.sm,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  qtyRow: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    height: 38,
+    flexDirection: "row",
     alignItems: "center",
   },
-  qtyText: { fontSize: 18, fontWeight: "600" },
-  qtyValue: { marginHorizontal: 12, fontSize: 16, fontWeight: "600" },
-  removeBtn: { fontWeight: "600" },
+  qtyValue: {
+    minWidth: 24,
+    textAlign: "center",
+    marginHorizontal: spacing.sm,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  removeButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   checkoutCard: {
     position: "absolute",
-    bottom: 10,
-    left: 20,
-    right: 20,
+    left: layout.pagePadding,
+    right: layout.pagePadding,
+    bottom: spacing.lg,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+  },
+  summaryRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    elevation: 3,
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
   },
-  totalText: { fontSize: 16, fontWeight: "600" },
-  checkoutBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+  summaryText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  checkoutText: { color: "#fff", fontWeight: "700" },
+  totalRow: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  totalLabel: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  totalValue: {
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  checkoutButton: {
+    minHeight: 54,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkoutButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  footerLarge: {
+    height: 196,
+  },
+  footerSmall: {
+    height: 48,
+  },
 });

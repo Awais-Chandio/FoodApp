@@ -1,23 +1,28 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  FlatList,
   StyleSheet,
   Text,
-  View,
   TouchableOpacity,
-  FlatList,
-  Alert,
+  View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { getAdminUsers, deleteAdminUser } from "../../database/dbs";
-import Toast from "react-native-toast-message"; 
+import AntDesign from "@react-native-vector-icons/ant-design";
+import Toast from "react-native-toast-message";
+import EmptyState from "../../components/ui/EmptyState";
+import SectionHeader from "../../components/ui/SectionHeader";
+import { useTheme } from "../../Context/ThemeProvider";
+import { createShadow, layout, radius, spacing } from "../../constants/designSystem";
+import { deleteAdminUser, getAdminUsers } from "../../database/dbs";
 
 const ManageUsers = () => {
   const navigation = useNavigation();
+  const { colors } = useTheme();
   const [users, setUsers] = useState([]);
 
   const loadUsers = () => {
     getAdminUsers((fetchedUsers) => {
-      console.log("Loaded users:", fetchedUsers);
       setUsers(fetchedUsers || []);
     });
   };
@@ -31,11 +36,9 @@ const ManageUsers = () => {
         onPress: () => {
           deleteAdminUser(id, () => {
             loadUsers();
-
-           
             Toast.show({
               type: "success",
-              text1: "Deleted!",
+              text1: "Deleted",
               text2: "User has been removed.",
             });
           });
@@ -49,70 +52,87 @@ const ManageUsers = () => {
     return unsubscribe;
   }, [navigation]);
 
-  const renderUser = ({ item }) => {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.name}>
-          {item.first_name} {item.last_name}
-        </Text>
+  const renderUser = ({ item }) => (
+    <View
+      style={[
+        styles.card,
+        createShadow(colors.shadow, 10),
+        { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+      ]}
+    >
+      <Text style={[styles.name, { color: colors.text }]}>
+        {item.first_name} {item.last_name}
+      </Text>
 
-        {Object.entries(item).map(([key, value]) => {
-          if (key === "id") return null;
-          return (
-            <Text key={key} style={styles.field}>
-              {key}: {Array.isArray(value) ? value.join(", ") : value}
-            </Text>
-          );
-        })}
+      {Object.entries(item).map(([key, value]) => {
+        if (key === "id") {
+          return null;
+        }
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.editBtn]}
-            onPress={() => navigation.navigate("Users", { user: item })}
-          >
-            <Text style={styles.actionText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.deleteBtn]}
-            onPress={() => handleDelete(item.id)}
-          >
-            <Text style={styles.actionText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+        return (
+          <Text key={key} style={[styles.field, { color: colors.textSecondary }]}>
+            {key}: {Array.isArray(value) ? value.join(", ") : value}
+          </Text>
+        );
+      })}
+
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: colors.badge }]}
+          onPress={() => navigation.navigate("Users", { user: item })}
+        >
+          <AntDesign name="edit" size={15} color={colors.text} />
+          <Text style={[styles.actionText, { color: colors.text }]}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: colors.surfaceMuted }]}
+          onPress={() => handleDelete(item.id)}
+        >
+          <AntDesign name="delete" size={15} color={colors.danger} />
+          <Text style={[styles.deleteText, { color: colors.danger }]}>Delete</Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-     
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Manage Users</Text>
-
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate("Users")}
-        >
-          <Text style={styles.addButtonText}>+ Add User</Text>
-        </TouchableOpacity>
-      </View>
-
-      
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={users}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderUser}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={
+          <>
+            <View style={styles.topRow}>
+              <TouchableOpacity
+                style={[styles.iconButton, { backgroundColor: colors.surface }]}
+                onPress={() => navigation.goBack()}
+              >
+                <AntDesign name="arrow-left" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
+                onPress={() => navigation.navigate("Users")}
+              >
+                <Text style={styles.addButtonText}>Add user</Text>
+              </TouchableOpacity>
+            </View>
+            <SectionHeader
+              title="Manage users"
+              subtitle="Review and maintain saved admin-side user records."
+            />
+          </>
+        }
         ListEmptyComponent={
-          <Text style={{ textAlign: "center", marginTop: 20 }}>
-            No users found
-          </Text>
+          <EmptyState
+            title="No users found"
+            message="Add a new user to start populating this management list."
+            icon="team"
+            actionLabel="Add user"
+            onActionPress={() => navigation.navigate("Users")}
+          />
         }
       />
     </View>
@@ -122,60 +142,75 @@ const ManageUsers = () => {
 export default ManageUsers;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", marginTop: 20 },
-  header: {
+  container: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: layout.pagePadding,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.huge,
+  },
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#f9f9f9",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    marginBottom: spacing.lg,
   },
-  backButton: {
-    padding: 6,
-    borderRadius: 10,
-    backgroundColor: "#fffcfcff",
-    elevation: 1,
-  },
-  backArrow: { fontSize: 22, color: "#000" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1f1e1e",
-    flex: 1,
-    textAlign: "center",
-    marginRight: 40,
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   addButton: {
-    backgroundColor: "#FFD700",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    elevation: 2,
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  addButtonText: { fontSize: 14, fontWeight: "600", color: "#000" },
+  addButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
   card: {
-    backgroundColor: "#f1f1f1",
-    margin: 10,
-    padding: 15,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
-  name: { fontSize: 16, fontWeight: "bold" },
-  field: { fontSize: 14, marginVertical: 2 },
+  name: {
+    fontSize: 17,
+    fontWeight: "800",
+    marginBottom: spacing.sm,
+  },
+  field: {
+    fontSize: 13,
+    marginTop: spacing.xs,
+  },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 10,
+    marginTop: spacing.lg,
   },
   actionBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginLeft: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginLeft: spacing.sm,
   },
-  editBtn: { backgroundColor: "#4CAF50" },
-  deleteBtn: { backgroundColor: "#E53935" },
-  actionText: { color: "#fff", fontWeight: "600" },
+  actionText: {
+    marginLeft: spacing.xs,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  deleteText: {
+    marginLeft: spacing.xs,
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });

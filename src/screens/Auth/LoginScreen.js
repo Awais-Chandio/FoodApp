@@ -1,130 +1,249 @@
-import React, { useState, useContext } from "react";
-import AntIcon from "react-native-vector-icons/AntDesign";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Dimensions } from "react-native";
+import React, { useState } from "react";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import AntDesign from "@react-native-vector-icons/ant-design";
+import Toast from "react-native-toast-message";
+import AppButton from "../../components/ui/AppButton";
+import { useTheme } from "../../Context/ThemeProvider";
+import { radius, spacing } from "../../constants/designSystem";
+import { appImages } from "../../constants/imageRegistry";
 import { loginUser } from "../../database/dbs";
-import { useAuth } from "../Auth/AuthContext";   
-import { ThemeContext } from "../../Context/ThemeProvider";
-
-const { width } = Dimensions.get("window");
+import { useAuth } from "./AuthContext";
 
 export default function LoginScreen({ navigation }) {
+  const { colors } = useTheme();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  const { login } = useAuth();   
-  const { colors } = useContext(ThemeContext);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = () => {
-    if (!email || !password) {
-      alert("Please enter both email and password");
+    if (!email.trim() || !password.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Missing information",
+        text2: "Please enter both email and password.",
+      });
       return;
     }
 
+    setSubmitting(true);
     loginUser(
-      email,
+      email.trim(),
       password,
       async (user) => {
-        if (user) {
-          await login(user);
-          if (user.role === "admin") {
-            alert("Welcome Admin!");
-            navigation.navigate("Tab");
-          } else {
-            alert("Login successful!");
-            navigation.navigate("Tab", { screen: "AddToCartScreen" });
-          }
+        setSubmitting(false);
+        if (!user) {
+          Toast.show({
+            type: "error",
+            text1: "Login failed",
+            text2: "Invalid email or password.",
+          });
+          return;
+        }
+
+        await login(user);
+        Toast.show({
+          type: "success",
+          text1: user.role === "admin" ? "Welcome back, admin" : "Login successful",
+        });
+
+        if (user.role === "admin") {
+          navigation.navigate("Tab");
         } else {
-          alert("Invalid email or password");
+          navigation.navigate("Tab", { screen: "AddToCartScreen" });
         }
       },
-      (err) => {
-        console.log("Login error:", err);
-        alert("Invalid email or password");
+      (error) => {
+        setSubmitting(false);
+        console.log("Login error:", error);
+        Toast.show({
+          type: "error",
+          text1: "Login failed",
+          text2: "Invalid email or password.",
+        });
       }
     );
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Image
-        source={require("../../assets/Group-118.png")}
-        style={styles.topImage}
-        resizeMode="cover"
-      />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}
+        >
+          <Image source={appImages.heroBackground} style={styles.topImage} />
 
-      <View style={{ flexDirection: "row", justifyContent: "center", marginVertical: 15 }}>
-        <Image
-          source={require("../../assets/Group-6.png")}
-          style={{ width: 125, height: 100, marginHorizontal: 10 }}
-          resizeMode="contain"
-        />
-      </View>
-
-      <Text style={{ textAlign: "center", color: colors.text, fontSize: 16, marginBottom: 10 }}>
-        or login with email
-      </Text>
-
-      <View style={styles.content}>
-        <Text style={{ alignSelf: "flex-start", marginBottom: 5, color: colors.subtext, fontSize: 14 }}>
-          Email:
-        </Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.input, color: colors.text, borderColor: colors.border }]}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          placeholderTextColor={colors.subtext + "99"}
-          keyboardType="email-address"
-        />
-
-        <Text style={{ alignSelf: "flex-start", marginBottom: 5, color: colors.subtext, fontSize: 14 }}>
-          Password:
-        </Text>
-        <View style={{ width: "100%", position: "relative" }}>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.input, color: colors.text, borderColor: colors.border }]}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Enter your password"
-            placeholderTextColor={colors.subtext + "99"}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity
-            style={{ position: "absolute", right: 15, top: 10 }}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <AntIcon
-              name={showPassword ? "eyeo" : "eye"}
-              size={20}
-              color={colors.text}
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Image
+              source={appImages.logo}
+              style={styles.logo}
+              resizeMode="contain"
             />
-          </TouchableOpacity>
-        </View>
+            <Text style={[styles.title, { color: colors.text }]}>Welcome back</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Sign in to continue your orders and checkout flow.
+            </Text>
 
-        <TouchableOpacity style={[styles.loginButton, { backgroundColor: colors.primary }]} onPress={handleLogin}>
-          <Text style={[styles.loginButtonText, { color: colors.background }]}>Sign in</Text>
-        </TouchableOpacity>
+            <Text style={[styles.label, { color: colors.text }]}>Email</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+            />
 
-        <View style={styles.registerRow}>
-          <Text style={[styles.registerText, { color: colors.subtext }]}>Don’t have an account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-            <Text style={[styles.registerLink, { color: colors.text }]}> Register</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+            <View
+              style={[
+                styles.passwordWrap,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry={!showPassword}
+                style={[styles.passwordInput, { color: colors.text }]}
+              />
+              <TouchableOpacity onPress={() => setShowPassword((current) => !current)}>
+                <AntDesign
+                  name={showPassword ? "eye" : "eye-invisible"}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <AppButton
+              label={submitting ? "Signing in..." : "Sign in"}
+              onPress={handleLogin}
+              disabled={submitting}
+              style={styles.cta}
+            />
+
+            <View style={styles.footerRow}>
+              <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+                Don&apos;t have an account?
+              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                <Text style={[styles.footerLink, { color: colors.primaryStrong }]}>
+                  {" "}
+                  Register
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "rgba(153,146,146,0.25)" },
-  topImage: { width: width, height: 250 },
-  content: { flex: 1, alignItems: "center", paddingHorizontal: 24, paddingTop: 20 },
-  input: { width: "100%", paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, marginBottom: 15, fontSize: 16, elevation: 2, borderWidth: 1 },
-  loginButton: { width: "100%", paddingVertical: 14, borderRadius: 8, alignItems: "center", marginTop: 10, elevation: 3 },
-  loginButtonText: { fontSize: 18, fontWeight: "bold" },
-  registerRow: { flexDirection: "row", marginTop: 20 },
-  registerText: { fontSize: 14 },
-  registerLink: { fontSize: 14, fontWeight: "bold" },
+  container: {
+    flex: 1,
+  },
+  content: {
+    paddingBottom: spacing.huge,
+  },
+  topImage: {
+    width: "100%",
+    height: 250,
+  },
+  card: {
+    marginTop: -28,
+    marginHorizontal: spacing.xl,
+    borderRadius: radius.xl,
+    padding: spacing.xxl,
+  },
+  logo: {
+    width: 112,
+    height: 86,
+    alignSelf: "center",
+    marginBottom: spacing.md,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  subtitle: {
+    marginTop: spacing.sm,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+    marginBottom: spacing.xxl,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: spacing.sm,
+  },
+  input: {
+    minHeight: 54,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing.lg,
+    fontSize: 15,
+    marginBottom: spacing.lg,
+  },
+  passwordWrap: {
+    minHeight: 54,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: spacing.md,
+  },
+  cta: {
+    marginTop: spacing.xl,
+  },
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: spacing.xl,
+  },
+  footerText: {
+    fontSize: 14,
+  },
+  footerLink: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
 });

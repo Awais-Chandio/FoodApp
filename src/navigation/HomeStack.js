@@ -7,16 +7,15 @@ import ManageItems from "../Admin/ManageItems";
 
 const Stack = createNativeStackNavigator();
 
-const HomeStack=()=> {
+const HomeStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      
       <Stack.Screen name="HomeScreen" component={HomeScreen} />
       <Stack.Screen name="Details" component={DetailsScreen} />
       <Stack.Screen name="MenuScreen" component={MenuScreen} />
       <Stack.Screen name="ManageItems" component={ManageItems} />
-      
     </Stack.Navigator>
   );
-}
-export default HomeStack
+};
+
+export default HomeStack;

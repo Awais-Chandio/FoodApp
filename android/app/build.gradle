@@ -309,6 +309,7 @@ dependencies {
 }
 
 project.ext.vectoricons = [
-    iconFontNames: [ 'Ionicons.ttf' ]
+    iconFontsDir: "../../node_modules/@react-native-vector-icons/ant-design/fonts",
+    iconFontNames: [ 'AntDesign.ttf' ]
 ]
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"

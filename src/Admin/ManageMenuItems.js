@@ -1,28 +1,31 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  StyleSheet,
   View,
 } from "react-native";
+import AntDesign from "@react-native-vector-icons/ant-design";
+import AppButton from "../components/ui/AppButton";
+import SectionHeader from "../components/ui/SectionHeader";
+import { useTheme } from "../Context/ThemeProvider";
+import { layout, radius, spacing } from "../constants/designSystem";
 import { insertMenuItem, updateMenuItem } from "../database/dbs";
-import { ThemeContext } from "../Context/ThemeProvider";   // 👈 import theme
 
 export default function ManageMenuItem({ navigation, route }) {
   const editingItem = route.params?.menuItem ?? null;
   const passedRestaurantId = route.params?.restaurantId ?? null;
   const restaurantId = editingItem?.restaurant_id ?? passedRestaurantId;
+  const { colors } = useTheme();
 
   const [name, setName] = useState(editingItem?.name || "");
   const [price, setPrice] = useState(
     editingItem?.price != null ? String(editingItem.price) : ""
   );
   const [imageKey, setImageKey] = useState(editingItem?.image_key || "");
-
-  const { colors } = useContext(ThemeContext);  
 
   const handleSave = () => {
     if (!name.trim() || !price.trim()) {
@@ -33,23 +36,22 @@ export default function ManageMenuItem({ navigation, route }) {
       Alert.alert("Validation", "Restaurant not specified");
       return;
     }
-    const priceVal = parseFloat(price);
-    if (isNaN(priceVal)) {
+    const priceValue = parseFloat(price);
+    if (Number.isNaN(priceValue)) {
       Alert.alert("Validation", "Price must be a number");
       return;
     }
 
     const keyOrUrl = imageKey.trim() || null;
-
     const onSuccess = () => navigation.goBack();
-    const onError = (err) =>
-      Alert.alert("Error", err?.message || "Database error");
+    const onError = (error) =>
+      Alert.alert("Error", error?.message || "Database error");
 
     if (editingItem) {
       updateMenuItem(
         editingItem.id,
         name.trim(),
-        priceVal,
+        priceValue,
         null,
         keyOrUrl,
         onSuccess,
@@ -59,7 +61,7 @@ export default function ManageMenuItem({ navigation, route }) {
       insertMenuItem(
         restaurantId,
         name.trim(),
-        priceVal,
+        priceValue,
         null,
         keyOrUrl,
         onSuccess,
@@ -69,104 +71,127 @@ export default function ManageMenuItem({ navigation, route }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-    
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => navigation.goBack()}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
       >
-        <Text style={[styles.backArrow, { color: colors.text }]}>←</Text>
-      </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.surface }]}
+            onPress={() => navigation.goBack()}
+          >
+            <AntDesign name="arrow-left" size={20} color={colors.text} />
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          {editingItem ? "Edit Menu Item" : "Add Menu Item"}
-        </Text>
-
-        <Text style={[styles.label, { color: colors.text }]}>Name *</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.input,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          value={name}
-          onChangeText={setName}
+        <SectionHeader
+          title={editingItem ? "Edit menu item" : "Add menu item"}
+          subtitle="Quick item changes without altering the current menu data flow."
         />
 
-        <Text style={[styles.label, { color: colors.text }]}>Price (Rs.) *</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.input,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-        />
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.label, { color: colors.text }]}>Name *</Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            value={name}
+            onChangeText={setName}
+          />
 
-        <Text style={[styles.label, { color: colors.text }]}>Image key or URL</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.input,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          value={imageKey}
-          onChangeText={setImageKey}
-          placeholder="food2 OR https://example.com/pic.jpg"
-          placeholderTextColor={colors.text + "99"}
-          autoCapitalize="none"
-        />
+          <Text style={[styles.label, { color: colors.text }]}>Price (Rs.) *</Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="numeric"
+          />
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveText}>{editingItem ? "Update" : "Add"}</Text>
-        </TouchableOpacity>
+          <Text style={[styles.label, { color: colors.text }]}>Image key or URL</Text>
+          <TextInput
+            style={[
+              styles.input,
+              styles.textArea,
+              {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            value={imageKey}
+            onChangeText={setImageKey}
+            placeholder="food2 or https://example.com/pic.jpg"
+            placeholderTextColor={colors.textSecondary}
+            autoCapitalize="none"
+            multiline
+          />
+
+          <AppButton
+            label={editingItem ? "Update item" : "Add item"}
+            onPress={handleSave}
+            style={styles.saveButton}
+          />
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16,marginTop:100 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 16 },
-  label: { marginTop: 12, fontSize: 14 },
-  input: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 6,
+  container: {
+    flex: 1,
   },
-  saveBtn: {
-    marginTop: 24,
-    backgroundColor: "#FF7F32",
-    paddingVertical: 12,
-    borderRadius: 8,
+  content: {
+    paddingHorizontal: layout.pagePadding,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.huge,
+  },
+  headerRow: {
+    marginBottom: spacing.lg,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
-    marginBottom: 40,
+    justifyContent: "center",
   },
-  saveText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-
-
-  backBtn: {
-    position: "absolute",
-    top: 15,
-    left: 15,
-    zIndex: 10,
-    padding: 5,
-
-    marginTop:10
+  card: {
+    borderRadius: radius.lg,
+    padding: spacing.xl,
   },
-  backArrow: { fontSize: 26, fontWeight: "bold" },
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+  },
+  input: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    fontSize: 15,
+  },
+  textArea: {
+    minHeight: 84,
+    textAlignVertical: "top",
+    paddingTop: spacing.md,
+  },
+  saveButton: {
+    marginTop: spacing.xxl,
+  },
 });

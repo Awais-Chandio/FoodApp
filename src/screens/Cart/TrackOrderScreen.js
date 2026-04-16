@@ -1,150 +1,281 @@
-import React, { useContext } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import React from "react";
+import {
+  Image,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import AntDesign from "@react-native-vector-icons/ant-design";
 import { useNavigation } from "@react-navigation/native";
-import { ThemeContext } from "../../Context/ThemeProvider";  
+import { useTheme } from "../../Context/ThemeProvider";
+import {
+  createShadow,
+  layout,
+  radius,
+  spacing,
+} from "../../constants/designSystem";
+import { appImages } from "../../constants/imageRegistry";
 
-const TrackOrderScreen = () => {
+const orderSteps = [
+  {
+    id: "confirmed",
+    title: "Order confirmed",
+    subtitle: "Your order has been received and queued for preparation.",
+    done: true,
+  },
+  {
+    id: "prepared",
+    title: "Order prepared",
+    subtitle: "The kitchen finished your meal and packed it securely.",
+    done: true,
+  },
+  {
+    id: "delivery",
+    title: "Delivery in progress",
+    subtitle: "Your rider is on the way with your order.",
+    done: false,
+  },
+];
+
+export default function TrackOrderScreen() {
   const navigation = useNavigation();
-  const { colors } = useContext(ThemeContext);   
+  const { colors } = useTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Text style={[styles.backArrow, { color: colors.text }]}>←</Text>
-      </TouchableOpacity>
-
-      
-      <Image
-        source={{
-          uri: "https://i.ibb.co/X7tV3RC/map-sample.png",
-        }}
-        style={styles.map}
-      />
-
-    
-      <View style={[styles.bottomSheet, { backgroundColor: colors.card }]}>
-    
-        <View style={styles.row}>
-          <Text style={[styles.timeIcon, { color: colors.text }]}></Text>
-          <Text style={[styles.deliveryTime, { color: colors.text }]}>
-            20 Min
-          </Text>
-        </View>
-
-       
-        <View style={styles.personBox}>
-          <Image
-            source={{
-              uri: "https://randomuser.me/api/portraits/men/41.jpg",
-            }}
-            style={styles.personImage}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.personName, { color: colors.text }]}>
-              George William
-            </Text>
-            <Text style={[styles.personRole, { color: colors.textSecondary }]}>
-              Delivery person
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.callButton}>
-            <Text style={{ color: "#fff", fontWeight: "bold" }}></Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ImageBackground
+          source={appImages.heroBackground}
+          style={styles.mapCard}
+          imageStyle={styles.mapImage}
+        >
+          <View style={styles.mapOverlay} />
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <AntDesign name="arrow-left" size={20} color={colors.text} />
           </TouchableOpacity>
+
+          <View style={styles.mapContent}>
+            <Text style={styles.mapLabel}>Estimated arrival</Text>
+            <Text style={styles.mapTime}>20 min</Text>
+            <Text style={styles.mapMeta}>Your order is moving through the final leg.</Text>
+          </View>
+        </ImageBackground>
+
+        <View style={styles.content}>
+          <View
+            style={[
+              styles.driverCard,
+              createShadow(colors.shadow, 12),
+              { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+            ]}
+          >
+            <Image
+              source={{ uri: "https://randomuser.me/api/portraits/men/41.jpg" }}
+              style={styles.driverImage}
+            />
+            <View style={styles.driverContent}>
+              <Text style={[styles.driverName, { color: colors.text }]}>
+                George William
+              </Text>
+              <Text style={[styles.driverMeta, { color: colors.textSecondary }]}>
+                Delivery partner
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.callButton, { backgroundColor: colors.primaryStrong }]}
+            >
+              <AntDesign name="phone" size={18} color={colors.white} />
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={[
+              styles.statusCard,
+              createShadow(colors.shadow, 12),
+              { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Delivery progress
+            </Text>
+
+            {orderSteps.map((step, index) => (
+              <View key={step.id} style={styles.stepRow}>
+                <View style={styles.stepIndicator}>
+                  <View
+                    style={[
+                      styles.stepDot,
+                      {
+                        backgroundColor: step.done
+                          ? colors.success
+                          : colors.primaryStrong,
+                      },
+                    ]}
+                  >
+                    <AntDesign
+                      name={step.done ? "check" : "clock-circle"}
+                      size={12}
+                      color={colors.white}
+                    />
+                  </View>
+                  {index < orderSteps.length - 1 ? (
+                    <View
+                      style={[
+                        styles.stepLine,
+                        { backgroundColor: colors.borderSoft },
+                      ]}
+                    />
+                  ) : null}
+                </View>
+
+                <View style={styles.stepContent}>
+                  <Text style={[styles.stepTitle, { color: colors.text }]}>
+                    {step.title}
+                  </Text>
+                  <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+                    {step.subtitle}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
-
-   
-        <View style={styles.statusBox}>
-          <View style={styles.statusRow}>
-            <Text style={[styles.checkIcon, { color: "green" }]}></Text>
-            <View>
-              <Text style={[styles.statusTitle, { color: colors.text }]}>
-                Order confirmed
-              </Text>
-              <Text style={[styles.statusSub, { color: colors.textSecondary }]}>
-                Your order has been Confirmed
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.statusRow}>
-            <Text style={[styles.checkIcon, { color: "green" }]}></Text>
-            <View>
-              <Text style={[styles.statusTitle, { color: colors.text }]}>
-                Order prepared
-              </Text>
-              <Text style={[styles.statusSub, { color: colors.textSecondary }]}>
-                Your order has been prepared
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.statusRow}>
-            <Text style={[styles.pendingIcon, { color: "red" }]}></Text>
-            <View>
-              <Text style={[styles.statusTitle, { color: colors.text }]}>
-                Delivery in progress
-              </Text>
-              <Text style={[styles.statusSub, { color: colors.textSecondary }]}>
-                Hang on! Your food is on the way
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
-  backBtn: {
-    position: "absolute",
-    top: 15,
-    left: 15,
-    zIndex: 10,
-    padding: 5,
-  },
-  backArrow: { fontSize: 26, fontWeight: "bold" },
-
-  map: {
-    width: "100%",
-    height: "50%",
-    resizeMode: "cover",
-  },
-
-  bottomSheet: {
+  container: {
     flex: 1,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 20,
   },
-
-  row: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
-  timeIcon: { fontSize: 22, marginRight: 8 },
-  deliveryTime: { fontSize: 18, fontWeight: "bold" },
-
-  personBox: {
+  mapCard: {
+    height: 320,
+    justifyContent: "space-between",
+  },
+  mapImage: {
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  mapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.xxxl,
+    marginLeft: layout.pagePadding,
+    backgroundColor: "rgba(255,255,255,0.92)",
+  },
+  mapContent: {
+    paddingHorizontal: layout.pagePadding,
+    paddingBottom: spacing.xxl,
+  },
+  mapLabel: {
+    color: "rgba(255,255,255,0.76)",
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  mapTime: {
+    color: "#FFFFFF",
+    fontSize: 34,
+    fontWeight: "900",
+    marginTop: spacing.sm,
+  },
+  mapMeta: {
+    color: "rgba(255,255,255,0.84)",
+    fontSize: 14,
+    marginTop: spacing.sm,
+  },
+  content: {
+    paddingHorizontal: layout.pagePadding,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.huge,
+  },
+  driverCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: layout.sectionGap,
   },
-  personImage: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
-  personName: { fontSize: 16, fontWeight: "bold" },
-  personRole: { fontSize: 13 },
+  driverImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+  },
+  driverContent: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  driverName: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  driverMeta: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+  },
   callButton: {
-    backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
-
-  statusBox: { marginTop: 10 },
-  statusRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 15 },
-  checkIcon: { fontSize: 20, marginRight: 10 },
-  pendingIcon: { fontSize: 20, marginRight: 10 },
-  statusTitle: { fontSize: 15, fontWeight: "bold" },
-  statusSub: { fontSize: 12 },
+  statusCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: spacing.lg,
+  },
+  stepRow: {
+    flexDirection: "row",
+  },
+  stepIndicator: {
+    alignItems: "center",
+    marginRight: spacing.md,
+  },
+  stepDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepLine: {
+    width: 2,
+    flex: 1,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  stepContent: {
+    flex: 1,
+    paddingBottom: spacing.xl,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  stepSubtitle: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+    lineHeight: 19,
+  },
 });
-
-export default TrackOrderScreen;

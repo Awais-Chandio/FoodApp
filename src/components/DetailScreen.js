@@ -1,178 +1,428 @@
-import React, { useState, useContext } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
   Image,
-  StyleSheet,
+  ImageBackground,
   ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ThemeContext } from "../Context/ThemeProvider"; // 👈 added
+import AntDesign from "@react-native-vector-icons/ant-design";
+import AppButton from "./ui/AppButton";
+import EmptyState from "./ui/EmptyState";
+import SectionHeader from "./ui/SectionHeader";
+import { useTheme } from "../Context/ThemeProvider";
+import {
+  createShadow,
+  layout,
+  radius,
+  spacing,
+} from "../constants/designSystem";
+import { resolveFoodImage, resolveRestaurantImage } from "../constants/imageRegistry";
 
-const imageMap = {
-  food1: require("../assets/food1.jpg"),
-  food2: require("../assets/food2.jpg"),
-  food3: require("../assets/food3.jpg"),
-  Westway: require("../assets/Westway.png"),
-  Fortune: require("../assets/Fortune.png"),
-  Seafood: require("../assets/Seafood.png"),
-  Moonland: require("../assets/Moonland.png"),
-  Starfish: require("../assets/Starfish.png"),
-  BlackNodles: require("../assets/BlackNodles.png"),
-};
+const previewFilters = [
+  { id: "all", label: "All" },
+  { id: "budget", label: "Budget" },
+  { id: "premium", label: "Premium" },
+];
+
+const fallbackItems = [
+  { id: "1", name: "Margherita Pizza", price: 180, image_key: "food3" },
+  { id: "2", name: "Veggie Supreme", price: 150, image_key: "food2" },
+];
 
 export default function DetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors } = useContext(ThemeContext); // 👈 get theme colors
+  const { colors } = useTheme();
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const restaurant = route?.params?.restaurant;
+  const menuPreview = restaurant?.menu_items?.length
+    ? restaurant.menu_items
+    : fallbackItems;
+  const filteredPreviewItems = useMemo(() => {
+    switch (activeFilter) {
+      case "budget":
+        return menuPreview.filter((item) => Number(item.price || 0) <= 180);
+      case "premium":
+        return menuPreview.filter((item) => Number(item.price || 0) > 180);
+      default:
+        return menuPreview;
+    }
+  }, [activeFilter, menuPreview]);
 
   if (!restaurant) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ textAlign: "center", marginTop: 50, fontSize: 18, color: colors.text }}>
-          No restaurant data available
-        </Text>
+        <EmptyState
+          title="Restaurant unavailable"
+          message="We couldn't load the selected restaurant. Please go back and try again."
+          icon="warning"
+        />
       </View>
     );
   }
 
-  const [activeFilter, setActiveFilter] = useState("Best Seller");
-
-  const imgSource =
-    restaurant.image_path
-      ? { uri: restaurant.image_path }
-      : imageMap[restaurant.image_key || restaurant.name] ||
-        require("../assets/food1.jpg");
-
-  const bestSellers = [
-    { id: "1", name: "Margherita Pizza", price: "$12", image: imageMap.food3 },
-    { id: "2", name: "Veggie Supreme", price: "$15", image: imageMap.food2 },
-  ];
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Image source={imgSource} style={styles.headerImage} />
-
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
+        <ImageBackground
+          source={resolveRestaurantImage(restaurant)}
+          style={styles.hero}
+          imageStyle={styles.heroImage}
         >
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
+          <View style={styles.heroOverlay} />
 
-        <View style={styles.infoContainer}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              {restaurant.name}
+          <TouchableOpacity style={styles.topButton} onPress={() => navigation.goBack()}>
+            <AntDesign name="arrow-left" size={20} color={colors.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={() => setIsFavorite((current) => !current)}
+          >
+            <AntDesign
+              name="heart"
+              size={18}
+              color={isFavorite ? colors.danger : colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <View style={styles.heroContent}>
+            {restaurant.offer ? (
+              <View style={[styles.offerPill, { backgroundColor: colors.primaryStrong }]}>
+                <Text style={styles.offerText}>{restaurant.offer}</Text>
+              </View>
+            ) : null}
+            <Text style={styles.heroTitle}>{restaurant.name}</Text>
+            <Text style={styles.heroSubtitle}>
+              Rich flavors, solid portions, and menu picks worth repeating.
             </Text>
-            <TouchableOpacity>
-              <Text style={styles.moreInfo}>More info</Text>
-            </TouchableOpacity>
           </View>
-          <Text style={[styles.details, { color: colors.text }]}>
-            ⭐ {restaurant.rating} • {restaurant.time}
-          </Text>
-          <Text style={[styles.description, { color: colors.text }]}>
-            Healthy eating means eating a variety of foods that give you the
-            nutrients you need to maintain your health, feel good, and have
-            energy.
-          </Text>
-        </View>
+        </ImageBackground>
 
-        <View style={styles.filterContainer}>
-          {["Best Seller", "Veg", "Non-Veg", "Beverages"].map((label) => (
-            <TouchableOpacity
-              key={label}
-              style={[
-                styles.filterBtn,
-                { borderColor: colors.border },
-                activeFilter === label && { backgroundColor: "#FF7000", borderColor: "#FF7000" },
-              ]}
-              onPress={() => setActiveFilter(label)}
-            >
-              <Text
+        <View style={styles.content}>
+          <View
+            style={[
+              styles.statsCard,
+              createShadow(colors.shadow, 14),
+              { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+            ]}
+          >
+            <View style={styles.statBlock}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {restaurant.rating || "4.6"}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Rating
+              </Text>
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: colors.borderSoft }]} />
+            <View style={styles.statBlock}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {restaurant.time || "20 min"}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Delivery
+              </Text>
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: colors.borderSoft }]} />
+            <View style={styles.statBlock}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {menuPreview.length}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Dishes
+              </Text>
+            </View>
+          </View>
+
+          <SectionHeader
+            title="About this place"
+            subtitle="A cleaner summary with stronger hierarchy and faster access to the menu."
+          />
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            Healthy food should still feel indulgent. This restaurant blends
+            fresh ingredients, thoughtful prep, and fast delivery into a simple
+            experience that feels easy to order from again.
+          </Text>
+
+          <View style={styles.actionRow}>
+            <AppButton
+              label="See full menu"
+              onPress={() =>
+                navigation.navigate("MenuScreen", { restaurant })
+              }
+              style={styles.primaryAction}
+            />
+            <AppButton
+              label="View cart"
+              variant="secondary"
+              onPress={() => navigation.navigate("AddToCartScreen")}
+              style={styles.secondaryAction}
+            />
+          </View>
+
+          <SectionHeader
+            title="Preview dishes"
+            subtitle="A quick look at the items customers usually notice first."
+          />
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {previewFilters.map((filter) => {
+              const isActive = activeFilter === filter.id;
+              return (
+                <TouchableOpacity
+                  key={filter.id}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: isActive ? colors.primaryStrong : colors.surface,
+                      borderColor: isActive ? colors.primaryStrong : colors.border,
+                    },
+                  ]}
+                  onPress={() => setActiveFilter(filter.id)}
+                >
+                  <Text
+                    style={[
+                      styles.filterLabel,
+                      { color: isActive ? colors.white : colors.text },
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {filteredPreviewItems.length ? (
+            filteredPreviewItems.map((item) => (
+              <View
+                key={String(item.id)}
                 style={[
-                  styles.filterText,
-                  { color: colors.text },
-                  activeFilter === label && styles.activeFilterText,
+                  styles.itemCard,
+                  createShadow(colors.shadow, 10),
+                  { backgroundColor: colors.surface, borderColor: colors.borderSoft },
                 ]}
               >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Image
+                  source={resolveFoodImage(item.image_path || item.image_key || item.name)}
+                  style={styles.itemImage}
+                />
+                <View style={styles.itemContent}>
+                  <Text style={[styles.itemName, { color: colors.text }]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.itemMeta, { color: colors.textSecondary }]}>
+                    Chef recommended
+                  </Text>
+                  <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
+                    Rs. {item.price || 0}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.inlineAdd, { backgroundColor: colors.badge }]}
+                  onPress={() => navigation.navigate("MenuScreen", { restaurant })}
+                >
+                  <AntDesign name="plus" size={16} color={colors.primaryStrong} />
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            <EmptyState
+              title="No dishes for this filter"
+              message="Switch to another preview filter or open the full menu."
+              icon="profile"
+              actionLabel="Open menu"
+              onActionPress={() => navigation.navigate("MenuScreen", { restaurant })}
+            />
+          )}
         </View>
-
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Best Seller</Text>
-        {bestSellers.map((item) => (
-          <View key={item.id} style={[styles.itemRow, { backgroundColor: colors.card }]}>
-            <Image source={item.image} style={styles.itemImage} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-              <Text style={[styles.itemSubtitle, { color: colors.text }]}>{item.price}</Text>
-            </View>
-            <TouchableOpacity style={[styles.addBtn, { borderColor: colors.text }]}>
-              <Text style={[styles.addBtnText, { color: colors.text }]}>+</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        <TouchableOpacity
-          style={styles.menuLinkRight}
-          onPress={() => navigation.navigate("MenuScreen")}
-        >
-          <Text style={styles.menuText}>See our menu</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerImage: {
-    width: "100%",
-    height: 240,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+  container: {
+    flex: 1,
   },
-  backBtn: {
+  hero: {
+    height: 332,
+    justifyContent: "space-between",
+  },
+  heroImage: {
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  topButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.xxxl,
+    marginLeft: spacing.xl,
+    backgroundColor: "rgba(255,255,255,0.92)",
+  },
+  favoriteButton: {
     position: "absolute",
-    top: 40,
-    left: 20,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 22,
-    padding: 8,
+    right: spacing.xl,
+    top: spacing.xxxl,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.92)",
   },
-  backArrow: { color: "#fff", fontSize: 22, fontWeight: "700" },
-
-  infoContainer: { paddingHorizontal: 20, paddingTop: 16 },
-  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "700" },
-  moreInfo: { color: "#f57c00", fontWeight: "600", fontSize: 14 },
-  details: { marginTop: 4, fontSize: 15 },
-  description: { marginTop: 12, fontSize: 15, lineHeight: 22 },
-
-  filterContainer: { flexDirection: "row", justifyContent: "space-evenly", marginTop: 24, marginBottom: 16, paddingHorizontal: 10 },
-  filterBtn: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  filterText: { fontSize: 14 },
-  activeFilterText: { color: "#fff", fontWeight: "600" },
-
-  sectionTitle: { fontSize: 20, fontWeight: "700", marginHorizontal: 20, marginTop: 10, marginBottom: 12 },
-
-  itemRow: { flexDirection: "row", alignItems: "center", marginHorizontal: 20, marginBottom: 14, padding: 14, borderRadius: 12 },
-  itemImage: { width: 70, height: 70, borderRadius: 8 },
-  itemName: { fontSize: 16, fontWeight: "600" },
-  itemSubtitle: { fontSize: 14, marginTop: 2 },
-  itemPrice: { fontSize: 16, fontWeight: "700", marginTop: 4 },
-
-  addBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: "center", alignItems: "center", backgroundColor: "transparent" },
-  addBtnText: { fontSize: 20, fontWeight: "700" },
-
-  menuLinkRight: { alignItems: "flex-end", marginHorizontal: 20, marginVertical: 20 },
-  menuText: { color: "#FF7000", fontWeight: "600", fontSize: 15 },
+  heroContent: {
+    paddingHorizontal: layout.pagePadding,
+    paddingBottom: spacing.xxl,
+  },
+  offerPill: {
+    alignSelf: "flex-start",
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  offerText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "800",
+    maxWidth: "80%",
+  },
+  heroSubtitle: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: spacing.sm,
+    maxWidth: "85%",
+  },
+  content: {
+    paddingHorizontal: layout.pagePadding,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.huge,
+  },
+  statsCard: {
+    marginTop: -54,
+    marginBottom: layout.sectionGap,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  statBlock: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  statLabel: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+  },
+  statDivider: {
+    width: 1,
+    height: 34,
+  },
+  description: {
+    fontSize: 15,
+    lineHeight: 24,
+    marginTop: -spacing.xs,
+    marginBottom: layout.sectionGap,
+  },
+  actionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: layout.sectionGap,
+  },
+  primaryAction: {
+    flexGrow: 1,
+    flexBasis: 160,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  secondaryAction: {
+    flexGrow: 1,
+    flexBasis: 160,
+    marginLeft: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  filterRow: {
+    paddingBottom: spacing.md,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 1,
+    marginRight: spacing.sm,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  itemCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  itemImage: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.md,
+  },
+  itemContent: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  itemMeta: {
+    fontSize: 13,
+    marginTop: spacing.xs,
+  },
+  itemPrice: {
+    marginTop: spacing.sm,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  inlineAdd: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

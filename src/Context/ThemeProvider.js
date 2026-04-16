@@ -1,10 +1,11 @@
-import React, { createContext, useState, useEffect,useContext } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { darkColors, lightColors } from "../constants/designSystem";
 
 export const ThemeContext = createContext({
   mode: "system",
-  theme: "light", 
+  theme: "light",
   colors: {},
   toggleTheme: () => {},
   setMode: () => {},
@@ -15,7 +16,7 @@ export const useTheme = () => useContext(ThemeContext);
 const STORAGE_KEY = "app_theme_mode";
 
 export const ThemeProvider = ({ children }) => {
-  const system = useColorScheme(); 
+  const system = useColorScheme();
   const [mode, setMode] = useState("system");
   const resolvedTheme = mode === "system" ? (system ?? "light") : mode;
 
@@ -61,36 +62,13 @@ export const ThemeProvider = ({ children }) => {
     await persistMode("system");
   };
 
-  const colors =
-    resolvedTheme === "light"
-      ? {
-          background: "#fff",
-          text: "#000",
-          card: "#f1f1f1",
-          input: "#fff",
-          subtext: "#555",  
-          border: "#ccc",
-          primary: "#FFD700",
-          secondary: "#4CAF50",
-          danger: "#E53935",
-        }
-      : {
-          background: "#121212",
-          text: "#fff",
-          card: "#1E1E1E",
-            subtext: "#aaa",
-          input: "#2A2A2A",
-          border: "#444",
-          primary: "#FFD700",
-          secondary: "#4CAF50",
-          danger: "#E53935",
-        };
+  const colors = resolvedTheme === "light" ? lightColors : darkColors;
 
   return (
     <ThemeContext.Provider
       value={{
-        mode, 
-        theme: resolvedTheme, 
+        mode,
+        theme: resolvedTheme,
         colors,
         toggleTheme,
         setMode,
