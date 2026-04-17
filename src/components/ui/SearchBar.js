@@ -38,7 +38,9 @@ export default function SearchBar({
         containerStyle,
       ]}
     >
-      <AntDesign name="search" size={18} color={colors.textSecondary} />
+      <View style={[styles.iconWrap, { backgroundColor: colors.badge }]}>
+        <AntDesign name="search1" size={17} color={colors.primaryStrong} />
+      </View>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -51,27 +53,46 @@ export default function SearchBar({
         returnKeyType="search"
       />
       {value ? (
-        <TouchableOpacity onPress={onClear} hitSlop={8}>
+        <TouchableOpacity style={styles.trailingButton} onPress={onClear} hitSlop={8}>
           <AntDesign name="close-circle" size={18} color={colors.muted} />
         </TouchableOpacity>
-      ) : null}
+      ) : (
+        <View style={[styles.trailingButton, { backgroundColor: colors.surfaceMuted }]}>
+          <AntDesign name="filter" size={14} color={colors.primaryStrong} />
+        </View>
+      )}
     </Wrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 56,
-    borderRadius: radius.md,
+    minHeight: 62,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     flexDirection: "row",
     alignItems: "center",
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   input: {
     flex: 1,
     marginLeft: spacing.md,
     fontSize: 15,
-    paddingVertical: spacing.md,
+    fontWeight: "600",
+    paddingVertical: spacing.md + 1,
+  },
+  trailingButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

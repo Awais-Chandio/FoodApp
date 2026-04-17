@@ -55,13 +55,13 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     marginRight: spacing.md,
   },
   image: {
-    height: 94,
+    height: 102,
     borderRadius: radius.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   line: {
     height: 12,

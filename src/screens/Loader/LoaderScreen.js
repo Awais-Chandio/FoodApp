@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import { useTheme } from "../../Context/ThemeProvider";
-import { spacing } from "../../constants/designSystem";
+import { createShadow, spacing } from "../../constants/designSystem";
 
 export default function LoaderScreen({ navigation }) {
   const { colors } = useTheme();
@@ -15,20 +16,27 @@ export default function LoaderScreen({ navigation }) {
   }, [navigation]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.logoCircle, { backgroundColor: colors.primaryStrong }]}>
+    <LinearGradient
+      colors={colors.surfaceGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+      <View style={[styles.glow, { backgroundColor: colors.glow }]} />
+      <LinearGradient
+        colors={colors.buttonGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.logoCircle, createShadow(colors.shadow, 18)]}
+      >
         <Text style={styles.logoText}>F</Text>
-      </View>
+      </LinearGradient>
       <Text style={[styles.title, { color: colors.text }]}>FoodApp</Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Clean ordering, faster choices, better food moments.
+        Bold food visuals, smoother checkout, and one consistent orange design language.
       </Text>
-      <ActivityIndicator
-        size="small"
-        color={colors.primaryStrong}
-        style={styles.loader}
-      />
-    </View>
+      <ActivityIndicator size="small" color={colors.primaryStrong} style={styles.loader} />
+    </LinearGradient>
   );
 }
 
@@ -38,6 +46,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xxl,
+  },
+  glow: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    opacity: 0.32,
   },
   logoCircle: {
     width: 88,
@@ -61,7 +76,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: "center",
     marginTop: spacing.sm,
-    maxWidth: 260,
+    maxWidth: 280,
   },
   loader: {
     marginTop: spacing.xxl,

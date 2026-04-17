@@ -1,28 +1,40 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
-import { radius, spacing } from "../../constants/designSystem";
+import { createShadow, radius, spacing } from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 
 export default function Onboarding3({ navigation }) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <LinearGradient
+      colors={colors.surfaceGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       <View style={styles.content}>
         <View style={[styles.badge, { backgroundColor: colors.badge }]}>
           <Text style={[styles.badgeText, { color: colors.primaryStrong }]}>
             Step 3 of 3
           </Text>
         </View>
-        <Image source={appImages.onboardingDelivery} style={styles.image} />
+        <LinearGradient
+          colors={colors.heroGradientAlt}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.imageWrap, createShadow(colors.shadow, 16)]}
+        >
+          <Image source={appImages.onboardingDelivery} style={styles.image} />
+        </LinearGradient>
         <Text style={[styles.title, { color: colors.text }]}>
           Track delivery with clearer progress
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Move from discovery to ordering to delivery with a more polished
-          front-end experience and unchanged core app behavior.
+          Move from discovery to ordering to delivery with the same polished orange visual language.
         </Text>
         <View style={styles.dots}>
           <View style={[styles.dot, { backgroundColor: colors.border }]} />
@@ -41,10 +53,9 @@ export default function Onboarding3({ navigation }) {
           label="Skip"
           variant="secondary"
           onPress={() => navigation.replace("Tab")}
-          style={styles.secondaryButton}
         />
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -69,6 +80,13 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: "800",
+  },
+  imageWrap: {
+    width: 288,
+    height: 288,
+    borderRadius: radius.xl,
+    alignItems: "center",
+    justifyContent: "center",
   },
   image: {
     width: 250,
@@ -106,8 +124,5 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     marginBottom: spacing.md,
-  },
-  secondaryButton: {
-    backgroundColor: "transparent",
   },
 });

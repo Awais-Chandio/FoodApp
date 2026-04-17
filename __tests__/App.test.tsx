@@ -11,10 +11,10 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../src/navigation/AppNavigator', () => {
-  const React = require('react');
+  const ReactLib = require('react');
   const {Text} = require('react-native');
   return function MockAppNavigator() {
-    return <Text>Mock Navigator</Text>;
+    return ReactLib.createElement(Text, null, 'Mock Navigator');
   };
 });
 
@@ -25,6 +25,14 @@ jest.mock('../src/database/dbs', () => ({
 jest.mock('react-native-toast-message', () => {
   return function MockToast() {
     return null;
+  };
+});
+
+jest.mock('react-native-linear-gradient', () => {
+  const ReactLib = require('react');
+  const {View} = require('react-native');
+  return function MockLinearGradient({children}: any) {
+    return ReactLib.createElement(View, null, children);
   };
 });
 

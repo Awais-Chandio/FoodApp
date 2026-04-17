@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../Context/ThemeProvider";
-import { spacing } from "../../constants/designSystem";
+import { radius, spacing } from "../../constants/designSystem";
 
 export default function SectionHeader({
   title,
@@ -22,7 +22,11 @@ export default function SectionHeader({
         ) : null}
       </View>
       {actionLabel ? (
-        <TouchableOpacity onPress={onActionPress} activeOpacity={0.75}>
+        <TouchableOpacity
+          onPress={onActionPress}
+          activeOpacity={0.82}
+          style={[styles.actionButton, { backgroundColor: colors.badge }]}
+        >
           <Text style={[styles.action, { color: colors.primaryStrong }]}>
             {actionLabel}
           </Text>
@@ -35,25 +39,31 @@ export default function SectionHeader({
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   titleWrap: {
     flex: 1,
     paddingRight: spacing.md,
   },
   title: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: "800",
     letterSpacing: 0.1,
   },
   subtitle: {
     marginTop: spacing.xs,
     fontSize: 13,
+    lineHeight: 19,
+  },
+  actionButton: {
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   action: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
   },
 });

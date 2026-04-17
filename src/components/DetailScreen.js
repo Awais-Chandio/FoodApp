@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppButton from "./ui/AppButton";
@@ -37,10 +39,12 @@ export default function DetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
   const [activeFilter, setActiveFilter] = useState("all");
   const [isFavorite, setIsFavorite] = useState(false);
 
   const restaurant = route?.params?.restaurant;
+  const heroHeight = Math.min(Math.max(width * 0.82, 304), 372);
   const menuPreview = restaurant?.menu_items?.length
     ? restaurant.menu_items
     : fallbackItems;
@@ -69,13 +73,21 @@ export default function DetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <ImageBackground
           source={resolveRestaurantImage(restaurant)}
-          style={styles.hero}
+          style={[styles.hero, { height: heroHeight }]}
           imageStyle={styles.heroImage}
         >
-          <View style={styles.heroOverlay} />
+          <LinearGradient
+            colors={["rgba(15,23,42,0.12)", "rgba(233,79,29,0.28)", "rgba(24,24,27,0.76)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.heroOverlay}
+          />
 
           <TouchableOpacity style={styles.topButton} onPress={() => navigation.goBack()}>
             <AntDesign name="arrow-left" size={20} color={colors.text} />
@@ -94,14 +106,26 @@ export default function DetailScreen() {
 
           <View style={styles.heroContent}>
             {restaurant.offer ? (
-              <View style={[styles.offerPill, { backgroundColor: colors.primaryStrong }]}>
-                <Text style={styles.offerText}>{restaurant.offer}</Text>
+              <View style={[styles.offerPill, { backgroundColor: colors.secondarySoft }]}>
+                <Text style={[styles.offerText, { color: colors.primaryDeep }]}>
+                  {restaurant.offer}
+                </Text>
               </View>
             ) : null}
             <Text style={styles.heroTitle}>{restaurant.name}</Text>
             <Text style={styles.heroSubtitle}>
               Rich flavors, solid portions, and menu picks worth repeating.
             </Text>
+            <View style={styles.heroChips}>
+              <View style={styles.heroChip}>
+                <AntDesign name="star" size={12} color={colors.white} />
+                <Text style={styles.heroChipText}>{restaurant.rating || "4.6"} rating</Text>
+              </View>
+              <View style={styles.heroChip}>
+                <AntDesign name="clockcircleo" size={12} color={colors.white} />
+                <Text style={styles.heroChipText}>{restaurant.time || "20 min"}</Text>
+              </View>
+            </View>
           </View>
         </ImageBackground>
 
@@ -230,10 +254,16 @@ export default function DetailScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.inlineAdd, { backgroundColor: colors.badge }]}
                   onPress={() => navigation.navigate("MenuScreen", { restaurant })}
                 >
-                  <AntDesign name="plus" size={16} color={colors.primaryStrong} />
+                  <LinearGradient
+                    colors={colors.buttonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.inlineAdd}
+                  >
+                    <AntDesign name="plus" size={16} color={colors.white} />
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             ))
@@ -256,8 +286,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: spacing.huge,
+  },
   hero: {
-    height: 332,
     justifyContent: "space-between",
   },
   heroImage: {
@@ -266,7 +298,6 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.28)",
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
   },
@@ -303,7 +334,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   offerText: {
-    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "800",
   },
@@ -320,17 +350,41 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     maxWidth: "85%",
   },
+  heroChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: spacing.lg,
+  },
+  heroChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  heroChipText: {
+    marginLeft: spacing.xs,
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   content: {
     paddingHorizontal: layout.pagePadding,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.huge,
   },
   statsCard: {
-    marginTop: -54,
+    marginTop: -48,
     marginBottom: layout.sectionGap,
     borderWidth: 1,
     borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
@@ -360,28 +414,30 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+    marginHorizontal: -6,
     marginBottom: layout.sectionGap,
   },
   primaryAction: {
     flexGrow: 1,
     flexBasis: 160,
-    marginRight: spacing.sm,
+    marginHorizontal: 6,
     marginBottom: spacing.sm,
   },
   secondaryAction: {
     flexGrow: 1,
     flexBasis: 160,
-    marginLeft: spacing.sm,
+    marginHorizontal: 6,
     marginBottom: spacing.sm,
   },
   filterRow: {
     paddingBottom: spacing.md,
+    paddingRight: spacing.xs,
   },
   filterChip: {
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 1,
+    paddingVertical: spacing.sm + 2,
     marginRight: spacing.sm,
   },
   filterLabel: {
@@ -391,14 +447,14 @@ const styles = StyleSheet.create({
   itemCard: {
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   itemImage: {
-    width: 88,
-    height: 88,
+    width: 92,
+    height: 92,
     borderRadius: radius.md,
   },
   itemContent: {
@@ -419,9 +475,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   inlineAdd: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
   },

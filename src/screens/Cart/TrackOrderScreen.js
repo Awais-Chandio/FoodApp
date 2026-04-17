@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -52,7 +53,12 @@ export default function TrackOrderScreen() {
           style={styles.mapCard}
           imageStyle={styles.mapImage}
         >
-          <View style={styles.mapOverlay} />
+          <LinearGradient
+            colors={colors.heroGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.mapOverlay}
+          />
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <AntDesign name="arrow-left" size={20} color={colors.text} />
           </TouchableOpacity>
@@ -85,9 +91,16 @@ export default function TrackOrderScreen() {
               </Text>
             </View>
             <TouchableOpacity
-              style={[styles.callButton, { backgroundColor: colors.primaryStrong }]}
+              style={styles.callButton}
             >
-              <AntDesign name="phone" size={18} color={colors.white} />
+              <LinearGradient
+                colors={colors.buttonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.callButtonGradient}
+              >
+                <AntDesign name="phone" size={18} color={colors.white} />
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
@@ -162,7 +175,6 @@ const styles = StyleSheet.create({
   },
   mapOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.28)",
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
   },
@@ -232,6 +244,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    overflow: "hidden",
+  },
+  callButtonGradient: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },

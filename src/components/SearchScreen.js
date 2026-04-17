@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import HomeHeader from "./HomeHeader";
 import EmptyState from "./ui/EmptyState";
@@ -137,7 +138,6 @@ export default function SearchScreen({ navigation }) {
             {item.name}
           </Text>
           <TouchableOpacity
-            style={[styles.menuButton, { backgroundColor: colors.badge }]}
             onPress={() =>
               navigation.navigate("HomeStack", {
                 screen: "MenuScreen",
@@ -145,17 +145,22 @@ export default function SearchScreen({ navigation }) {
               })
             }
           >
-            <Text style={[styles.menuButtonText, { color: colors.primaryStrong }]}>
-              Menu
-            </Text>
+            <LinearGradient
+              colors={colors.buttonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.menuButton}
+            >
+              <Text style={styles.menuButtonText}>Menu</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
         <Text style={[styles.resultMeta, { color: colors.textSecondary }]}>
           ⭐ {item.rating || "4.6"} • {item.time || "20 min"}
         </Text>
         {item.offer ? (
-          <View style={[styles.dealPill, { backgroundColor: colors.accent }]}>
-            <Text style={[styles.dealText, { color: colors.primaryStrong }]}>
+          <View style={[styles.dealPill, { backgroundColor: colors.accentSoft }]}>
+            <Text style={[styles.dealText, { color: colors.accent }]}>
               {item.offer}
             </Text>
           </View>
@@ -168,6 +173,7 @@ export default function SearchScreen({ navigation }) {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -185,10 +191,7 @@ export default function SearchScreen({ navigation }) {
         />
 
         <View style={styles.content}>
-          <SectionHeader
-            title="Filters"
-            subtitle="Sharpen your search in one tap."
-          />
+          <SectionHeader title="Filters" subtitle="Sharpen your search in one tap." />
 
           <ScrollView
             horizontal
@@ -265,7 +268,7 @@ export default function SearchScreen({ navigation }) {
                 <SkeletonCard
                   key={item}
                   width={null}
-                  height={136}
+                  height={142}
                   style={styles.searchSkeleton}
                 />
               ))}
@@ -299,19 +302,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: spacing.huge + spacing.lg,
+  },
   content: {
     paddingHorizontal: layout.pagePadding,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.huge,
   },
   filterRow: {
     paddingBottom: spacing.lg,
+    paddingRight: spacing.xs,
   },
   filterChip: {
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 1,
+    paddingVertical: spacing.sm + 2,
     marginRight: spacing.sm,
   },
   filterText: {
@@ -321,7 +328,7 @@ const styles = StyleSheet.create({
   recentRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: -spacing.sm,
+    marginTop: -spacing.xs,
     marginBottom: spacing.xxl,
   },
   recentChip: {
@@ -329,7 +336,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 1,
     marginRight: spacing.sm,
     marginTop: spacing.sm,
   },
@@ -344,20 +351,20 @@ const styles = StyleSheet.create({
   },
   resultCard: {
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     overflow: "hidden",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   resultImage: {
     width: "100%",
-    height: 160,
+    height: 182,
   },
   resultContent: {
-    padding: spacing.lg,
+    padding: spacing.xl,
   },
   rowBetween: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     flexWrap: "wrap",
   },
@@ -370,14 +377,16 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 1,
     marginTop: spacing.xs,
   },
   menuButtonText: {
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
+    color: "#FFFFFF",
+    letterSpacing: 0.4,
   },
   resultMeta: {
     marginTop: spacing.sm,
@@ -387,7 +396,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 1,
     marginTop: spacing.md,
   },
   dealText: {

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
@@ -229,10 +230,16 @@ export default function MenuScreen() {
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
             onPress={() => increaseQty(item)}
           >
-            <AntDesign name="plus" size={16} color={colors.white} />
+            <LinearGradient
+              colors={colors.buttonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.addButton}
+            >
+              <AntDesign name="plus" size={16} color={colors.white} />
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </View>
@@ -386,14 +393,19 @@ export default function MenuScreen() {
           styles.cartCard,
           createShadow(colors.shadow, 14),
           {
-            backgroundColor: totalItems ? colors.primaryStrong : colors.surface,
+            backgroundColor: colors.surface,
             borderColor: totalItems ? colors.primaryStrong : colors.borderSoft,
           },
         ]}
         onPress={() => navigation.navigate("AddToCartScreen")}
       >
         {totalItems ? (
-          <>
+          <LinearGradient
+            colors={colors.buttonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cartGradient}
+          >
             <View>
               <Text style={styles.cartTitle}>{totalItems} items selected</Text>
               <Text style={styles.cartSubtitle}>Ready for checkout</Text>
@@ -402,14 +414,14 @@ export default function MenuScreen() {
               <Text style={styles.cartPrice}>Rs. {totalPrice}</Text>
               <Text style={styles.cartLink}>View cart</Text>
             </View>
-          </>
+          </LinearGradient>
         ) : (
-          <>
+          <View style={styles.emptyCartState}>
             <Text style={[styles.emptyCartPrompt, { color: colors.text }]}>
               Select any item you want
             </Text>
             <AntDesign name="shopping-cart" size={20} color={colors.text} />
-          </>
+          </View>
         )}
       </TouchableOpacity>
     </View>
@@ -423,7 +435,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: layout.pagePadding,
     paddingTop: spacing.xxxl,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 168,
   },
   headerRow: {
     flexDirection: "row",
@@ -475,15 +487,18 @@ const styles = StyleSheet.create({
   },
   quickStatsRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     marginTop: spacing.md,
   },
   quickStat: {
     flex: 1,
+    minWidth: 96,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     alignItems: "center",
     marginRight: spacing.sm,
+    marginBottom: spacing.sm,
   },
   quickStatValue: {
     fontSize: 15,
@@ -503,7 +518,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 1,
+    paddingVertical: spacing.sm + 2,
     marginRight: spacing.sm,
     marginTop: spacing.sm,
   },
@@ -514,14 +529,14 @@ const styles = StyleSheet.create({
   itemCard: {
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   itemImage: {
-    width: 84,
-    height: 84,
+    width: 88,
+    height: 88,
     borderRadius: radius.md,
   },
   itemContent: {
@@ -579,9 +594,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: layout.pagePadding,
     right: layout.pagePadding,
-    bottom: spacing.lg,
+    bottom: 92,
     borderWidth: 1,
     borderRadius: radius.lg,
+    minHeight: 72,
+    overflow: "hidden",
+  },
+  cartGradient: {
     minHeight: 72,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
@@ -617,7 +636,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  emptyCartState: {
+    minHeight: 72,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   listFooter: {
-    height: 128,
+    height: 24,
   },
 });

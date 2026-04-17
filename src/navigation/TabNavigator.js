@@ -1,5 +1,7 @@
 import React from "react";
+import { StyleSheet, View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 
 import HomeStack from "../navigation/HomeStack";
@@ -11,6 +13,27 @@ import { createShadow, radius } from "../constants/designSystem";
 
 const Tab = createBottomTabNavigator();
 
+function TabBarIcon({ backgroundColor, color, name }) {
+  if (backgroundColor === "gradient") {
+    return (
+      <LinearGradient
+        colors={["#FF5A3C", "#FF8B3D"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.iconShell}
+      >
+        <AntDesign name={name} size={20} color={color} />
+      </LinearGradient>
+    );
+  }
+
+  return (
+    <View style={[styles.iconShell, { backgroundColor }]}>
+      <AntDesign name={name} size={20} color={color} />
+    </View>
+  );
+}
+
 export default function TabNavigator() {
   const { colors } = useTheme();
 
@@ -19,21 +42,24 @@ export default function TabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
+        tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: "600",
-          marginBottom: 6,
+          fontWeight: "700",
+          marginBottom: 4,
         },
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopLeftRadius: radius.xl,
           borderTopRightRadius: radius.xl,
-          height: 72,
-          paddingTop: 8,
-          paddingBottom: 8,
-          borderTopWidth: 0,
-          ...createShadow(colors.shadow, 20),
+          height: 78,
+          paddingTop: 10,
+          paddingBottom: 10,
+          borderTopWidth: 1,
+          borderTopColor: colors.borderSoft,
+          ...createShadow(colors.shadow, 18),
         },
+        tabBarItemStyle: styles.tabBarItem,
         tabBarIcon: ({ focused }) => {
           const iconMap = {
             HomeStack: "home",
@@ -43,10 +69,10 @@ export default function TabNavigator() {
           };
 
           return (
-            <AntDesign
+            <TabBarIcon
               name={iconMap[route.name]}
-              size={20}
-              color={focused ? colors.primaryStrong : colors.textSecondary}
+              backgroundColor={focused ? "gradient" : colors.badge}
+              color={focused ? colors.white : colors.textSecondary}
             />
           );
         },
@@ -69,3 +95,16 @@ export default function TabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBarItem: {
+    paddingTop: 4,
+  },
+  iconShell: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

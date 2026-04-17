@@ -1,12 +1,14 @@
 import React, { useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import { useTheme } from "../../Context/ThemeProvider";
 import { createShadow, radius, spacing } from "../../constants/designSystem";
 
 const variantStyles = {
   primary: (colors) => ({
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    gradientColors: colors.buttonGradient,
+    pressedGradientColors: colors.buttonGradientPressed,
+    borderColor: colors.primaryStrong,
     textColor: colors.white,
   }),
   secondary: (colors) => ({
@@ -16,13 +18,13 @@ const variantStyles = {
   }),
   outline: (colors) => ({
     backgroundColor: "transparent",
-    borderColor: colors.border,
-    textColor: colors.text,
+    borderColor: colors.primaryStrong,
+    textColor: colors.primaryStrong,
   }),
   ghost: (colors) => ({
-    backgroundColor: colors.badge,
-    borderColor: colors.badge,
-    textColor: colors.primaryStrong,
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentSoft,
+    textColor: colors.accent,
   }),
 };
 
@@ -43,61 +45,78 @@ export default function AppButton({
     Animated.spring(scale, {
       toValue: value,
       useNativeDriver: true,
-      speed: 30,
-      bounciness: 2,
+      speed: 24,
+      bounciness: 3,
     }).start();
   };
 
   return (
     <Pressable
       disabled={disabled}
-      onPressIn={() => animateTo(0.98)}
+      onPressIn={() => animateTo(0.97)}
       onPressOut={() => animateTo(1)}
       onPress={onPress}
-      style={({ pressed }) => [{ opacity: pressed || disabled ? 0.9 : 1 }]}
+      style={({ pressed }) => [{ opacity: disabled ? 0.62 : pressed ? 0.96 : 1 }]}
     >
       <Animated.View
         style={[
-          styles.button,
-          createShadow(colors.shadow, 10),
+          styles.buttonShell,
+          createShadow(colors.shadow, variant === "primary" ? 16 : 8),
           {
-            backgroundColor: resolvedVariant.backgroundColor,
+            backgroundColor: resolvedVariant.backgroundColor || "transparent",
             borderColor: resolvedVariant.borderColor,
             transform: [{ scale }],
           },
-          disabled ? styles.disabled : null,
           style,
         ]}
       >
-        <Text
-          style={[
-            styles.label,
-            { color: resolvedVariant.textColor },
-            textStyle,
-          ]}
-        >
-          {label}
-        </Text>
+        {resolvedVariant.gradientColors && !disabled ? (
+          <LinearGradient
+            colors={resolvedVariant.gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.gradientFill}
+          >
+            <Text style={[styles.label, { color: resolvedVariant.textColor }, textStyle]}>
+              {label}
+            </Text>
+          </LinearGradient>
+        ) : (
+          <View style={styles.flatFill}>
+            <Text style={[styles.label, { color: resolvedVariant.textColor }, textStyle]}>
+              {label}
+            </Text>
+          </View>
+        )}
       </Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    minHeight: 54,
-    borderRadius: radius.md,
+  buttonShell: {
+    minHeight: 58,
+    borderRadius: radius.lg,
     borderWidth: 1,
+    overflow: "hidden",
+  },
+  gradientFill: {
+    minHeight: 58,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flatFill: {
+    minHeight: 58,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
     fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-  disabled: {
-    opacity: 0.6,
+    fontWeight: "800",
+    letterSpacing: 0.35,
   },
 });

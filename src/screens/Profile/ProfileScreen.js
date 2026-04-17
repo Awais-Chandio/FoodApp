@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -59,37 +60,41 @@ export default function ProfileScreen({ route }) {
           style={[
             styles.heroCard,
             createShadow(colors.shadow, 14),
-            { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+            { borderColor: colors.borderSoft },
           ]}
         >
-          <View style={[styles.avatar, { backgroundColor: colors.badge }]}>
-            <Text style={[styles.avatarText, { color: colors.primaryStrong }]}>
-              {(displayName || "F").charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <Text style={[styles.profileName, { color: colors.text }]}>{displayName}</Text>
-          <Text style={[styles.profileMeta, { color: colors.textSecondary }]}>
-            {role === "admin"
-              ? "Admin controls and storefront management"
-              : "Customer profile, preferences, and app settings"}
-          </Text>
-
-          <View style={styles.heroActions}>
-            <View style={[styles.rolePill, { backgroundColor: colors.badge }]}>
-              <Text style={[styles.roleText, { color: colors.primaryStrong }]}>
-                {role.toUpperCase()}
-              </Text>
+          <LinearGradient
+            colors={colors.heroGradientAlt}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroGradient}
+          >
+            <View style={styles.heroTopRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {(displayName || "F").charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.rolePill}>
+                <Text style={styles.roleText}>{role.toUpperCase()}</Text>
+              </View>
             </View>
-            <TouchableOpacity
-              style={[styles.themeButton, { backgroundColor: colors.surfaceMuted }]}
-              onPress={toggleTheme}
-            >
-              <AntDesign name="bulb" size={16} color={colors.primaryStrong} />
-              <Text style={[styles.themeButtonText, { color: colors.text }]}>
-                {theme === "light" ? "Dark mode" : "Light mode"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={styles.profileName}>{displayName}</Text>
+            <Text style={styles.profileMeta}>
+              {role === "admin"
+                ? "Admin controls and storefront management"
+                : "Customer profile, preferences, and app settings"}
+            </Text>
+
+            <View style={styles.heroActions}>
+              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+                <AntDesign name="bulb" size={16} color={colors.white} />
+                <Text style={styles.themeButtonText}>
+                  {theme === "light" ? "Dark mode" : "Light mode"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
         </View>
 
         {role === "admin" ? (
@@ -228,9 +233,16 @@ const styles = StyleSheet.create({
   heroCard: {
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.xxl,
-    alignItems: "center",
+    overflow: "hidden",
     marginBottom: layout.sectionGap,
+  },
+  heroGradient: {
+    padding: spacing.xxl,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   avatar: {
     width: 76,
@@ -238,53 +250,55 @@ const styles = StyleSheet.create({
     borderRadius: 38,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
   avatarText: {
     fontSize: 30,
     fontWeight: "900",
+    color: "#FFFFFF",
   },
   profileName: {
     fontSize: 24,
     fontWeight: "800",
     marginTop: spacing.lg,
-    textAlign: "center",
+    color: "#FFFFFF",
   },
   profileMeta: {
     marginTop: spacing.sm,
     fontSize: 14,
     lineHeight: 21,
-    textAlign: "center",
+    color: "rgba(255,255,255,0.84)",
   },
   heroActions: {
     marginTop: spacing.lg,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
+    alignItems: "flex-start",
   },
   rolePill: {
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm + 1,
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
   roleText: {
     fontSize: 12,
     fontWeight: "800",
+    color: "#FFFFFF",
   },
   themeButton: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm + 1,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
   },
   themeButtonText: {
     marginLeft: spacing.xs,
     fontSize: 13,
     fontWeight: "700",
+    color: "#FFFFFF",
   },
   actionCard: {
     borderWidth: 1,
@@ -292,7 +306,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   actionContent: {
     flex: 1,
@@ -310,5 +324,6 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: spacing.lg,
+    marginBottom: spacing.xxl,
   },
 });

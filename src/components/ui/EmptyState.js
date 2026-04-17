@@ -57,28 +57,28 @@ export default function EmptyState({
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: spacing.xl,
+    marginHorizontal: spacing.sm,
     padding: spacing.xxl,
     borderRadius: radius.lg,
     borderWidth: 1,
     alignItems: "center",
   },
   iconWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 19,
+    fontWeight: "800",
     marginBottom: spacing.sm,
   },
   message: {
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
     textAlign: "center",
   },
   button: {

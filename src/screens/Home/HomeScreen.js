@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -13,8 +8,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
@@ -29,7 +26,10 @@ import {
   radius,
   spacing,
 } from "../../constants/designSystem";
-import { resolveRestaurantImage } from "../../constants/imageRegistry";
+import {
+  categoryAssetMap,
+  resolveRestaurantImage,
+} from "../../constants/imageRegistry";
 import {
   deleteRestaurant,
   fetchRestaurants,
@@ -39,9 +39,36 @@ import { useAuth } from "../Auth/AuthContext";
 
 const homeFilters = [
   { id: "all", label: "All" },
-  { id: "offers", label: "Offers" },
-  { id: "fast", label: "Fast delivery" },
+  { id: "offers", label: "Hot deals" },
+  { id: "fast", label: "Quick bites" },
   { id: "top", label: "Top rated" },
+];
+
+const discoveryCategories = [
+  {
+    id: "all",
+    label: "All meals",
+    subtitle: "Full storefront",
+    image: categoryAssetMap.all,
+  },
+  {
+    id: "offers",
+    label: "Deals",
+    subtitle: "Save on dinner",
+    image: categoryAssetMap.pizza,
+  },
+  {
+    id: "fast",
+    label: "Fast delivery",
+    subtitle: "In a rush",
+    image: categoryAssetMap.beverages,
+  },
+  {
+    id: "top",
+    label: "Top picks",
+    subtitle: "Loved nearby",
+    image: categoryAssetMap.asian,
+  },
 ];
 
 const getDeliveryMinutes = (value = "") => {
@@ -53,6 +80,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const { role } = useAuth();
+  const { width } = useWindowDimensions();
   const isAdmin = role === "admin";
   useCreateTables();
 
@@ -61,6 +89,9 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [favoriteIds, setFavoriteIds] = useState([]);
+
+  const cardWidth = Math.min(Math.max(width * 0.76, 248), 296);
+  const categoryWidth = Math.min(Math.max(width * 0.36, 134), 168);
 
   const loadRestaurants = useCallback(async () => {
     setLoading(true);
@@ -91,29 +122,24 @@ export default function HomeScreen() {
     }, [loadRestaurants])
   );
 
-  const applyFilter = useCallback((items) => {
-    switch (activeFilter) {
-      case "offers":
-        return items.filter((item) => item.offer);
-      case "fast":
-        return items.filter((item) => getDeliveryMinutes(item.time) <= 20);
-      case "top":
-        return items.filter((item) => Number(item.rating) >= 4.8);
-      default:
-        return items;
-    }
-  }, [activeFilter]);
+  const applyFilter = useCallback(
+    (items) => {
+      switch (activeFilter) {
+        case "offers":
+          return items.filter((item) => item.offer);
+        case "fast":
+          return items.filter((item) => getDeliveryMinutes(item.time) <= 20);
+        case "top":
+          return items.filter((item) => Number(item.rating) >= 4.8);
+        default:
+          return items;
+      }
+    },
+    [activeFilter]
+  );
 
   const filteredNearest = useMemo(() => applyFilter(nearest), [applyFilter, nearest]);
   const filteredPopular = useMemo(() => applyFilter(popular), [applyFilter, popular]);
-
-  const recommendedItems = useMemo(() => {
-    const allRestaurants = [...nearest, ...popular];
-    return allRestaurants
-      .filter((item, index, list) => list.findIndex((r) => r.id === item.id) === index)
-      .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
-      .slice(0, 3);
-  }, [nearest, popular]);
 
   const toggleFavorite = (restaurantId) => {
     setFavoriteIds((current) =>
@@ -124,35 +150,30 @@ export default function HomeScreen() {
   };
 
   const confirmDelete = (item) => {
-    Alert.alert(
-      "Delete Restaurant",
-      `Delete "${item.name}" from the app?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            if (!isAdmin) {
-              return;
-            }
-            deleteRestaurant(
-              item.id,
-              () => {
-                Toast.show({
-                  type: "success",
-                  text1: "Restaurant deleted",
-                  text2: `${item.name} was removed successfully.`,
-                });
-                loadRestaurants();
-              },
-              (error) =>
-                Alert.alert("Error", error?.message || "Could not delete")
-            );
-          },
+    Alert.alert("Delete Restaurant", `Delete "${item.name}" from the app?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          if (!isAdmin) {
+            return;
+          }
+          deleteRestaurant(
+            item.id,
+            () => {
+              Toast.show({
+                type: "success",
+                text1: "Restaurant deleted",
+                text2: `${item.name} was removed successfully.`,
+              });
+              loadRestaurants();
+            },
+            (error) => Alert.alert("Error", error?.message || "Could not delete")
+          );
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderRestaurantCard = ({ item }) => {
@@ -163,58 +184,79 @@ export default function HomeScreen() {
         activeOpacity={0.92}
         style={[
           styles.restaurantCard,
-          createShadow(colors.shadow, 12),
+          createShadow(colors.shadow, 14),
           {
             backgroundColor: colors.surface,
             borderColor: colors.borderSoft,
+            width: cardWidth,
           },
         ]}
         onPress={() => navigation.navigate("Details", { restaurant: item })}
       >
-        <View>
+        <View style={styles.imageWrap}>
           <Image source={resolveRestaurantImage(item)} style={styles.restaurantImage} />
-          <TouchableOpacity style={styles.favoriteButton} onPress={() => toggleFavorite(item.id)} hitSlop={8}>
+          <LinearGradient
+            colors={["transparent", "rgba(24,24,27,0.58)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.imageFade}
+          />
+          <TouchableOpacity
+            style={[styles.favoriteButton, { backgroundColor: colors.white }]}
+            onPress={() => toggleFavorite(item.id)}
+            hitSlop={8}
+          >
             <AntDesign
-              name="heart"
+              name={isFavorite ? "heart" : "hearto"}
               size={16}
               color={isFavorite ? colors.danger : colors.textSecondary}
             />
           </TouchableOpacity>
           {item.offer ? (
-            <View style={[styles.offerTag, { backgroundColor: colors.primaryStrong }]}>
-              <Text style={styles.offerText}>{item.offer}</Text>
+            <View style={[styles.offerTag, { backgroundColor: colors.secondarySoft }]}>
+              <Text style={[styles.offerText, { color: colors.primaryDeep }]}>
+                {item.offer}
+              </Text>
             </View>
           ) : null}
-        </View>
 
-        <View style={styles.cardBody}>
-          <View style={styles.rowBetween}>
-            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <View style={[styles.ratingPill, { backgroundColor: colors.badge }]}>
+          <View style={styles.imageMeta}>
+            <View style={styles.ratingPill}>
               <AntDesign name="star" size={12} color={colors.warning} />
               <Text style={[styles.ratingText, { color: colors.text }]}>
                 {item.rating || "4.5"}
               </Text>
             </View>
+            <Text style={styles.imageMetaText}>{item.time || "20 min"} delivery</Text>
           </View>
+        </View>
 
-          <Text
-            style={[styles.metaText, { color: colors.textSecondary }]}
-            numberOfLines={1}
-          >
-            {item.time || "20 min"} delivery
+        <View style={styles.cardBody}>
+          <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
+            {(item.menu_items || []).length || 0} menu items • Freshly prepared
           </Text>
 
-          <View style={styles.rowBetween}>
-            <Text style={[styles.menuCount, { color: colors.textSecondary }]}>
-              {(item.menu_items || []).length || 0} menu items
-            </Text>
-            <Text style={[styles.ctaText, { color: colors.primaryStrong }]}>
-              Explore
-            </Text>
-          </View>
+          <LinearGradient
+            colors={colors.surfaceGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardFooter}
+          >
+            <View>
+              <Text style={[styles.footerLabel, { color: colors.primaryStrong }]}>
+                View menu
+              </Text>
+              <Text style={[styles.footerMeta, { color: colors.textSecondary }]}>
+                Fast checkout and smart recommendations
+              </Text>
+            </View>
+            <View style={[styles.footerArrow, { backgroundColor: colors.badge }]}>
+              <AntDesign name="arrow-right" size={15} color={colors.primaryStrong} />
+            </View>
+          </LinearGradient>
         </View>
 
         {isAdmin ? (
@@ -244,7 +286,7 @@ export default function HomeScreen() {
   const renderLoadingRow = () => (
     <View style={styles.loadingRow}>
       {[1, 2, 3].map((item) => (
-        <SkeletonCard key={item} />
+        <SkeletonCard key={item} width={cardWidth} />
       ))}
     </View>
   );
@@ -254,7 +296,7 @@ export default function HomeScreen() {
     const emptyMessage =
       activeFilter === "all"
         ? "Restaurants will appear here as soon as they are available."
-        : "Try a different chip or clear the current filter.";
+        : "Try a different category or clear the current filter.";
 
     return (
       <View style={styles.section}>
@@ -281,6 +323,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -290,8 +333,8 @@ export default function HomeScreen() {
         }
       >
         <HomeHeader
-          title="Food that feels worth the wait"
-          subtitle="Clean ingredients, rich flavors, and restaurants worth repeating."
+          title="Food that looks as good as it tastes"
+          subtitle="Bold flavors, cleaner cards, and faster decisions from the first scroll."
           rightActionLabel={isAdmin ? "Add store" : undefined}
           onRightActionPress={
             isAdmin ? () => navigation.navigate("ManageItems") : undefined
@@ -303,8 +346,66 @@ export default function HomeScreen() {
 
         <View style={styles.content}>
           <SectionHeader
-            title="Browse smarter"
-            subtitle="Quick filters to reach the right meal faster."
+            title="Taste categories"
+            subtitle="Explore by mood, speed, and what feels worth ordering."
+          />
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesRow}
+          >
+            {discoveryCategories.map((item, index) => {
+              const isActive = activeFilter === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.9}
+                  onPress={() => setActiveFilter(item.id)}
+                  style={[
+                    styles.categoryCard,
+                    createShadow(colors.shadow, isActive ? 16 : 10),
+                    { width: categoryWidth, borderColor: colors.borderSoft },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={
+                      isActive
+                        ? colors.heroGradientAlt
+                        : index % 2 === 0
+                          ? colors.surfaceGradient
+                          : [colors.secondarySoft, colors.surface]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.categoryGradient}
+                  >
+                    <Image source={item.image} style={styles.categoryImage} />
+                    <Text
+                      style={[
+                        styles.categoryLabel,
+                        { color: isActive ? colors.white : colors.text },
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.categoryMeta,
+                        isActive ? styles.categoryMetaActive : { color: colors.textSecondary },
+                      ]}
+                    >
+                      {item.subtitle}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <SectionHeader
+            title="Smart filters"
+            subtitle="Quick shortcuts that keep the browsing flow lightweight."
           />
 
           <ScrollView
@@ -317,7 +418,7 @@ export default function HomeScreen() {
               return (
                 <TouchableOpacity
                   key={filter.id}
-                  activeOpacity={0.82}
+                  activeOpacity={0.86}
                   style={[
                     styles.filterChip,
                     {
@@ -340,65 +441,14 @@ export default function HomeScreen() {
             })}
           </ScrollView>
 
-          {recommendedItems.length ? (
-            <View
-              style={[
-                styles.recommendedBanner,
-                createShadow(colors.shadow, 12),
-                { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-              ]}
-            >
-              <View style={styles.rowBetween}>
-                <View>
-                  <Text style={[styles.bannerEyebrow, { color: colors.primaryStrong }]}>
-                    Recommended
-                  </Text>
-                  <Text style={[styles.bannerTitle, { color: colors.text }]}>
-                    Best rated right now
-                  </Text>
-                </View>
-                <View style={[styles.bannerBadge, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.bannerBadgeText, { color: colors.text }]}>
-                    {recommendedItems.length} picks
-                  </Text>
-                </View>
-              </View>
-
-              {recommendedItems.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  activeOpacity={0.84}
-                  style={[styles.recommendedItem, { borderTopColor: colors.borderSoft }]}
-                  onPress={() => navigation.navigate("Details", { restaurant: item })}
-                >
-                  <Image
-                    source={resolveRestaurantImage(item)}
-                    style={styles.recommendedImage}
-                  />
-                  <View style={styles.recommendedContent}>
-                    <Text style={[styles.recommendedName, { color: colors.text }]}>
-                      {item.name}
-                    </Text>
-                    <Text
-                      style={[styles.recommendedMeta, { color: colors.textSecondary }]}
-                    >
-                      {item.time || "20 min"} • ⭐ {item.rating || "4.5"}
-                    </Text>
-                  </View>
-                  <AntDesign name="arrow-right" size={18} color={colors.primaryStrong} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : null}
-
           {renderHorizontalSection(
-            "Nearest restaurants",
-            "Shorter delivery time, easier decisions.",
+            "Nearby favorites",
+            "Shorter delivery times with a more premium storefront feel.",
             filteredNearest
           )}
           {renderHorizontalSection(
-            "Popular picks",
-            "The places customers keep ordering from.",
+            "Popular right now",
+            "The places customers keep opening first.",
             filteredPopular
           )}
         </View>
@@ -411,75 +461,60 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: spacing.huge + spacing.lg,
+  },
   content: {
     paddingHorizontal: layout.pagePadding,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.xl + spacing.sm,
     paddingBottom: spacing.huge,
   },
+  categoriesRow: {
+    paddingBottom: spacing.xl,
+    paddingRight: spacing.xs,
+  },
+  categoryCard: {
+    marginRight: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  categoryGradient: {
+    padding: spacing.lg,
+    minHeight: 168,
+    justifyContent: "space-between",
+  },
+  categoryImage: {
+    width: 54,
+    height: 54,
+    resizeMode: "contain",
+  },
+  categoryLabel: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  categoryMeta: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: spacing.xs,
+  },
+  categoryMetaActive: {
+    color: "rgba(255,255,255,0.84)",
+  },
   filtersRow: {
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xl,
+    paddingRight: spacing.xs,
   },
   filterChip: {
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 1,
+    paddingVertical: spacing.sm + 2,
     marginRight: spacing.sm,
   },
   filterLabel: {
     fontSize: 14,
     fontWeight: "700",
-  },
-  recommendedBanner: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    marginBottom: layout.sectionGap,
-  },
-  bannerEyebrow: {
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  bannerTitle: {
-    marginTop: spacing.xs,
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  bannerBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  bannerBadgeText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  recommendedItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: spacing.lg,
-    marginTop: spacing.lg,
-    borderTopWidth: 1,
-  },
-  recommendedImage: {
-    width: 58,
-    height: 58,
-    borderRadius: radius.md,
-  },
-  recommendedContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-    marginRight: spacing.sm,
-  },
-  recommendedName: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  recommendedMeta: {
-    marginTop: spacing.xs,
-    fontSize: 13,
   },
   section: {
     marginBottom: layout.sectionGap,
@@ -489,81 +524,112 @@ const styles = StyleSheet.create({
   },
   horizontalList: {
     paddingBottom: spacing.xs,
+    paddingRight: spacing.xs,
   },
   restaurantCard: {
-    width: 250,
     marginRight: spacing.md,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
     overflow: "hidden",
   },
+  imageWrap: {
+    position: "relative",
+  },
   restaurantImage: {
     width: "100%",
-    height: 156,
+    height: 190,
+  },
+  imageFade: {
+    ...StyleSheet.absoluteFillObject,
   },
   favoriteButton: {
     position: "absolute",
     top: spacing.md,
     right: spacing.md,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.92)",
   },
   offerTag: {
     position: "absolute",
     left: spacing.md,
-    bottom: spacing.md,
+    top: spacing.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
   },
   offerText: {
-    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "800",
   },
-  cardBody: {
-    padding: spacing.lg,
-  },
-  rowBetween: {
+  imageMeta: {
+    position: "absolute",
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  cardTitle: {
-    flex: 1,
-    marginRight: spacing.sm,
-    fontSize: 17,
-    fontWeight: "800",
+  imageMetaText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
   ratingPill: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.sm - 1,
+    backgroundColor: "rgba(255,255,255,0.92)",
   },
   ratingText: {
     marginLeft: 4,
     fontSize: 12,
     fontWeight: "700",
   },
+  cardBody: {
+    padding: spacing.lg,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
   metaText: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
     fontSize: 13,
+    lineHeight: 19,
   },
-  menuCount: {
-    marginTop: spacing.md,
-    fontSize: 13,
-    fontWeight: "600",
+  cardFooter: {
+    marginTop: spacing.lg,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  ctaText: {
-    marginTop: spacing.md,
+  footerLabel: {
     fontSize: 13,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  footerMeta: {
+    marginTop: spacing.xs,
+    fontSize: 12,
+    lineHeight: 18,
+    maxWidth: 170,
+  },
+  footerArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
   adminRow: {
     flexDirection: "row",
@@ -574,7 +640,7 @@ const styles = StyleSheet.create({
   adminAction: {
     flex: 1,
     marginRight: spacing.sm,
-    minHeight: 42,
+    minHeight: 44,
     borderRadius: radius.md,
     flexDirection: "row",
     alignItems: "center",

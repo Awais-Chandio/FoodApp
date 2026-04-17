@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -10,11 +11,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
-import { radius, spacing } from "../../constants/designSystem";
+import { createShadow, radius, spacing } from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 import { loginUser } from "../../database/dbs";
 import { useAuth } from "./AuthContext";
@@ -87,9 +89,34 @@ export default function LoginScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}
         >
-          <Image source={appImages.heroBackground} style={styles.topImage} />
+          <ImageBackground source={appImages.heroBackground} style={styles.topImage}>
+            <LinearGradient
+              colors={colors.heroGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.topOverlay}
+            />
+            <View style={styles.heroContent}>
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>Returning customer</Text>
+              </View>
+              <Text style={styles.heroTitle}>Fast checkout starts here</Text>
+              <Text style={styles.heroText}>
+                Sign in and continue with the same premium orange flow across the app.
+              </Text>
+            </View>
+          </ImageBackground>
 
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View
+            style={[
+              styles.card,
+              createShadow(colors.shadow, 18),
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderSoft,
+              },
+            ]}
+          >
             <Image
               source={appImages.logo}
               style={styles.logo}
@@ -179,11 +206,46 @@ const styles = StyleSheet.create({
   },
   topImage: {
     width: "100%",
-    height: 250,
+    height: 270,
+    justifyContent: "flex-end",
+  },
+  topOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  heroBadge: {
+    alignSelf: "flex-start",
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  heroBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "900",
+    maxWidth: 220,
+  },
+  heroText: {
+    color: "rgba(255,255,255,0.86)",
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: spacing.sm,
+    maxWidth: 280,
   },
   card: {
     marginTop: -28,
     marginHorizontal: spacing.xl,
+    borderWidth: 1,
     borderRadius: radius.xl,
     padding: spacing.xxl,
   },
@@ -191,7 +253,7 @@ const styles = StyleSheet.create({
     width: 112,
     height: 86,
     alignSelf: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: 28,
@@ -211,16 +273,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   input: {
-    minHeight: 54,
-    borderRadius: radius.md,
+    minHeight: 56,
+    borderRadius: radius.lg,
     borderWidth: 1,
     paddingHorizontal: spacing.lg,
     fontSize: 15,
     marginBottom: spacing.lg,
   },
   passwordWrap: {
-    minHeight: 54,
-    borderRadius: radius.md,
+    minHeight: 56,
+    borderRadius: radius.lg,
     borderWidth: 1,
     paddingHorizontal: spacing.lg,
     flexDirection: "row",

@@ -7,8 +7,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
@@ -34,6 +36,7 @@ export default function AddToCartScreen() {
   const navigation = useNavigation();
   const { isLoggedIn } = useAuth();
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
 
   const [cartItems, setCartItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,6 +129,7 @@ export default function AddToCartScreen() {
     : 0;
   const deliveryFee = cartItems.length ? 120 : 0;
   const totalPrice = subtotal + deliveryFee - discount;
+  const isCompact = width < 390;
 
   const handleCheckout = () => {
     if (isLoggedIn) {
@@ -249,6 +253,7 @@ export default function AddToCartScreen() {
                 <View
                   style={[
                     styles.summaryStrip,
+                    isCompact ? styles.summaryStripStack : null,
                     createShadow(colors.shadow, 10),
                     { backgroundColor: colors.surface, borderColor: colors.borderSoft },
                   ]}
@@ -283,7 +288,7 @@ export default function AddToCartScreen() {
                   title="Promo code"
                   subtitle="Optional frontend-only discount preview."
                 />
-                <View style={styles.promoRow}>
+                <View style={[styles.promoRow, isCompact ? styles.promoRowStack : null]}>
                   <TextInput
                     value={promoCode}
                     onChangeText={setPromoCode}
@@ -291,6 +296,7 @@ export default function AddToCartScreen() {
                     placeholderTextColor={colors.textSecondary}
                     style={[
                       styles.promoInput,
+                      isCompact ? styles.promoInputStack : null,
                       {
                         backgroundColor: colors.surface,
                         color: colors.text,
@@ -300,10 +306,20 @@ export default function AddToCartScreen() {
                     autoCapitalize="characters"
                   />
                   <TouchableOpacity
-                    style={[styles.applyButton, { backgroundColor: colors.primaryStrong }]}
+                    style={[
+                      styles.applyButton,
+                      isCompact ? styles.applyButtonStack : null,
+                    ]}
                     onPress={applyPromoCode}
                   >
-                    <Text style={styles.applyButtonText}>Apply</Text>
+                    <LinearGradient
+                      colors={colors.buttonGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.applyButtonGradient}
+                    >
+                      <Text style={styles.applyButtonText}>Apply</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
 
@@ -368,12 +384,18 @@ export default function AddToCartScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.checkoutButton, { backgroundColor: colors.primaryStrong }]}
             onPress={handleCheckout}
           >
-            <Text style={styles.checkoutButtonText}>
-              {isLoggedIn ? "Proceed to tracking" : "Login to checkout"}
-            </Text>
+            <LinearGradient
+              colors={colors.buttonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.checkoutButton}
+            >
+              <Text style={styles.checkoutButtonText}>
+                {isLoggedIn ? "Proceed to tracking" : "Login to checkout"}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -421,13 +443,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: layout.sectionGap,
   },
+  summaryStripStack: {
+    flexWrap: "wrap",
+  },
   summaryBubble: {
     flex: 1,
+    minWidth: 92,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     alignItems: "center",
     marginRight: spacing.sm,
+    marginBottom: spacing.sm,
   },
   summaryValue: {
     fontSize: 15,
@@ -442,19 +469,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: layout.sectionGap,
   },
+  promoRowStack: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
   promoInput: {
     flex: 1,
-    height: 54,
+    minHeight: 56,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     marginRight: spacing.sm,
     fontSize: 15,
   },
+  promoInputStack: {
+    marginRight: 0,
+    marginBottom: spacing.md,
+  },
   applyButton: {
-    height: 54,
+    minHeight: 56,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+  },
+  applyButtonStack: {
+    width: "100%",
+  },
+  applyButtonGradient: {
+    minHeight: 56,
     paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -466,10 +508,10 @@ const styles = StyleSheet.create({
   itemRow: {
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   itemImage: {
     width: 88,
@@ -520,7 +562,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: layout.pagePadding,
     right: layout.pagePadding,
-    bottom: spacing.lg,
+    bottom: 92,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.xl,
@@ -548,8 +590,8 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   checkoutButton: {
-    minHeight: 54,
-    borderRadius: radius.md,
+    minHeight: 56,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -559,9 +601,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   footerLarge: {
-    height: 196,
+    height: 284,
   },
   footerSmall: {
-    height: 48,
+    height: 72,
   },
 });
