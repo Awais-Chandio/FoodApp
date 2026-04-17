@@ -9,14 +9,14 @@ export default function AdminScreen({ navigation, route }) {
       <Text style={styles.welcome}>Welcome, {adminName} 👋</Text>
       <Text style={styles.subText}>Choose where you’d like to go:</Text>
 
-    
+
       <TouchableOpacity
         style={styles.button}
         onPress={() =>
           navigation.navigate("Tab", {
-            screen: "HomeStack",                
+            screen: "HomeStack",
             params: {
-              screen: "MenuScreen",           
+              screen: "MenuScreen",
             },
           })
         }
@@ -24,12 +24,12 @@ export default function AdminScreen({ navigation, route }) {
         <Text style={styles.buttonText}>Go to Menu Screen</Text>
       </TouchableOpacity>
 
-      
+
       <TouchableOpacity
         style={styles.button}
         onPress={() =>
           navigation.navigate("Tab", {
-            screen: "HomeStack",         
+            screen: "HomeStack",
             params: {
               screen: "HomeScreen",
             },
