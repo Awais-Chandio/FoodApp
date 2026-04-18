@@ -24,6 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: yarn
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -31,24 +32,31 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # ✅ Decode and create the keystore file from the GitHub secret
       - name: Decode Keystore
+        if: github.event_name == 'push'
         run: |
           mkdir -p android/app
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/my-release-key.keystore
+          printf '%s' "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/my-release-key.keystore
 
-      # ✅ Build the release APK (with signing credentials passed as environment variables)
+      - name: Verify Keystore
+        if: github.event_name == 'push'
+        run: |
+          keytool -list -v \
+            -keystore android/app/my-release-key.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}"
+
       - name: Build Release APK
+        if: github.event_name == 'push'
         run: |
           cd android
-          ./gradlew assembleRelease --stacktrace --info --warning-mode all
+          ./gradlew clean assembleRelease --stacktrace --info --warning-mode all
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      # ✅ Upload generated APK
       - name: Upload Release APK
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: app-release
