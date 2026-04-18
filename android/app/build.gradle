@@ -197,7 +197,7 @@ android {
         }
         release {
             // Read from GitHub Actions secrets (injected as env variables)
-            storeFile file("my-release-key.keystore") 
+            storeFile file("android/app/my-release-key.keystore") 
             storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
             keyAlias System.getenv("KEY_ALIAS") ?: ""
             keyPassword System.getenv("KEY_PASSWORD") ?: ""
