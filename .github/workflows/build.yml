@@ -37,14 +37,12 @@ jobs:
         run: |
           mkdir -p android/app
           printf '%s' "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/my-release-key.keystore
-
       - name: Verify Keystore
         if: github.event_name == 'push'
         run: |
           keytool -list -v \
             -keystore android/app/my-release-key.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}"
-
       - name: Build Release APK
         if: github.event_name == 'push'
         run: |
