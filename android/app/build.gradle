@@ -197,20 +197,21 @@ android {
         }
         release {
             // Read from GitHub Actions secrets (injected as env variables)
-            storeFile file("my-release-key.keystore") 
-            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias System.getenv("KEY_ALIAS") ?: ""
-            keyPassword System.getenv("KEY_PASSWORD") ?: ""
+            storeFile file("my-release-key.keystore")
+        // Ensure the correct keystore credentials are used from GitHub Secrets
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""  // Use KEYSTORE_PASSWORD secret
+            keyAlias System.getenv("KEY_ALIAS") ?: ""  // Use KEY_ALIAS secret
+            keyPassword System.getenv("KEY_PASSWORD") ?: ""  // Use KEY_PASSWORD secret
         }
     }
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+           signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.release
-            minifyEnabled enableProguardInReleaseBuilds
+            signingConfig signingConfigs.release  // Use the release signing configuration defined above
+            minifyEnabled false  // Change this to `true` if you want Proguard in the release build
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
