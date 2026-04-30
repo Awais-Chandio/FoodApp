@@ -68,27 +68,19 @@ Recommended folder structure:
    - Deliverable: user can authenticate and remain signed in after restart
 
 3. **Profile**
-   - Add profile fetching and update flow
+   - Add profile fetching, edit flow, and backend integration
    - Deliverable: user profile data can be viewed and updated
 
-4. **Centers and Services**
-   - Build center listing, detail screens, and service details
-   - Deliverable: users can browse centers and service offerings
+4. **Browse + Booking**
+   - Build center listing, details, and booking form
+   - Deliverable: users can discover centers, book appointments, and receive tokens
 
-5. **Booking Flow**
-   - Build booking form, token generation, and success state
-   - Deliverable: appointment creation persists to database
+5. **Bookings + Realtime**
+   - Add booking history, details, cancel flow, and live queue status
+   - Deliverable: users can review bookings and see realtime queue updates
 
-6. **Bookings Module**
-   - Add booking history, detail view, and cancel flow
-   - Deliverable: users can review and inspect bookings
-
-7. **Realtime Queue**
-   - Subscribe to queue updates, render live status changes
-   - Deliverable: live queue data updates without manual refresh
-
-8. **Portfolio Polish**
-   - Add search/filter, theming, avatar upload, cleanup, documentation
+6. **Polish**
+   - Add search/filter, theming, optional storage, cleanup, and docs
    - Deliverable: repository is clean, documented, and presentation-ready
 
 ## Acceptance criteria
@@ -103,8 +95,8 @@ Recommended folder structure:
 
 - Base RN project is setup and running
 - Navigation shell and authentication flow are implemented
-- Profile view exists, but full profile edit and Supabase backend integration are still in progress
-- This README is created to describe the planned QueueLess scope and next development steps
+- Currently in Phase 3: Profile flow is active, with profile fetch/update and backend integration in progress
+- Next step: complete profile editing, then move into centers and booking flows
 
 ## Run locally
 
