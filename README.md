@@ -1,97 +1,123 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+﻿# QueueLess
 
-# Getting Started
+QueueLess is a React Native mobile app designed to reduce waiting-line friction for clinics, banks, salons, and service centers. The app is scoped as a portfolio-ready solo project that demonstrates real backend integration, clean architecture, typed models, reusable UI, and production-style flows.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Project Summary
 
-## Step 1: Start Metro
+- **Project type:** React Native CLI mobile application
+- **Primary goal:** Smart queue and appointment manager for service centers
+- **Target audience:** consumers who want to book service appointments and avoid waiting in line
+- **Platform:** Android / iOS via React Native
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## What this document covers
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- Project objective, scope, and architecture
+- Functional and non-functional requirements
+- Phase-by-phase delivery plan
+- Acceptance criteria and portfolio positioning
+
+## Project goals
+
+- Build a realistic app that solves a visible real-world problem
+- Cover React Native fundamentals and strong app architecture
+- Use a real backend integration strategy with Supabase concepts
+- Create a portfolio-quality repository with strong interview value
+
+## Core features
+
+- Email/password sign up, login, logout, and session restore
+- Browse service centers, categories, hours, and available services
+- Book a token or appointment with selectable date/time
+- View current queue status and estimated wait time
+- Track active, completed, and cancelled bookings
+- Search and filter centers and bookings
+- Profile view with preferences and settings
+- Live queue updates via realtime backend changes
+
+## Tech stack
+
+- React Native CLI with TypeScript
+- React Navigation (stack + tabs)
+- Zustand for state management
+- React Hook Form + Zod for form validation
+- Supabase for Auth, Postgres, Realtime, and optional Storage
+- AsyncStorage for local preferences and session caching
+
+## Project architecture
+
+Recommended folder structure:
+
+- `src/components/` common UI, cards, badges, forms
+- `src/screens/` feature screens for auth, home, centers, bookings, profile, settings
+- `src/navigation/` root navigator, auth stack, tab navigator, nested flows
+- `src/services/` API and backend services for auth, profile, centers, bookings
+- `src/store/` Zustand stores for auth, booking, UI state
+- `src/hooks/` reusable hooks like `useAuth()` and `useRealtimeQueue`
+- `src/types/` shared models and request/response types
+- `src/utils/` validators, formatters, constants, helpers
+- `src/theme/` colors, spacing, typography, and design tokens
+
+## Phase plan
+
+1. **Foundation**
+   - Setup project, tooling, navigation, and UI shell
+   - Deliverable: runnable app shell and stable project structure
+
+2. **Auth**
+   - Add Supabase client wiring, login/signup, session restore
+   - Deliverable: user can authenticate and remain signed in after restart
+
+3. **Profile**
+   - Add profile fetching and update flow
+   - Deliverable: user profile data can be viewed and updated
+
+4. **Centers and Services**
+   - Build center listing, detail screens, and service details
+   - Deliverable: users can browse centers and service offerings
+
+5. **Booking Flow**
+   - Build booking form, token generation, and success state
+   - Deliverable: appointment creation persists to database
+
+6. **Bookings Module**
+   - Add booking history, detail view, and cancel flow
+   - Deliverable: users can review and inspect bookings
+
+7. **Realtime Queue**
+   - Subscribe to queue updates, render live status changes
+   - Deliverable: live queue data updates without manual refresh
+
+8. **Portfolio Polish**
+   - Add search/filter, theming, avatar upload, cleanup, documentation
+   - Deliverable: repository is clean, documented, and presentation-ready
+
+## Acceptance criteria
+
+- Major flows work on a real device or emulator
+- Screens handle loading, empty, success, and error states
+- User-specific data protection and secure access are evident
+- Reusable components and typed models are used consistently
+- The repo includes setup instructions and clear documentation
+
+## Current status
+
+- Base RN project is setup and running
+- Navigation shell and authentication flow are implemented
+- Profile view exists, but full profile edit and Supabase backend integration are still in progress
+- This README is created to describe the planned QueueLess scope and next development steps
+
+## Run locally
 
 ```sh
-# Using npm
+npm install
 npm start
-
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
 npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# or
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+> Note: Android and iOS setup depend on your local React Native development environment. Follow React Native official setup if you have not configured it.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Notes
 
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+This project is intentionally scoped for one developer to deliver end-to-end functionality in phases. The emphasis is on clean architecture, backend integration, real user flows, and interview-friendly implementation.
