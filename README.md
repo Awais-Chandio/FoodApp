@@ -1,102 +1,144 @@
-﻿# QueueLess
+﻿# FoodApp
 
-QueueLess is a React Native mobile app designed to reduce waiting-line friction for clinics, banks, salons, and service centers. The app is scoped as a portfolio-ready solo project that demonstrates real backend integration, clean architecture, typed models, reusable UI, and production-style flows.
+FoodApp is a React Native mobile application designed for food ordering and delivery. It allows users to browse restaurants, view menus, add items to cart, track orders, and manage their profiles. The app includes an admin panel for managing menu items and restaurants. This project demonstrates real-world mobile app development with Firebase integration, SQLite for local storage, and a clean, user-friendly interface.
 
 ## Project Summary
 
 - **Project type:** React Native CLI mobile application
-- **Primary goal:** Smart queue and appointment manager for service centers
-- **Target audience:** consumers who want to book service appointments and avoid waiting in line
+- **Primary goal:** Food ordering and delivery platform
+- **Target audience:** Consumers looking for convenient food ordering and delivery services
 - **Platform:** Android / iOS via React Native
 
-## What this document covers
+## Features
 
-- Project objective, scope, and architecture
-- Functional and non-functional requirements
-- Phase-by-phase delivery plan
-- Acceptance criteria and portfolio positioning
+### User Features
+- **Authentication:** Email/password sign up, login, logout, and session restore using Firebase Auth
+- **Onboarding:** Introductory screens for new users
+- **Home Screen:** Browse restaurants, categories (All meals, Deals, Fast delivery, Top picks), filters (All, Hot deals, Quick bites, Top rated)
+- **Menu Browsing:** View restaurant details, menus, and items
+- **Search:** Search for restaurants and menu items
+- **Cart Management:** Add items to cart, view cart, proceed to checkout
+- **Order Tracking:** Track order status and delivery
+- **Profile Management:** View and edit user profile, manage preferences
+- **Favorites:** Mark restaurants as favorites
 
-## Project goals
+### Admin Features
+- **Admin Panel:** Manage restaurants, menu items, and users
+- **Item Management:** Add, edit, delete menu items
+- **User Management:** View and manage registered users
 
-- Build a realistic app that solves a visible real-world problem
-- Cover React Native fundamentals and strong app architecture
-- Use a real backend integration strategy with Supabase concepts
-- Create a portfolio-quality repository with strong interview value
+### Additional Features
+- **Offline Support:** Local SQLite database for caching data
+- **Real-time Updates:** Firebase Firestore for real-time data synchronization
+- **Image Storage:** Firebase Storage for uploading and storing images
+- **Notifications:** Toast messages and snackbars for user feedback
+- **Theming:** Dark/light theme support
+- **Responsive Design:** Optimized for different screen sizes
 
-## Core features
+## Tech Stack
 
-- Email/password sign up, login, logout, and session restore
-- Browse service centers, categories, hours, and available services
-- Book a token or appointment with selectable date/time
-- View current queue status and estimated wait time
-- Track active, completed, and cancelled bookings
-- Search and filter centers and bookings
-- Profile view with preferences and settings
-- Live queue updates via realtime backend changes
+- **React Native:** 0.81.1 (CLI-based)
+- **Navigation:** React Navigation (Stack, Tabs, Native Stack)
+- **Authentication & Database:** Firebase (Auth, Firestore, Storage)
+- **Local Storage:** AsyncStorage and SQLite
+- **State Management:** React Context (ThemeProvider, AuthContext)
+- **UI Components:** Custom components with LinearGradient, Vector Icons
+- **Forms & Validation:** Basic form handling (can be extended with libraries like React Hook Form)
+- **Image Handling:** React Native Image Picker
+- **Animations:** React Native Reanimated
+- **Other Libraries:** DateTimePicker, Snackbar, Toast Message, Splash Screen, etc.
 
-## Tech stack
+## Installation
 
-- React Native CLI with TypeScript
-- React Navigation (stack + tabs)
-- Zustand for state management
-- React Hook Form + Zod for form validation
-- Supabase for Auth, Postgres, Realtime, and optional Storage
-- AsyncStorage for local preferences and session caching
+### Prerequisites
+- Node.js (version 18 or higher)
+- React Native development environment set up for Android/iOS
+- Android Studio (for Android) or Xcode (for iOS)
+- Firebase project configured with Auth, Firestore, and Storage enabled
 
-## Project architecture
+### Steps
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd FoodApp
+   ```
 
-Recommended folder structure:
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-- `src/components/` common UI, cards, badges, forms
-- `src/screens/` feature screens for auth, home, centers, bookings, profile, settings
-- `src/navigation/` root navigator, auth stack, tab navigator, nested flows
-- `src/services/` API and backend services for auth, profile, centers, bookings
-- `src/store/` Zustand stores for auth, booking, UI state
-- `src/hooks/` reusable hooks like `useAuth()` and `useRealtimeQueue`
-- `src/types/` shared models and request/response types
-- `src/utils/` validators, formatters, constants, helpers
-- `src/theme/` colors, spacing, typography, and design tokens
+3. Set up Firebase:
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+   - Enable Authentication, Firestore, and Storage
+   - Download the `google-services.json` file for Android and place it in `android/app/`
+   - For iOS, configure the Firebase SDK in Xcode
 
-## Phase plan
+4. Configure the app:
+   - Update Firebase configuration in the app (if needed, check Firebase config files)
 
-1. **Foundation**
-   - Setup project, tooling, navigation, and UI shell
-   - Deliverable: runnable app shell and stable project structure
+5. Run the app:
+   - For Android: `npm run android`
+   - For iOS: `npm run ios`
 
-2. **Auth**
-   - Add Supabase client wiring, login/signup, session restore
-   - Deliverable: user can authenticate and remain signed in after restart
+## Usage
 
-3. **Profile**
-   - Add profile fetching, edit flow, and backend integration
-   - Deliverable: user profile data can be viewed and updated
+1. **Launch the App:** Run the app on an emulator or device.
+2. **Onboarding:** New users will see onboarding screens.
+3. **Authentication:** Sign up or log in with email and password.
+4. **Browse:** Explore restaurants and menus on the home screen.
+5. **Order:** Add items to cart and place orders.
+6. **Track:** Monitor order status in the cart section.
+7. **Admin Access:** If logged in as admin, access the admin panel to manage items.
 
-4. **Browse + Booking**
-   - Build center listing, details, and booking form
-   - Deliverable: users can discover centers, book appointments, and receive tokens
+## Project Structure
 
-5. **Bookings + Realtime**
-   - Add booking history, details, cancel flow, and live queue status
-   - Deliverable: users can review bookings and see realtime queue updates
+```
+FoodApp/
+├── android/                 # Android-specific files
+├── ios/                     # iOS-specific files
+├── src/
+│   ├── Admin/               # Admin screens (AdminScreen, ManageItems, ManageMenuItems)
+│   ├── assets/              # Image assets and mappings
+│   ├── components/          # Reusable UI components (DetailScreen, HomeHeader, etc.)
+│   │   └── ui/              # UI-specific components (AppButton, EmptyState, etc.)
+│   ├── constants/           # Design system, image registry
+│   ├── Context/             # React Context providers (ThemeProvider)
+│   ├── database/            # SQLite database setup and queries
+│   ├── navigation/          # Navigation configurations (AppNavigator, TabNavigator, etc.)
+│   ├── screens/             # Feature screens
+│   │   ├── Auth/            # Authentication screens (Login, Register)
+│   │   ├── Cart/            # Cart and order tracking
+│   │   ├── Home/            # Home screen
+│   │   ├── Loader/          # Loading screen
+│   │   ├── Onboarding/      # Onboarding screens
+│   │   └── Profile/         # Profile and user management
+│   └── ...
+├── __tests__/               # Jest tests
+├── package.json             # Dependencies and scripts
+├── app.json                 # App configuration
+└── README.md                # This file
+```
 
-6. **Polish**
-   - Add search/filter, theming, optional storage, cleanup, and docs
-   - Deliverable: repository is clean, documented, and presentation-ready
+## Contributing
 
-## Acceptance criteria
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature-name`
+5. Submit a pull request.
 
-- Major flows work on a real device or emulator
-- Screens handle loading, empty, success, and error states
-- User-specific data protection and secure access are evident
-- Reusable components and typed models are used consistently
-- The repo includes setup instructions and clear documentation
+## License
 
-## Current status
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- Base RN project is setup and running
-- Navigation shell and authentication flow are implemented
-- Currently in Phase 3: Profile flow is active, with profile fetch/update and backend integration in progress
-- Next step: complete profile editing, then move into centers and booking flows
+## Current Status
+
+- Base React Native project is set up and running.
+- Authentication, navigation, and core screens are implemented.
+- Firebase integration for auth and database is in place.
+- Admin panel and user management are functional.
+- Ongoing: Enhancing UI/UX, adding more features like payment integration, and optimizing performance.
 
 ## Run locally
 
