@@ -6,7 +6,7 @@ export default function AdminScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcome}>Welcome, {adminName} 👋</Text>
+      <Text style={styles.welcome}>Welcome, {adminName} </Text>
       <Text style={styles.subText}>Choose where you’d like to go:</Text>
 
 
