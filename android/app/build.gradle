@@ -166,6 +166,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 
 react {
     autolinkLibrariesWithApp()
@@ -218,6 +219,17 @@ android {
 
 dependencies {
     implementation("com.facebook.react:react-android")
+     // 🔥 Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:34.12.0')
+
+    // 🔐 Auth
+    implementation 'com.google.firebase:firebase-auth'
+
+    // 🔔 Analytics (optional but recommended)
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // 🔔 FCM (notifications)
+    implementation 'com.google.firebase:firebase-messaging'
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
