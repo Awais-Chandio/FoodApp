@@ -238,6 +238,29 @@ dependencies {
     }
 }
 
+// Fix AndroidX/Support library conflicts
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.core:core:1.8.0'
+        force 'androidx.versionedparcelable:versionedparcelable:1.1.1'
+        eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'com.android.support') {
+                if (details.requested.name == 'appcompat-v7') {
+                    details.useTarget 'androidx.appcompat:appcompat:1.6.1'
+                } else if (details.requested.name == 'support-compat') {
+                    details.useTarget 'androidx.core:core:1.8.0'
+                } else {
+                    details.useVersion '1.0.0'
+                    details.because 'Force AndroidX instead of Support Library'
+                }
+            }
+        }
+    }
+    exclude group: 'com.android.support', module: 'support-compat'
+    exclude group: 'com.android.support', module: 'support-core-utils'
+    exclude group: 'com.android.support', module: 'support-core-ui'
+}
+
 project.ext.vectoricons = [
     iconFontNames: [ 'Ionicons.ttf' ]
 ]
