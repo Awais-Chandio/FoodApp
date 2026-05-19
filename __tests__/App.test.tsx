@@ -8,6 +8,10 @@ import App from '../App';
 
 jest.mock('@react-navigation/native', () => ({
   NavigationContainer: ({children}: any) => children,
+  createNavigationContainerRef: () => ({
+    isReady: jest.fn(() => true),
+    navigate: jest.fn(),
+  }),
 }));
 
 jest.mock('../src/navigation/AppNavigator', () => {
@@ -22,6 +26,11 @@ jest.mock('../src/database/dbs', () => ({
   useCreateTables: jest.fn(),
 }));
 
+jest.mock('../src/services/notificationService', () => ({
+  initialize: jest.fn(),
+  cleanup: jest.fn(),
+}));
+
 jest.mock('react-native-toast-message', () => {
   return function MockToast() {
     return null;
@@ -33,6 +42,14 @@ jest.mock('react-native-linear-gradient', () => {
   const {View} = require('react-native');
   return function MockLinearGradient({children}: any) {
     return ReactLib.createElement(View, null, children);
+  };
+});
+
+jest.mock('@react-native-vector-icons/ant-design', () => {
+  const ReactLib = require('react');
+  const {Text} = require('react-native');
+  return function MockAntDesign() {
+    return ReactLib.createElement(Text, null, 'icon');
   };
 });
 

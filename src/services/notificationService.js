@@ -1,21 +1,35 @@
-import messaging from '@react-native-firebase/messaging';
+import {
+  AuthorizationStatus,
+  getInitialNotification,
+  getMessaging,
+  getToken,
+  onMessage,
+  onNotificationOpenedApp,
+  onTokenRefresh,
+  requestPermission,
+} from '@react-native-firebase/messaging';
 import { Alert, PermissionsAndroid, Platform } from 'react-native';
+
+const messagingInstance = getMessaging();
 
 class NotificationService {
   constructor() {
     this.fcmToken = null;
     this.unsubscribeOnMessage = null;
     this.unsubscribeOnNotificationOpened = null;
+    this.unsubscribeOnTokenRefresh = null;
+    this.onForegroundMessage = null;
+    this.onNotificationOpen = null;
   }
 
   // Request notification permission for Android 13+
   async requestNotificationPermission() {
     try {
       if (Platform.OS === 'ios') {
-        const authStatus = await messaging().requestPermission();
+        const authStatus = await requestPermission(messagingInstance);
         const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+          authStatus === AuthorizationStatus.AUTHORIZED ||
+          authStatus === AuthorizationStatus.PROVISIONAL;
         
         console.log('iOS Permission status:', authStatus);
         return enabled;
@@ -47,7 +61,7 @@ class NotificationService {
       }
 
       // Get FCM token
-      const token = await messaging().getToken();
+      const token = await getToken(messagingInstance);
       this.fcmToken = token;
       
       console.log('FCM Token:', token);
@@ -62,8 +76,13 @@ class NotificationService {
 
   // Listen for foreground messages
   setupForegroundMessageHandler() {
-    this.unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+    this.unsubscribeOnMessage = onMessage(messagingInstance, async remoteMessage => {
       console.log('Foreground message received:', remoteMessage);
+
+      if (this.onForegroundMessage) {
+        this.onForegroundMessage(remoteMessage);
+        return;
+      }
       
       // Show alert for foreground notifications
       Alert.alert(
@@ -88,7 +107,7 @@ class NotificationService {
   // Handle notification when app is opened from killed state
   async getInitialNotification() {
     try {
-      const initialNotification = await messaging().getInitialNotification();
+      const initialNotification = await getInitialNotification(messagingInstance);
       
       if (initialNotification) {
         console.log('App opened from quit state via notification:', initialNotification);
@@ -96,6 +115,10 @@ class NotificationService {
         // Log which screen should open based on payload
         const screenToOpen = initialNotification.data?.screen || 'Home';
         console.log('Should open screen:', screenToOpen);
+
+        if (this.onNotificationOpen) {
+          this.onNotificationOpen(initialNotification, 'initial');
+        }
         
         return initialNotification;
       }
@@ -109,13 +132,18 @@ class NotificationService {
 
   // Handle notification when app is opened from background
   setupNotificationOpenedHandler() {
-    this.unsubscribeOnNotificationOpened = messaging().onNotificationOpenedApp(
+    this.unsubscribeOnNotificationOpened = onNotificationOpenedApp(
+      messagingInstance,
       remoteMessage => {
         console.log('Notification opened from background:', remoteMessage);
         
         // Log which screen should open based on payload
         const screenToOpen = remoteMessage.data?.screen || 'Home';
         console.log('Should open screen:', screenToOpen);
+
+        if (this.onNotificationOpen) {
+          this.onNotificationOpen(remoteMessage, 'background');
+        }
         
         console.log('Full notification data:', {
           messageId: remoteMessage.messageId,
@@ -128,9 +156,11 @@ class NotificationService {
   }
 
   // Initialize all notification services
-  async initialize() {
+  async initialize(handlers = {}) {
     try {
       console.log('Initializing Notification Service...');
+      this.onForegroundMessage = handlers.onForegroundMessage || null;
+      this.onNotificationOpen = handlers.onNotificationOpen || null;
       
       // Get FCM token
       await this.getFCMToken();
@@ -145,7 +175,7 @@ class NotificationService {
       await this.getInitialNotification();
       
       // Listen for token refresh
-      messaging().onTokenRefresh(token => {
+      this.unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, token => {
         console.log('FCM Token refreshed:', token);
         this.fcmToken = token;
       });
@@ -166,6 +196,11 @@ class NotificationService {
     if (this.unsubscribeOnNotificationOpened) {
       this.unsubscribeOnNotificationOpened();
       this.unsubscribeOnNotificationOpened = null;
+    }
+
+    if (this.unsubscribeOnTokenRefresh) {
+      this.unsubscribeOnTokenRefresh();
+      this.unsubscribeOnTokenRefresh = null;
     }
     
     console.log('Notification Service cleaned up');
