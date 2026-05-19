@@ -30,7 +30,7 @@ class NotificationService {
         const enabled =
           authStatus === AuthorizationStatus.AUTHORIZED ||
           authStatus === AuthorizationStatus.PROVISIONAL;
-        
+
         console.log('iOS Permission status:', authStatus);
         return enabled;
       } else {
@@ -63,10 +63,10 @@ class NotificationService {
       // Get FCM token
       const token = await getToken(messagingInstance);
       this.fcmToken = token;
-      
+
       console.log('FCM Token:', token);
       console.log('Token stored in service:', this.fcmToken);
-      
+
       return token;
     } catch (error) {
       console.error('Error getting FCM token:', error);
@@ -83,7 +83,7 @@ class NotificationService {
         this.onForegroundMessage(remoteMessage);
         return;
       }
-      
+
       // Show alert for foreground notifications
       Alert.alert(
         remoteMessage.notification?.title || 'New Notification',
@@ -92,7 +92,7 @@ class NotificationService {
           { text: 'OK' }
         ]
       );
-      
+
       // Log full payload
       console.log('Full notification payload:', {
         messageId: remoteMessage.messageId,
@@ -108,10 +108,10 @@ class NotificationService {
   async getInitialNotification() {
     try {
       const initialNotification = await getInitialNotification(messagingInstance);
-      
+
       if (initialNotification) {
         console.log('App opened from quit state via notification:', initialNotification);
-        
+
         // Log which screen should open based on payload
         const screenToOpen = initialNotification.data?.screen || 'Home';
         console.log('Should open screen:', screenToOpen);
@@ -119,10 +119,10 @@ class NotificationService {
         if (this.onNotificationOpen) {
           this.onNotificationOpen(initialNotification, 'initial');
         }
-        
+
         return initialNotification;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error getting initial notification:', error);
@@ -136,7 +136,7 @@ class NotificationService {
       messagingInstance,
       remoteMessage => {
         console.log('Notification opened from background:', remoteMessage);
-        
+
         // Log which screen should open based on payload
         const screenToOpen = remoteMessage.data?.screen || 'Home';
         console.log('Should open screen:', screenToOpen);
@@ -144,7 +144,7 @@ class NotificationService {
         if (this.onNotificationOpen) {
           this.onNotificationOpen(remoteMessage, 'background');
         }
-        
+
         console.log('Full notification data:', {
           messageId: remoteMessage.messageId,
           from: remoteMessage.from,
@@ -161,25 +161,25 @@ class NotificationService {
       console.log('Initializing Notification Service...');
       this.onForegroundMessage = handlers.onForegroundMessage || null;
       this.onNotificationOpen = handlers.onNotificationOpen || null;
-      
+
       // Get FCM token
       await this.getFCMToken();
-      
+
       // Setup foreground message handler
       this.setupForegroundMessageHandler();
-      
+
       // Setup notification opened handler
       this.setupNotificationOpenedHandler();
-      
+
       // Check for initial notification (app opened from killed state)
       await this.getInitialNotification();
-      
+
       // Listen for token refresh
       this.unsubscribeOnTokenRefresh = onTokenRefresh(messagingInstance, token => {
         console.log('FCM Token refreshed:', token);
         this.fcmToken = token;
       });
-      
+
       console.log('Notification Service initialized successfully');
     } catch (error) {
       console.error('Error initializing Notification Service:', error);
@@ -192,7 +192,7 @@ class NotificationService {
       this.unsubscribeOnMessage();
       this.unsubscribeOnMessage = null;
     }
-    
+
     if (this.unsubscribeOnNotificationOpened) {
       this.unsubscribeOnNotificationOpened();
       this.unsubscribeOnNotificationOpened = null;
@@ -202,7 +202,7 @@ class NotificationService {
       this.unsubscribeOnTokenRefresh();
       this.unsubscribeOnTokenRefresh = null;
     }
-    
+
     console.log('Notification Service cleaned up');
   }
 
