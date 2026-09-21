@@ -24,6 +24,7 @@ import {
   radius,
   spacing,
   typeScale,
+  withAlpha,
 } from "../../constants/designSystem";
 import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
 import * as menuRepo from "../../database/repositories/menuRepo";
@@ -110,18 +111,18 @@ export default function DetailScreen() {
           imageStyle={styles.heroImage}
         >
           <LinearGradient
-            colors={["rgba(15,23,42,0.12)", "rgba(233,79,29,0.28)", "rgba(24,24,27,0.76)"]}
+            colors={["transparent", withAlpha(colors.primaryDeep, 0.28), colors.scrimStrong]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0.8, y: 1 }}
             style={styles.heroOverlay}
           />
 
-          <TouchableOpacity style={styles.topButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={[styles.topButton, { backgroundColor: colors.imageChip }]} onPress={() => navigation.goBack()}>
             <AntDesign name="arrow-left" size={20} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.favoriteButton}
+            style={[styles.favoriteButton, { backgroundColor: colors.imageChip }]}
             onPress={() => toggleFavorite(restaurantId)}
             accessibilityRole="button"
             accessibilityLabel={favorite ? "Remove from favorites" : "Save to favorites"}
@@ -141,18 +142,18 @@ export default function DetailScreen() {
                 </AppText>
               </View>
             ) : null}
-            <AppText style={styles.heroTitle}>{restaurant.name}</AppText>
-            <AppText style={styles.heroSubtitle}>
+            <AppText style={[styles.heroTitle, { color: colors.onImage }]}>{restaurant.name}</AppText>
+            <AppText style={[styles.heroSubtitle, { color: colors.onImageMuted }]}>
               Rich flavors, solid portions, and menu picks worth repeating.
             </AppText>
             <View style={styles.heroChips}>
-              <View style={styles.heroChip}>
+              <View style={[styles.heroChip, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
                 <AntDesign name="star" size={12} color={colors.onImage} />
-                <AppText style={styles.heroChipText}>{restaurant.rating || "4.6"} rating</AppText>
+                <AppText style={[styles.heroChipText, { color: colors.onImage }]}>{restaurant.rating || "4.6"} rating</AppText>
               </View>
-              <View style={styles.heroChip}>
+              <View style={[styles.heroChip, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
                 <AntDesign name="clockcircleo" size={12} color={colors.onImage} />
-                <AppText style={styles.heroChipText}>{restaurant.time || "20 min"}</AppText>
+                <AppText style={[styles.heroChipText, { color: colors.onImage }]}>{restaurant.time || "20 min"}</AppText>
               </View>
             </View>
           </View>
@@ -356,7 +357,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: spacing.xxxl,
     marginLeft: spacing.xl,
-    backgroundColor: "rgba(255,255,255,0.92)",
   },
   favoriteButton: {
     position: "absolute",
@@ -367,7 +367,6 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.92)",
   },
   heroContent: {
     paddingHorizontal: layout.pagePadding,
@@ -385,12 +384,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
   },
   heroTitle: {
-    color: "#FFFFFF",
     ...typeScale.h1,
     maxWidth: "80%",
   },
   heroSubtitle: {
-    color: "rgba(255,255,255,0.82)",
     ...typeScale.label,
     fontFamily: fontFamily.regular,
     marginTop: spacing.sm,
@@ -407,15 +404,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.14)",
     marginRight: spacing.sm,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
   },
   heroChipText: {
     marginLeft: spacing.xs,
-    color: "#FFFFFF",
     ...typeScale.caption,
     fontFamily: fontFamily.bold,
   },

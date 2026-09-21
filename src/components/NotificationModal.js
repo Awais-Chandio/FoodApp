@@ -132,7 +132,7 @@ export default function NotificationModal({
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryFill}
               >
-                <AppText style={styles.primaryText}>
+                <AppText style={[styles.primaryText, { color: colors.onPrimary }]}>
                   {notification?.actionLabel || config.actionLabel}
                 </AppText>
                 <AntDesign name="arrow-right" size={16} color={colors.onPrimary} />
@@ -227,7 +227,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   primaryText: {
-    color: "#FFFFFF",
     ...typeScale.label,
     fontFamily: fontFamily.bold,
   },

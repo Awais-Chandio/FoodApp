@@ -239,7 +239,7 @@ export default function MenuScreen() {
                     })
                   }
                 >
-                  <AppText style={styles.headerActionText}>Add</AppText>
+                  <AppText style={[styles.headerActionText, { color: colors.onPrimary }]}>Add</AppText>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.headerPlaceholder} />
@@ -362,12 +362,12 @@ export default function MenuScreen() {
             style={styles.cartGradient}
           >
             <View>
-              <AppText style={styles.cartTitle}>{totalItems} items selected</AppText>
-              <AppText style={styles.cartSubtitle}>Ready for checkout</AppText>
+              <AppText style={[styles.cartTitle, { color: colors.onPrimary }]}>{totalItems} items selected</AppText>
+              <AppText style={[styles.cartSubtitle, { color: colors.onPrimary }]}>Ready for checkout</AppText>
             </View>
             <View style={styles.cartRight}>
-              <AppText style={styles.cartPrice}>Rs. {totalPrice}</AppText>
-              <AppText style={styles.cartLink}>View cart</AppText>
+              <AppText style={[styles.cartPrice, { color: colors.onPrimary }]}>Rs. {totalPrice}</AppText>
+              <AppText style={[styles.cartLink, { color: colors.onPrimary }]}>View cart</AppText>
             </View>
           </LinearGradient>
         ) : (
@@ -427,7 +427,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   headerActionText: {
-    color: "#FFFFFF",
     ...typeScale.label,
     fontFamily: fontFamily.bold,
   },
@@ -564,13 +563,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cartTitle: {
-    color: "#FFFFFF",
     ...typeScale.body,
     fontFamily: fontFamily.bold,
   },
   cartSubtitle: {
     marginTop: spacing.xs,
-    color: "rgba(255,255,255,0.82)",
     ...typeScale.label,
     fontFamily: fontFamily.regular,
   },
@@ -578,13 +575,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cartPrice: {
-    color: "#FFFFFF",
     ...typeScale.h3,
     fontFamily: fontFamily.bold,
   },
   cartLink: {
     marginTop: spacing.xs,
-    color: "rgba(255,255,255,0.82)",
     ...typeScale.label,
     fontFamily: fontFamily.bold,
   },

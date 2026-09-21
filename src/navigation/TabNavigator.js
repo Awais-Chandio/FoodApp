@@ -20,10 +20,11 @@ import {
 const Tab = createBottomTabNavigator();
 
 function TabBarIcon({ backgroundColor, color, name }) {
+  const { colors } = useTheme();
   if (backgroundColor === "gradient") {
     return (
       <LinearGradient
-        colors={["#FF5A3C", "#FF8B3D"]}
+        colors={colors.buttonGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.iconShell}

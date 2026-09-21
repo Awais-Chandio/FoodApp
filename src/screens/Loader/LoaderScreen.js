@@ -56,7 +56,7 @@ export default function LoaderScreen({ navigation }) {
         end={{ x: 1, y: 1 }}
         style={[styles.logoCircle, createShadow(colors.shadow, 18)]}
       >
-        <AppText style={styles.logoText}>F</AppText>
+        <AppText style={[styles.logoText, { color: colors.onPrimary }]}>F</AppText>
       </LinearGradient>
       <AppText style={[styles.title, { color: colors.text }]}>FoodApp</AppText>
       <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logoText: {
-    color: "#FFFFFF",
     ...typeScale.display,
   },
   title: {

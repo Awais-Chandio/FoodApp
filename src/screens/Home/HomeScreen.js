@@ -185,7 +185,7 @@ export default function HomeScreen() {
         <View style={styles.imageWrap}>
           <Image source={resolveRestaurantImage(item)} style={styles.restaurantImage} />
           <LinearGradient
-            colors={["transparent", "rgba(24,24,27,0.58)"]}
+            colors={["transparent", colors.scrim]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.imageFade}
@@ -212,13 +212,13 @@ export default function HomeScreen() {
           ) : null}
 
           <View style={styles.imageMeta}>
-            <View style={styles.ratingPill}>
+            <View style={[styles.ratingPill, { backgroundColor: colors.imageChip }]}>
               <AntDesign name="star" size={12} color={colors.warning} />
               <AppText style={[styles.ratingText, { color: colors.text }]}>
                 {item.rating || "4.5"}
               </AppText>
             </View>
-            <AppText style={styles.imageMetaText}>{item.time || "20 min"} delivery</AppText>
+            <AppText style={[styles.imageMetaText, { color: colors.onImage }]}>{item.time || "20 min"} delivery</AppText>
           </View>
         </View>
 
@@ -383,7 +383,7 @@ export default function HomeScreen() {
                     <AppText
                       style={[
                         styles.categoryMeta,
-                        isActive ? styles.categoryMetaActive : { color: colors.textSecondary },
+                        { color: isActive ? colors.onPrimary : colors.textSecondary },
                       ]}
                     >
                       {item.subtitle}
@@ -488,9 +488,6 @@ const styles = StyleSheet.create({
     ...typeScale.caption,
     marginTop: spacing.xs,
   },
-  categoryMetaActive: {
-    color: "rgba(255,255,255,0.84)",
-  },
   filtersRow: {
     paddingBottom: spacing.xl,
     paddingRight: spacing.xs,
@@ -564,7 +561,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   imageMetaText: {
-    color: "#FFFFFF",
     ...typeScale.label,
     fontFamily: fontFamily.bold,
   },
@@ -574,7 +570,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.sm - 1,
-    backgroundColor: "rgba(255,255,255,0.92)",
   },
   ratingText: {
     marginLeft: 4,

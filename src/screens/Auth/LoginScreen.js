@@ -103,11 +103,11 @@ export default function LoginScreen({ navigation }) {
               style={styles.topOverlay}
             />
             <View style={styles.heroContent}>
-              <View style={styles.heroBadge}>
-                <AppText style={styles.heroBadgeText}>Returning customer</AppText>
+              <View style={[styles.heroBadge, { backgroundColor: colors.glassOnPrimary }]}>
+                <AppText style={[styles.heroBadgeText, { color: colors.onPrimary }]}>Returning customer</AppText>
               </View>
-              <AppText style={styles.heroTitle}>Fast checkout starts here</AppText>
-              <AppText style={styles.heroText}>
+              <AppText style={[styles.heroTitle, { color: colors.onPrimary }]}>Fast checkout starts here</AppText>
+              <AppText style={[styles.heroText, { color: colors.onPrimary }]}>
                 Sign in and continue with the same premium orange flow across the app.
               </AppText>
             </View>
@@ -225,23 +225,19 @@ const styles = StyleSheet.create({
   heroBadge: {
     alignSelf: "flex-start",
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.18)",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
   heroBadgeText: {
-    color: "#FFFFFF",
     ...typeScale.caption,
     fontFamily: fontFamily.bold,
   },
   heroTitle: {
-    color: "#FFFFFF",
     ...typeScale.h1,
     maxWidth: 220,
   },
   heroText: {
-    color: "rgba(255,255,255,0.86)",
     ...typeScale.label,
     fontFamily: fontFamily.regular,
     marginTop: spacing.sm,

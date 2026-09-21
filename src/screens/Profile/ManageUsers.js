@@ -123,7 +123,7 @@ const ManageUsers = () => {
                 style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
                 onPress={() => navigation.navigate("Users")}
               >
-                <AppText style={styles.addButtonText}>Add user</AppText>
+                <AppText style={[styles.addButtonText, { color: colors.onPrimary }]}>Add user</AppText>
               </TouchableOpacity>
             </View>
             <SectionHeader
@@ -178,7 +178,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addButtonText: {
-    color: "#FFFFFF",
     ...typeScale.label,
     fontFamily: fontFamily.bold,
   },

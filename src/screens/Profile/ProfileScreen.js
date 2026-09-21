@@ -99,26 +99,26 @@ export default function ProfileScreen({ route }) {
             style={styles.heroGradient}
           >
             <View style={styles.heroTopRow}>
-              <View style={styles.avatar}>
-                <AppText style={styles.avatarText}>
+              <View style={[styles.avatar, { backgroundColor: colors.glassOnPrimary }]}>
+                <AppText style={[styles.avatarText, { color: colors.onPrimary }]}>
                   {(displayName || "F").charAt(0).toUpperCase()}
                 </AppText>
               </View>
-              <View style={styles.rolePill}>
-                <AppText style={styles.roleText}>{role.toUpperCase()}</AppText>
+              <View style={[styles.rolePill, { backgroundColor: colors.glassOnPrimary }]}>
+                <AppText style={[styles.roleText, { color: colors.onPrimary }]}>{role.toUpperCase()}</AppText>
               </View>
             </View>
-            <AppText style={styles.profileName}>{displayName}</AppText>
-            <AppText style={styles.profileMeta}>
+            <AppText style={[styles.profileName, { color: colors.onPrimary }]}>{displayName}</AppText>
+            <AppText style={[styles.profileMeta, { color: colors.onPrimary }]}>
               {role === "admin"
                 ? "Admin controls and storefront management"
                 : "Customer profile, preferences, and app settings"}
             </AppText>
 
             <View style={styles.heroActions}>
-              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+              <TouchableOpacity style={[styles.themeButton, { backgroundColor: colors.glassOnPrimary, borderColor: colors.glassOnPrimaryBorder }]} onPress={toggleTheme}>
                 <AntDesign name="bulb" size={16} color={colors.onPrimary} />
-                <AppText style={styles.themeButtonText}>
+                <AppText style={[styles.themeButtonText, { color: colors.onPrimary }]}>
                   {theme === "light" ? "Dark mode" : "Light mode"}
                 </AppText>
               </TouchableOpacity>
@@ -341,22 +341,18 @@ const styles = StyleSheet.create({
     borderRadius: 38,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
   },
   avatarText: {
     ...typeScale.h1,
-    color: "#FFFFFF",
   },
   profileName: {
     ...typeScale.h1,
     marginTop: spacing.lg,
-    color: "#FFFFFF",
   },
   profileMeta: {
     marginTop: spacing.sm,
     ...typeScale.label,
     fontFamily: fontFamily.regular,
-    color: "rgba(255,255,255,0.84)",
   },
   heroActions: {
     marginTop: spacing.lg,
@@ -366,12 +362,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 1,
-    backgroundColor: "rgba(255,255,255,0.18)",
   },
   roleText: {
     ...typeScale.caption,
     fontFamily: fontFamily.bold,
-    color: "#FFFFFF",
   },
   themeButton: {
     flexDirection: "row",
@@ -379,15 +373,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 1,
-    backgroundColor: "rgba(255,255,255,0.16)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
   },
   themeButtonText: {
     marginLeft: spacing.xs,
     ...typeScale.label,
     fontFamily: fontFamily.bold,
-    color: "#FFFFFF",
   },
   favoritesList: {
     paddingBottom: spacing.xs,

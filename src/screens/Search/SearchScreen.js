@@ -198,7 +198,7 @@ export default function SearchScreen({ navigation }) {
               end={{ x: 1, y: 1 }}
               style={styles.menuButton}
             >
-              <AppText style={styles.menuButtonText}>Menu</AppText>
+              <AppText style={[styles.menuButtonText, { color: colors.onPrimary }]}>Menu</AppText>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -480,7 +480,6 @@ const styles = StyleSheet.create({
     ...typeScale.caption,
     fontFamily: fontFamily.bold,
     textTransform: "uppercase",
-    color: "#FFFFFF",
     letterSpacing: 0.4,
   },
   resultMeta: {

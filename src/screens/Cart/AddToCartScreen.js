@@ -296,7 +296,7 @@ export default function AddToCartScreen() {
                         end={{ x: 1, y: 1 }}
                         style={styles.applyButtonGradient}
                       >
-                        <AppText style={styles.applyButtonText}>Apply</AppText>
+                        <AppText style={[styles.applyButtonText, { color: colors.onPrimary }]}>Apply</AppText>
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -371,7 +371,7 @@ export default function AddToCartScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.checkoutButton}
             >
-              <AppText style={styles.checkoutButtonText}>
+              <AppText style={[styles.checkoutButtonText, { color: colors.onPrimary }]}>
                 {isLoggedIn ? "Proceed to checkout" : "Login to checkout"}
               </AppText>
             </LinearGradient>
@@ -480,7 +480,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   applyButtonText: {
-    color: "#FFFFFF",
     ...typeScale.body,
     fontFamily: fontFamily.bold,
   },
@@ -600,7 +599,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkoutButtonText: {
-    color: "#FFFFFF",
     ...typeScale.body,
     fontFamily: fontFamily.bold,
   },
