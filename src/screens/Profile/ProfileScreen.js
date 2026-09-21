@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import AppButton from "../../components/ui/AppButton";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
+import { useCart } from "../../Context/CartContext";
 import {
   createShadow,
   layout,
@@ -32,10 +33,17 @@ export default function ProfileScreen({ route }) {
   const navigation = useNavigation();
   const { role, user, logout } = useAuth();
   const { theme, toggleTheme, colors } = useTheme();
+  const { clear: clearCart } = useCart();
   const adminName = route?.params?.name || "Admin";
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("userRole");
+    // The cart belongs to the session: it must not carry over to the next account.
+    try {
+      await clearCart();
+    } catch (error) {
+      console.log("could not clear cart on logout", error);
+    }
     await logout();
     navigation.replace("Login");
   };

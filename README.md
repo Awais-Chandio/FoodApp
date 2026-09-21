@@ -20,8 +20,9 @@ is Firebase Cloud Messaging for push notifications.
   stepper.
 - Search across restaurants (name, offer, delivery time) with recent
   searches.
-- Cart with quantity controls, a flat delivery fee, and the promo codes
-  `SAVE10` (10%) and `FOOD5` (5%). Checkout requires login.
+- Cart with quantity controls, a count badge on the Cart tab, a flat delivery
+  fee, and the promo codes `SAVE10` (10%) and `FOOD5` (5%). Checkout requires
+  login. The cart is cleared on logout.
 - Order tracking screen (static demo content, not tied to a real order).
 - Light, dark and system theme.
 - Push notifications (FCM): foreground modal, and routing when a
@@ -53,7 +54,7 @@ is Firebase Cloud Messaging for push notifications.
 | Framework | React Native 0.81.1 (CLI), React 19.1, New Architecture and Hermes enabled |
 | Language | JavaScript (TypeScript only for the Jest test) |
 | Navigation | React Navigation 7: stack, native-stack, bottom-tabs |
-| State | React Context (`AuthContext`, `ThemeProvider`) |
+| State | React Context (`AuthContext`, `ThemeProvider`, `CartContext`) |
 | Local data | `react-native-sqlite-storage`, `@react-native-async-storage/async-storage` |
 | Push | `@react-native-firebase/app` + `messaging` |
 | UI | `react-native-linear-gradient`, AntDesign icons (`@react-native-vector-icons/ant-design`), `react-native-toast-message`, `@react-native-picker/picker`, `@react-native-community/datetimepicker` |
@@ -98,7 +99,7 @@ FoodApp/
 ├── .github/workflows/     CI: signed release APK on push to main
 └── src/
     ├── Admin/             ManageItems (restaurant form), ManageMenuItems (dish form)
-    ├── Context/           ThemeProvider
+    ├── Context/           ThemeProvider, CartContext (cart state, backed by SQLite)
     ├── assets/            images
     ├── components/        NotificationModal
     │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard

@@ -9,6 +9,7 @@ import SearchScreen from "../screens/Search/SearchScreen";
 import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import { useTheme } from "../Context/ThemeProvider";
+import { useCart } from "../Context/CartContext";
 import { createShadow, radius } from "../constants/designSystem";
 
 const Tab = createBottomTabNavigator();
@@ -36,6 +37,7 @@ function TabBarIcon({ backgroundColor, color, name }) {
 
 export default function TabNavigator() {
   const { colors } = useTheme();
+  const { count: cartCount } = useCart();
 
   return (
     <Tab.Navigator
@@ -89,7 +91,15 @@ export default function TabNavigator() {
       <Tab.Screen
         name="AddToCartScreen"
         component={AddToCartScreen}
-        options={{ title: "Cart" }}
+        options={{
+          title: "Cart",
+          tabBarBadge: cartCount > 0 ? cartCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.primaryStrong,
+            color: colors.white,
+            fontWeight: "700",
+          },
+        }}
       />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

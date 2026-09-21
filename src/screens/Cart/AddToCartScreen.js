@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   FlatList,
   Image,
@@ -11,10 +11,10 @@ import {
   View,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import * as cartRepo from "../../database/repositories/cartRepo";
+import { useCart } from "../../Context/CartContext";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../Auth/AuthContext";
@@ -38,76 +38,40 @@ export default function AddToCartScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
 
-  const [cartItems, setCartItems] = useState([]);
+  const {
+    items: cartItems,
+    subtotal,
+    reload: reloadCart,
+    updateQty,
+    remove,
+    getQty,
+  } = useCart();
   const [refreshing, setRefreshing] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(null);
 
-  const fetchCart = useCallback(async () => {
-    try {
-      setCartItems(await cartRepo.list());
-    } catch (error) {
-      console.log("Cart fetch error", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchCart();
-    }, [fetchCart])
-  );
-
   const refreshCart = async () => {
     setRefreshing(true);
-    await fetchCart();
+    await reloadCart();
     setRefreshing(false);
   };
 
-  const removeItem = async (menuItemId) => {
-    try {
-      await cartRepo.remove(menuItemId);
-      fetchCart();
-    } catch (error) {
-      console.log("remove cart error", error);
-    }
-  };
+  const showCartError = () =>
+    Toast.show({ type: "error", text1: "Could not update your cart" });
 
-  const increaseQty = async (menuItemId) => {
-    try {
-      await cartRepo.changeQuantity(menuItemId, 1);
-      fetchCart();
-    } catch (error) {
-      console.log("increase qty error", error);
-    }
-  };
+  const removeItem = (menuItemId) => remove(menuItemId).catch(showCartError);
 
-  const decreaseQty = async (menuItemId) => {
+  const increaseQty = (menuItemId) =>
+    updateQty(menuItemId, getQty(menuItemId) + 1).catch(showCartError);
+
+  const decreaseQty = (menuItemId) => {
     // The stepper never removes the last unit; the trash button does that.
-    const row = cartItems.find((item) => item.menu_item_id === menuItemId);
-    if (!row || (row.quantity || 0) <= 1) {
-      return;
+    const quantity = getQty(menuItemId);
+    if (quantity <= 1) {
+      return undefined;
     }
-
-    try {
-      await cartRepo.changeQuantity(menuItemId, -1);
-      fetchCart();
-    } catch (error) {
-      console.log("decrease qty error", error);
-    }
+    return updateQty(menuItemId, quantity - 1).catch(showCartError);
   };
-
-  const subtotal = useMemo(
-    () =>
-      cartItems.reduce(
-        (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
-        0
-      ),
-    [cartItems]
-  );
 
   const discount = appliedPromo
     ? Math.round(subtotal * VALID_PROMOS[appliedPromo])

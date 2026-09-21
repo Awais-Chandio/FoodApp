@@ -5,6 +5,7 @@ import { useCreateTables } from "./src/database/dbs";
 import { AuthProvider } from "./src/screens/Auth/AuthContext";
 import Toast from "react-native-toast-message";
 import { ThemeProvider } from "./src/Context/ThemeProvider";
+import { CartProvider } from "./src/Context/CartContext";
 import notificationService from "./src/services/notificationService";
 import NotificationModal from "./src/components/NotificationModal";
 import { navigationRef } from "./src/navigation/rootNavigation";
@@ -159,24 +160,26 @@ const AppContent = () => {
 
   return (
     <AuthProvider>
-      <NavigationContainer
-        ref={navigationRef}
-        onReady={() => {
-          if (pendingNotificationRef.current) {
-            navigateForNotification(pendingNotificationRef.current);
-            pendingNotificationRef.current = null;
-          }
-        }}
-      >
-        <AppNavigator />
-        <Toast />
-        <NotificationModal
-          visible={!!activeNotification}
-          notification={activeNotification}
-          onClose={() => setActiveNotification(null)}
-          onPrimaryPress={handlePrimaryNotificationPress}
-        />
-      </NavigationContainer>
+      <CartProvider>
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={() => {
+            if (pendingNotificationRef.current) {
+              navigateForNotification(pendingNotificationRef.current);
+              pendingNotificationRef.current = null;
+            }
+          }}
+        >
+          <AppNavigator />
+          <Toast />
+          <NotificationModal
+            visible={!!activeNotification}
+            notification={activeNotification}
+            onClose={() => setActiveNotification(null)}
+            onPrimaryPress={handlePrimaryNotificationPress}
+          />
+        </NavigationContainer>
+      </CartProvider>
     </AuthProvider>
   );
 };

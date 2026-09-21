@@ -12,8 +12,8 @@ import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import * as cartRepo from "../../database/repositories/cartRepo";
 import * as menuRepo from "../../database/repositories/menuRepo";
+import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
@@ -40,18 +40,13 @@ export default function MenuScreen() {
   const isAdmin = role === "admin";
   const restaurant = route?.params?.restaurant || { id: 1, name: "Westway" };
 
+  const { count: totalItems, subtotal: totalPrice, getQty, add, updateQty } = useCart();
   const [menuItems, setMenuItems] = useState([]);
-  const [cart, setCart] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
 
   const loadData = useCallback(async () => {
     try {
-      const [items, cartRows] = await Promise.all([
-        menuRepo.listByRestaurant(restaurant.id),
-        cartRepo.list(),
-      ]);
-      setMenuItems(items);
-      setCart(cartRows);
+      setMenuItems(await menuRepo.listByRestaurant(restaurant.id));
     } catch (error) {
       console.log("menu load error", error);
     }
@@ -74,36 +69,31 @@ export default function MenuScreen() {
     }
   }, [activeFilter, menuItems]);
 
-  const getCartRow = (id) => cart.find((item) => item.menu_item_id === id);
-  const getQuantity = (id) => getCartRow(id)?.quantity || 0;
-
   const increaseQty = async (item) => {
-    const existing = getCartRow(item.id);
+    const existing = getQty(item.id) > 0;
 
     try {
-      await cartRepo.addItem(item);
-      loadData();
+      await add(item);
       Toast.show({
         type: "success",
         text1: existing ? "Quantity updated" : "Added to cart",
         text2: `${item.name} is ready for checkout.`,
       });
     } catch (error) {
-      console.log("increase cart error", error);
+      Toast.show({ type: "error", text1: "Could not update your cart" });
     }
   };
 
   const decreaseQty = async (item) => {
-    const existing = getCartRow(item.id);
-    if (!existing) {
+    const quantity = getQty(item.id);
+    if (!quantity) {
       return;
     }
 
     try {
-      await cartRepo.changeQuantity(item.id, -1);
-      loadData();
+      await updateQty(item.id, quantity - 1);
     } catch (error) {
-      console.log("decrease cart error", error);
+      Toast.show({ type: "error", text1: "Could not update your cart" });
     }
   };
 
@@ -139,14 +129,8 @@ export default function MenuScreen() {
     ]);
   };
 
-  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const totalPrice = cart.reduce(
-    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
-    0
-  );
-
   const renderMenuItem = ({ item }) => {
-    const quantity = getQuantity(item.id);
+    const quantity = getQty(item.id);
 
     return (
       <View
