@@ -1,157 +1,124 @@
-﻿# FoodApp
+# FoodApp
 
-FoodApp is a React Native mobile application designed for food ordering and delivery. It allows users to browse restaurants, view menus, add items to cart, track orders, and manage their profiles. The app includes an admin panel for managing menu items and restaurants. This project demonstrates real-world mobile app development with Firebase integration, SQLite for local storage, and a clean, user-friendly interface.
+FoodApp is a React Native (CLI, not Expo) food-ordering demo. Users browse
+restaurants, open menus, build a cart and go through a mock checkout flow. An
+admin role can manage restaurants, menu items and a sample user list.
 
-## Project Summary
+**It is a local-only app.** All data lives in an on-device SQLite database.
+There is no backend, no real orders and no payments. The only network feature
+is Firebase Cloud Messaging for push notifications.
 
-- **Project type:** React Native CLI mobile application
-- **Primary goal:** Food ordering and delivery platform
-- **Target audience:** Consumers looking for convenient food ordering and delivery services
-- **Platform:** Android / iOS via React Native
+## What is implemented
 
-## Features
+**Customer**
+- Splash, three onboarding screens (skippable), and guest browsing.
+- Email/password register and login, checked against the local database.
+  The session is restored from AsyncStorage.
+- Home: restaurant lists ("Nearby favorites", "Popular right now") with
+  filters (deals, quick bites, top rated), skeleton and empty states.
+- Restaurant details, menu with price filters, and an add/remove cart
+  stepper.
+- Search across restaurants (name, offer, delivery time) with recent
+  searches.
+- Cart with quantity controls, a flat delivery fee, and the promo codes
+  `SAVE10` (10%) and `FOOD5` (5%). Checkout requires login.
+- Order tracking screen (static demo content, not tied to a real order).
+- Light, dark and system theme.
+- Push notifications (FCM): foreground modal, and routing when a
+  notification is opened.
 
-### User Features
-- **Authentication:** Email/password sign up, login, logout, and session restore using Firebase Auth
-- **Onboarding:** Introductory screens for new users
-- **Home Screen:** Browse restaurants, categories (All meals, Deals, Fast delivery, Top picks), filters (All, Hot deals, Quick bites, Top rated)
-- **Menu Browsing:** View restaurant details, menus, and items
-- **Search:** Search for restaurants and menu items
-- **Cart Management:** Add items to cart, view cart, proceed to checkout
-- **Order Tracking:** Track order status and delivery
-- **Profile Management:** View and edit user profile, manage preferences
-- **Favorites:** Mark restaurants as favorites
+**Admin** (role `admin`)
+- Add, edit and delete restaurants and menu items from the Home and Menu
+  screens.
+- A generic "Manage users" form stored as JSON in SQLite.
+- An admin account is seeded on first run; see `src/database/dbs.js`.
 
-### Admin Features
-- **Admin Panel:** Manage restaurants, menu items, and users
-- **Item Management:** Add, edit, delete menu items
-- **User Management:** View and manage registered users
+## Known limitations
 
-### Additional Features
-- **Offline Support:** Local SQLite database for caching data
-- **Real-time Updates:** Firebase Firestore for real-time data synchronization
-- **Image Storage:** Firebase Storage for uploading and storing images
-- **Notifications:** Toast messages and snackbars for user feedback
-- **Theming:** Dark/light theme support
-- **Responsive Design:** Optimized for different screen sizes
+- No backend: data is per device and orders are never placed or stored.
+- The order tracking screen is static.
+- Favorites (hearts) are in-memory only and are lost on reload.
+- Passwords are stored in plain text in SQLite, and the stored session
+  includes the password. Do not use real credentials.
+- Only restaurant 1 has seeded menu items; other restaurants show an empty
+  menu until an admin adds dishes.
+- Push notifications are configured for Android. iOS has no
+  `GoogleService-Info.plist` or Firebase setup, so iOS push is not expected
+  to work.
 
-## Tech Stack
+## Tech stack
 
-- **React Native:** 0.81.1 (CLI-based)
-- **Navigation:** React Navigation (Stack, Tabs, Native Stack)
-- **Authentication & Database:** Firebase (Auth, Firestore, Storage)
-- **Local Storage:** AsyncStorage and SQLite
-- **State Management:** React Context (ThemeProvider, AuthContext)
-- **UI Components:** Custom components with LinearGradient, Vector Icons
-- **Forms & Validation:** Basic form handling (can be extended with libraries like React Hook Form)
-- **Image Handling:** React Native Image Picker
-- **Animations:** React Native Reanimated
-- **Other Libraries:** DateTimePicker, Snackbar, Toast Message, Splash Screen, etc.
+| Area | Library |
+|---|---|
+| Framework | React Native 0.81.1 (CLI), React 19.1, New Architecture and Hermes enabled |
+| Language | JavaScript (TypeScript only for the Jest test) |
+| Navigation | React Navigation 7: stack, native-stack, bottom-tabs |
+| State | React Context (`AuthContext`, `ThemeProvider`) |
+| Local data | `react-native-sqlite-storage`, `@react-native-async-storage/async-storage` |
+| Push | `@react-native-firebase/app` + `messaging` |
+| UI | `react-native-linear-gradient`, AntDesign icons (`@react-native-vector-icons/ant-design`), `react-native-toast-message`, `@react-native-picker/picker`, `@react-native-community/datetimepicker` |
+| Animation | React Native `Animated`. `react-native-reanimated` is installed but not used yet. |
 
-## Installation
+Firebase Auth, Firestore and Storage are **not** used.
 
-### Prerequisites
-- Node.js (version 18 or higher)
-- React Native development environment set up for Android/iOS
-- Android Studio (for Android) or Xcode (for iOS)
-- Firebase project configured with Auth, Firestore, and Storage enabled
+## Getting started
 
-### Steps
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   cd FoodApp
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Set up Firebase:
-   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Enable Authentication, Firestore, and Storage
-   - Download the `google-services.json` file for Android and place it in `android/app/`
-   - For iOS, configure the Firebase SDK in Xcode
-
-4. Configure the app:
-   - Update Firebase configuration in the app (if needed, check Firebase config files)
-
-5. Run the app:
-   - For Android: `npm run android`
-   - For iOS: `npm run ios`
-
-## Usage
-
-1. **Launch the App:** Run the app on an emulator or device.
-2. **Onboarding:** New users will see onboarding screens.
-3. **Authentication:** Sign up or log in with email and password.
-4. **Browse:** Explore restaurants and menus on the home screen.
-5. **Order:** Add items to cart and place orders.
-6. **Track:** Monitor order status in the cart section.
-7. **Admin Access:** If logged in as admin, access the admin panel to manage items.
-
-## Project Structure
-
-```
-FoodApp/
-├── android/                 # Android-specific files
-├── ios/                     # iOS-specific files
-├── src/
-│   ├── Admin/               # Admin screens (AdminScreen, ManageItems, ManageMenuItems)
-│   ├── assets/              # Image assets and mappings
-│   ├── components/          # Reusable UI components (DetailScreen, HomeHeader, etc.)
-│   │   └── ui/              # UI-specific components (AppButton, EmptyState, etc.)
-│   ├── constants/           # Design system, image registry
-│   ├── Context/             # React Context providers (ThemeProvider)
-│   ├── database/            # SQLite database setup and queries
-│   ├── navigation/          # Navigation configurations (AppNavigator, TabNavigator, etc.)
-│   ├── screens/             # Feature screens
-│   │   ├── Auth/            # Authentication screens (Login, Register)
-│   │   ├── Cart/            # Cart and order tracking
-│   │   ├── Home/            # Home screen
-│   │   ├── Loader/          # Loading screen
-│   │   ├── Onboarding/      # Onboarding screens
-│   │   └── Profile/         # Profile and user management
-│   └── ...
-├── __tests__/               # Jest tests
-├── package.json             # Dependencies and scripts
-├── app.json                 # App configuration
-└── README.md                # This file
-```
-
-## Contributing
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit a pull request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Current Status
-
-- Base React Native project is set up and running.
-- Authentication, navigation, and core screens are implemented.
-- Firebase integration for auth and database is in place.
-- Admin panel and user management are functional.
-- Ongoing: Enhancing UI/UX, adding more features like payment integration, and optimizing performance.
-
-## Run locally
+Prerequisites: Node 20 or newer, the
+[React Native environment setup](https://reactnative.dev/docs/set-up-your-development-environment)
+for your platform, JDK 17 and Android Studio for Android, and Xcode with
+CocoaPods for iOS.
 
 ```sh
 npm install
-npm start
-npm run android
-# or
+npm start            # Metro bundler, keep it running
+
+npm run android      # in a second terminal
+# iOS
+bundle install
+(cd ios && bundle exec pod install)
 npm run ios
 ```
 
-> Note: Android and iOS setup depend on your local React Native development environment. Follow React Native official setup if you have not configured it.
+Push notifications on Android need `android/app/google-services.json` for
+your Firebase project. The repo already contains one.
 
-## Notes
+```sh
+npm run lint
+npm test
+```
 
-This project is intentionally scoped for one developer to deliver end-to-end functionality in phases. The emphasis is on clean architecture, backend integration, real user flows, and interview-friendly implementation.
+## Project structure
+
+```
+FoodApp/
+├── App.js                 providers, NavigationContainer, push-notification routing
+├── index.js               app entry + FCM background handler
+├── android/  ios/         native projects
+├── __tests__/             Jest smoke test
+├── .github/workflows/     CI: signed release APK on push to main
+└── src/
+    ├── Admin/             ManageItems (restaurant form), ManageMenuItems (dish form)
+    ├── Context/           ThemeProvider
+    ├── assets/            images
+    ├── components/        DetailScreen, MenuScreen, SearchScreen, HomeHeader,
+    │   │                  NotificationModal
+    │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard
+    ├── constants/         designSystem (colors, spacing, radius), imageRegistry
+    ├── database/          dbs.js: SQLite schema, seed data and queries
+    ├── navigation/        AppNavigator, TabNavigator, HomeStack, rootNavigation
+    ├── screens/           Auth, Cart, Home, Loader, Onboarding, Profile
+    └── services/          notificationService (FCM)
+```
+
+## Navigation
+
+`Loader` → `Onboarding1-3` → `Tab` (Home, Search, Cart, Profile). Inside the
+Home tab: `HomeScreen` → `Details` → `MenuScreen`. Login, Register,
+TrackOrder and the admin screens live on the root stack.
+
+## Release builds
+
+CI (`.github/workflows/build.yml`) builds a signed APK on pushes to `main`,
+using the repository secrets `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
+`KEY_ALIAS` and `KEY_PASSWORD`. Keystores and their text exports are
+git-ignored and must never be committed.
