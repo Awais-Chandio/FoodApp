@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useCreateTables } from "./src/database/dbs";
@@ -188,9 +190,15 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <ThemeProvider>
-    <AppContent />
-  </ThemeProvider>
+  <GestureHandlerRootView style={styles.root}>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  </GestureHandlerRootView>
 );
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
 
 export default App;
