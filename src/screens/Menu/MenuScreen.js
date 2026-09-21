@@ -4,10 +4,10 @@ import {
   FlatList,
   Image,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
@@ -20,9 +20,11 @@ import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
 
@@ -145,13 +147,13 @@ export default function MenuScreen() {
           style={styles.itemImage}
         />
         <View style={styles.itemContent}>
-          <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-          <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
+          <AppText style={[styles.itemName, { color: colors.text }]}>{item.name}</AppText>
+          <AppText style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
             Freshly prepared and balanced for quick delivery
-          </Text>
-          <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
+          </AppText>
+          <AppText style={[styles.itemPrice, { color: colors.primaryStrong }]}>
             Rs. {item.price}
-          </Text>
+          </AppText>
         </View>
 
         {isAdmin ? (
@@ -176,7 +178,7 @@ export default function MenuScreen() {
             <TouchableOpacity onPress={() => decreaseQty(item)} hitSlop={8}>
               <AntDesign name="minus" size={16} color={colors.primaryStrong} />
             </TouchableOpacity>
-            <Text style={[styles.qtyValue, { color: colors.text }]}>{quantity}</Text>
+            <AppText style={[styles.qtyValue, { color: colors.text }]}>{quantity}</AppText>
             <TouchableOpacity onPress={() => increaseQty(item)} hitSlop={8}>
               <AntDesign name="plus" size={16} color={colors.primaryStrong} />
             </TouchableOpacity>
@@ -217,12 +219,12 @@ export default function MenuScreen() {
               </TouchableOpacity>
 
               <View style={styles.headerCenter}>
-                <Text style={[styles.restaurantName, { color: colors.text }]}>
+                <AppText style={[styles.restaurantName, { color: colors.text }]}>
                   {restaurant.name}
-                </Text>
-                <Text style={[styles.headerMeta, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText style={[styles.headerMeta, { color: colors.textSecondary }]}>
                   Curated menu
-                </Text>
+                </AppText>
               </View>
 
               {isAdmin ? (
@@ -237,7 +239,7 @@ export default function MenuScreen() {
                     })
                   }
                 >
-                  <Text style={styles.headerActionText}>Add</Text>
+                  <AppText style={styles.headerActionText}>Add</AppText>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.headerPlaceholder} />
@@ -257,28 +259,28 @@ export default function MenuScreen() {
               />
               <View style={styles.quickStatsRow}>
                 <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
                     {menuItems.length}
-                  </Text>
-                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
                     Items
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
                     {totalItems}
-                  </Text>
-                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
                     In cart
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
                     Rs. {totalPrice}
-                  </Text>
-                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
                     Running total
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </View>
@@ -302,14 +304,14 @@ export default function MenuScreen() {
                     ]}
                     onPress={() => setActiveFilter(filter.id)}
                   >
-                    <Text
+                    <AppText
                       style={[
                         styles.filterLabel,
                         { color: isActive ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {filter.label}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -360,19 +362,19 @@ export default function MenuScreen() {
             style={styles.cartGradient}
           >
             <View>
-              <Text style={styles.cartTitle}>{totalItems} items selected</Text>
-              <Text style={styles.cartSubtitle}>Ready for checkout</Text>
+              <AppText style={styles.cartTitle}>{totalItems} items selected</AppText>
+              <AppText style={styles.cartSubtitle}>Ready for checkout</AppText>
             </View>
             <View style={styles.cartRight}>
-              <Text style={styles.cartPrice}>Rs. {totalPrice}</Text>
-              <Text style={styles.cartLink}>View cart</Text>
+              <AppText style={styles.cartPrice}>Rs. {totalPrice}</AppText>
+              <AppText style={styles.cartLink}>View cart</AppText>
             </View>
           </LinearGradient>
         ) : (
           <View style={styles.emptyCartState}>
-            <Text style={[styles.emptyCartPrompt, { color: colors.text }]}>
+            <AppText style={[styles.emptyCartPrompt, { color: colors.text }]}>
               Select any item you want
-            </Text>
+            </AppText>
             <AntDesign name="shopping-cart" size={20} color={colors.text} />
           </View>
         )}
@@ -409,12 +411,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   restaurantName: {
-    fontSize: 21,
-    fontWeight: "800",
+    ...typeScale.h2,
   },
   headerMeta: {
     marginTop: spacing.xs,
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   headerAction: {
     minWidth: 58,
@@ -426,8 +428,8 @@ const styles = StyleSheet.create({
   },
   headerActionText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   headerPlaceholder: {
     width: 58,
@@ -454,12 +456,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   quickStatValue: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   quickStatLabel: {
     marginTop: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   filterRow: {
     flexDirection: "row",
@@ -476,8 +478,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   filterLabel: {
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   itemCard: {
     borderWidth: 1,
@@ -497,18 +499,18 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   itemSubtitle: {
     marginTop: spacing.xs,
-    fontSize: 13,
-    lineHeight: 18,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   itemPrice: {
     marginTop: spacing.sm,
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   adminColumn: {
     justifyContent: "space-between",
@@ -539,8 +541,8 @@ const styles = StyleSheet.create({
   qtyValue: {
     minWidth: 24,
     textAlign: "center",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
     marginHorizontal: spacing.sm,
   },
   cartCard: {
@@ -563,31 +565,32 @@ const styles = StyleSheet.create({
   },
   cartTitle: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   cartSubtitle: {
     marginTop: spacing.xs,
     color: "rgba(255,255,255,0.82)",
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   cartRight: {
     alignItems: "flex-end",
   },
   cartPrice: {
     color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   cartLink: {
     marginTop: spacing.xs,
     color: "rgba(255,255,255,0.82)",
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   emptyCartPrompt: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   emptyCartState: {
     minHeight: 72,

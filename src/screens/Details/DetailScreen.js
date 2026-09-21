@@ -4,11 +4,11 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
@@ -19,9 +19,11 @@ import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
 import * as menuRepo from "../../database/repositories/menuRepo";
@@ -134,23 +136,23 @@ export default function DetailScreen() {
           <View style={styles.heroContent}>
             {restaurant.offer ? (
               <View style={[styles.offerPill, { backgroundColor: colors.secondarySoft }]}>
-                <Text style={[styles.offerText, { color: colors.primaryDeep }]}>
+                <AppText style={[styles.offerText, { color: colors.primaryDeep }]}>
                   {restaurant.offer}
-                </Text>
+                </AppText>
               </View>
             ) : null}
-            <Text style={styles.heroTitle}>{restaurant.name}</Text>
-            <Text style={styles.heroSubtitle}>
+            <AppText style={styles.heroTitle}>{restaurant.name}</AppText>
+            <AppText style={styles.heroSubtitle}>
               Rich flavors, solid portions, and menu picks worth repeating.
-            </Text>
+            </AppText>
             <View style={styles.heroChips}>
               <View style={styles.heroChip}>
                 <AntDesign name="star" size={12} color={colors.onImage} />
-                <Text style={styles.heroChipText}>{restaurant.rating || "4.6"} rating</Text>
+                <AppText style={styles.heroChipText}>{restaurant.rating || "4.6"} rating</AppText>
               </View>
               <View style={styles.heroChip}>
                 <AntDesign name="clockcircleo" size={12} color={colors.onImage} />
-                <Text style={styles.heroChipText}>{restaurant.time || "20 min"}</Text>
+                <AppText style={styles.heroChipText}>{restaurant.time || "20 min"}</AppText>
               </View>
             </View>
           </View>
@@ -165,30 +167,30 @@ export default function DetailScreen() {
             ]}
           >
             <View style={styles.statBlock}>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <AppText style={[styles.statValue, { color: colors.text }]}>
                 {restaurant.rating || "4.6"}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              </AppText>
+              <AppText style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Rating
-              </Text>
+              </AppText>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.borderSoft }]} />
             <View style={styles.statBlock}>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <AppText style={[styles.statValue, { color: colors.text }]}>
                 {restaurant.time || "20 min"}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              </AppText>
+              <AppText style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Delivery
-              </Text>
+              </AppText>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.borderSoft }]} />
             <View style={styles.statBlock}>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <AppText style={[styles.statValue, { color: colors.text }]}>
                 {menuLoading ? "–" : menuPreview.length}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              </AppText>
+              <AppText style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Dishes
-              </Text>
+              </AppText>
             </View>
           </View>
 
@@ -196,11 +198,11 @@ export default function DetailScreen() {
             title="About this place"
             subtitle="A cleaner summary with stronger hierarchy and faster access to the menu."
           />
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
+          <AppText style={[styles.description, { color: colors.textSecondary }]}>
             Healthy food should still feel indulgent. This restaurant blends
             fresh ingredients, thoughtful prep, and fast delivery into a simple
             experience that feels easy to order from again.
-          </Text>
+          </AppText>
 
           <View style={styles.actionRow}>
             <AppButton
@@ -242,14 +244,14 @@ export default function DetailScreen() {
                   ]}
                   onPress={() => setActiveFilter(filter.id)}
                 >
-                  <Text
+                  <AppText
                     style={[
                       styles.filterLabel,
                       { color: isActive ? colors.onPrimary : colors.text },
                     ]}
                   >
                     {filter.label}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
@@ -288,15 +290,15 @@ export default function DetailScreen() {
                   style={styles.itemImage}
                 />
                 <View style={styles.itemContent}>
-                  <Text style={[styles.itemName, { color: colors.text }]}>
+                  <AppText style={[styles.itemName, { color: colors.text }]}>
                     {item.name}
-                  </Text>
-                  <Text style={[styles.itemMeta, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.itemMeta, { color: colors.textSecondary }]}>
                     Chef recommended
-                  </Text>
-                  <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
+                  </AppText>
+                  <AppText style={[styles.itemPrice, { color: colors.primaryStrong }]}>
                     Rs. {item.price || 0}
-                  </Text>
+                  </AppText>
                 </View>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("MenuScreen", { restaurant })}
@@ -379,19 +381,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   offerText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   heroTitle: {
     color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "800",
+    ...typeScale.h1,
     maxWidth: "80%",
   },
   heroSubtitle: {
     color: "rgba(255,255,255,0.82)",
-    fontSize: 14,
-    lineHeight: 21,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     marginTop: spacing.sm,
     maxWidth: "85%",
   },
@@ -415,8 +416,8 @@ const styles = StyleSheet.create({
   heroChipText: {
     marginLeft: spacing.xs,
     color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   content: {
     paddingHorizontal: layout.pagePadding,
@@ -439,20 +440,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   statLabel: {
     marginTop: spacing.xs,
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   statDivider: {
     width: 1,
     height: 34,
   },
   description: {
-    fontSize: 15,
-    lineHeight: 24,
+    ...typeScale.body,
     marginTop: -spacing.xs,
     marginBottom: layout.sectionGap,
   },
@@ -486,8 +487,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   filterLabel: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   itemSkeleton: {
     width: "100%",
@@ -511,17 +512,18 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   itemMeta: {
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     marginTop: spacing.xs,
   },
   itemPrice: {
     marginTop: spacing.sm,
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   inlineAdd: {
     width: 42,

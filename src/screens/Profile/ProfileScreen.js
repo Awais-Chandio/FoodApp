@@ -5,10 +5,10 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,9 +22,11 @@ import { useFavorites } from "../../Context/FavoritesContext";
 import { navigationRef } from "../../navigation/rootNavigation";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveRestaurantImage } from "../../constants/imageRegistry";
 import { useAuth } from "../Auth/AuthContext";
@@ -98,27 +100,27 @@ export default function ProfileScreen({ route }) {
           >
             <View style={styles.heroTopRow}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
+                <AppText style={styles.avatarText}>
                   {(displayName || "F").charAt(0).toUpperCase()}
-                </Text>
+                </AppText>
               </View>
               <View style={styles.rolePill}>
-                <Text style={styles.roleText}>{role.toUpperCase()}</Text>
+                <AppText style={styles.roleText}>{role.toUpperCase()}</AppText>
               </View>
             </View>
-            <Text style={styles.profileName}>{displayName}</Text>
-            <Text style={styles.profileMeta}>
+            <AppText style={styles.profileName}>{displayName}</AppText>
+            <AppText style={styles.profileMeta}>
               {role === "admin"
                 ? "Admin controls and storefront management"
                 : "Customer profile, preferences, and app settings"}
-            </Text>
+            </AppText>
 
             <View style={styles.heroActions}>
               <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
                 <AntDesign name="bulb" size={16} color={colors.onPrimary} />
-                <Text style={styles.themeButtonText}>
+                <AppText style={styles.themeButtonText}>
                   {theme === "light" ? "Dark mode" : "Light mode"}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -145,10 +147,10 @@ export default function ProfileScreen({ route }) {
             >
               <AntDesign name="appstore" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
-                <Text style={[styles.actionTitle, { color: colors.text }]}>Manage menu</Text>
-                <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                <AppText style={[styles.actionTitle, { color: colors.text }]}>Manage menu</AppText>
+                <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                   Review restaurant items and update the storefront.
-                </Text>
+                </AppText>
               </View>
               <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -168,12 +170,12 @@ export default function ProfileScreen({ route }) {
             >
               <AntDesign name="home" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
-                <Text style={[styles.actionTitle, { color: colors.text }]}>
+                <AppText style={[styles.actionTitle, { color: colors.text }]}>
                   Review customer view
-                </Text>
-                <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                   Check the updated storefront experience as a shopper.
-                </Text>
+                </AppText>
               </View>
               <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -188,12 +190,12 @@ export default function ProfileScreen({ route }) {
             >
               <AntDesign name="team" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
-                <Text style={[styles.actionTitle, { color: colors.text }]}>
+                <AppText style={[styles.actionTitle, { color: colors.text }]}>
                   Manage users
-                </Text>
-                <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                   Add, review, and edit saved admin-side user records.
-                </Text>
+                </AppText>
               </View>
               <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -233,19 +235,19 @@ export default function ProfileScreen({ route }) {
                           style={styles.favoriteImage}
                         />
                         <View style={styles.favoriteBody}>
-                          <Text
+                          <AppText
                             style={[styles.favoriteName, { color: colors.text }]}
                             numberOfLines={1}
                           >
                             {restaurant.name}
-                          </Text>
+                          </AppText>
                           <View style={styles.favoriteMetaRow}>
                             <AntDesign name="star" size={12} color={colors.warning} />
-                            <Text
+                            <AppText
                               style={[styles.favoriteMeta, { color: colors.textSecondary }]}
                             >
                               {restaurant.rating || "4.5"} • {restaurant.time || "20 min"}
-                            </Text>
+                            </AppText>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -277,16 +279,16 @@ export default function ProfileScreen({ route }) {
               >
                 <AntDesign name={option.icon} size={20} color={colors.primaryStrong} />
                 <View style={styles.actionContent}>
-                  <Text style={[styles.actionTitle, { color: colors.text }]}>
+                  <AppText style={[styles.actionTitle, { color: colors.text }]}>
                     {option.label}
-                  </Text>
-                  <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                     {option.id === "theme"
                       ? `Currently using ${theme} appearance.`
                       : option.id === "orders"
                         ? "See your past orders, track them, or order again."
                         : "Reserved for the next UI iteration without changing your existing flows."}
-                  </Text>
+                  </AppText>
                 </View>
                 <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -342,20 +344,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.18)",
   },
   avatarText: {
-    fontSize: 30,
-    fontWeight: "900",
+    ...typeScale.h1,
     color: "#FFFFFF",
   },
   profileName: {
-    fontSize: 24,
-    fontWeight: "800",
+    ...typeScale.h1,
     marginTop: spacing.lg,
     color: "#FFFFFF",
   },
   profileMeta: {
     marginTop: spacing.sm,
-    fontSize: 14,
-    lineHeight: 21,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     color: "rgba(255,255,255,0.84)",
   },
   heroActions: {
@@ -369,8 +369,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.18)",
   },
   roleText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
     color: "#FFFFFF",
   },
   themeButton: {
@@ -385,8 +385,8 @@ const styles = StyleSheet.create({
   },
   themeButtonText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
     color: "#FFFFFF",
   },
   favoritesList: {
@@ -409,8 +409,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   favoriteName: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   favoriteMetaRow: {
     flexDirection: "row",
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   },
   favoriteMeta: {
     marginLeft: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   actionCard: {
     borderWidth: 1,
@@ -435,13 +435,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   actionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   actionMeta: {
     marginTop: spacing.xs,
-    fontSize: 13,
-    lineHeight: 19,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   logoutButton: {
     marginTop: spacing.lg,

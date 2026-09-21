@@ -2,14 +2,20 @@ import React from "react";
 import {
   ImageBackground,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing, typography } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 import SearchBar from "../../components/ui/SearchBar";
 
@@ -60,8 +66,8 @@ export default function HomeHeader({
               <AntDesign name="environment" size={15} color={colors.onPrimary} />
             </View>
             <View>
-              <Text style={styles.locationLabel}>Deliver to</Text>
-              <Text style={styles.locationValue}>{location}</Text>
+              <AppText style={styles.locationLabel}>Deliver to</AppText>
+              <AppText style={styles.locationValue}>{location}</AppText>
             </View>
           </View>
 
@@ -71,7 +77,7 @@ export default function HomeHeader({
               activeOpacity={0.82}
               onPress={onRightActionPress}
             >
-              <Text style={styles.topActionText}>{rightActionLabel}</Text>
+              <AppText style={styles.topActionText}>{rightActionLabel}</AppText>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -79,10 +85,10 @@ export default function HomeHeader({
         <View style={styles.heroCopy}>
           <View style={styles.kicker}>
             <AntDesign name="heart" size={12} color={colors.onPrimary} />
-            <Text style={styles.kickerText}>Curated for your cravings</Text>
+            <AppText style={styles.kickerText}>Curated for your cravings</AppText>
           </View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <AppText style={styles.title}>{title}</AppText>
+          <AppText style={styles.subtitle}>{subtitle}</AppText>
         </View>
 
         <View style={styles.highlightRow}>
@@ -92,7 +98,7 @@ export default function HomeHeader({
               style={[styles.highlightPill, createShadow(colors.shadow, 8)]}
             >
               <AntDesign name={item.icon} size={13} color={colors.onPrimary} />
-              <Text style={styles.highlightText}>{item.label}</Text>
+              <AppText style={styles.highlightText}>{item.label}</AppText>
             </View>
           ))}
         </View>
@@ -156,13 +162,13 @@ const styles = StyleSheet.create({
   },
   locationLabel: {
     color: "rgba(255,255,255,0.72)",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   locationValue: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   topAction: {
     paddingHorizontal: spacing.md,
@@ -174,8 +180,8 @@ const styles = StyleSheet.create({
   },
   topActionText: {
     color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   heroCopy: {
     marginTop: spacing.xl + spacing.xs,
@@ -194,22 +200,20 @@ const styles = StyleSheet.create({
   kickerText: {
     marginLeft: spacing.xs,
     color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   title: {
     marginTop: spacing.lg,
     color: "#FFFFFF",
-    fontSize: typography.title,
-    fontWeight: "900",
-    lineHeight: 36,
+    ...typeScale.h1,
     maxWidth: "78%",
   },
   subtitle: {
     marginTop: spacing.sm,
     color: "rgba(255,255,255,0.86)",
-    fontSize: 14,
-    lineHeight: 22,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     maxWidth: "88%",
   },
   highlightRow: {
@@ -233,8 +237,8 @@ const styles = StyleSheet.create({
   highlightText: {
     marginLeft: spacing.xs,
     color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   searchBar: {
     marginTop: spacing.xs,

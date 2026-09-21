@@ -10,7 +10,12 @@ import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import { useTheme } from "../Context/ThemeProvider";
 import { useCart } from "../Context/CartContext";
-import { createShadow, radius } from "../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  typeScale,
+} from "../constants/designSystem";
 
 const Tab = createBottomTabNavigator();
 
@@ -46,8 +51,8 @@ export default function TabNavigator() {
         tabBarShowLabel: true,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "700",
+          ...typeScale.caption,
+          fontFamily: fontFamily.bold,
           marginBottom: 4,
         },
         tabBarStyle: {
@@ -97,7 +102,7 @@ export default function TabNavigator() {
           tabBarBadgeStyle: {
             backgroundColor: colors.primaryStrong,
             color: colors.onPrimary,
-            fontWeight: "700",
+            fontFamily: fontFamily.bold,
           },
         }}
       />

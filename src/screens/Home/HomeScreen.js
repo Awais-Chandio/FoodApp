@@ -6,11 +6,11 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
@@ -22,9 +22,11 @@ import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import {
   categoryAssetMap,
@@ -203,30 +205,30 @@ export default function HomeScreen() {
           </TouchableOpacity>
           {item.offer ? (
             <View style={[styles.offerTag, { backgroundColor: colors.secondarySoft }]}>
-              <Text style={[styles.offerText, { color: colors.primaryDeep }]}>
+              <AppText style={[styles.offerText, { color: colors.primaryDeep }]}>
                 {item.offer}
-              </Text>
+              </AppText>
             </View>
           ) : null}
 
           <View style={styles.imageMeta}>
             <View style={styles.ratingPill}>
               <AntDesign name="star" size={12} color={colors.warning} />
-              <Text style={[styles.ratingText, { color: colors.text }]}>
+              <AppText style={[styles.ratingText, { color: colors.text }]}>
                 {item.rating || "4.5"}
-              </Text>
+              </AppText>
             </View>
-            <Text style={styles.imageMetaText}>{item.time || "20 min"} delivery</Text>
+            <AppText style={styles.imageMetaText}>{item.time || "20 min"} delivery</AppText>
           </View>
         </View>
 
         <View style={styles.cardBody}>
-          <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+          <AppText style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
             {item.name}
-          </Text>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
+          </AppText>
+          <AppText style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
             {(item.menu_items || []).length || 0} menu items • Freshly prepared
-          </Text>
+          </AppText>
 
           <LinearGradient
             colors={colors.surfaceGradient}
@@ -235,12 +237,12 @@ export default function HomeScreen() {
             style={styles.cardFooter}
           >
             <View>
-              <Text style={[styles.footerLabel, { color: colors.primaryStrong }]}>
+              <AppText style={[styles.footerLabel, { color: colors.primaryStrong }]}>
                 View menu
-              </Text>
-              <Text style={[styles.footerMeta, { color: colors.textSecondary }]}>
+              </AppText>
+              <AppText style={[styles.footerMeta, { color: colors.textSecondary }]}>
                 Fast checkout and smart recommendations
-              </Text>
+              </AppText>
             </View>
             <View style={[styles.footerArrow, { backgroundColor: colors.badge }]}>
               <AntDesign name="arrow-right" size={15} color={colors.primaryStrong} />
@@ -255,16 +257,16 @@ export default function HomeScreen() {
               onPress={() => navigation.navigate("ManageItems", { restaurant: item })}
             >
               <AntDesign name="edit" size={15} color={colors.text} />
-              <Text style={[styles.adminActionText, { color: colors.text }]}>Edit</Text>
+              <AppText style={[styles.adminActionText, { color: colors.text }]}>Edit</AppText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.adminAction, { backgroundColor: colors.surfaceMuted }]}
               onPress={() => confirmDelete(item)}
             >
               <AntDesign name="delete" size={15} color={colors.danger} />
-              <Text style={[styles.adminDangerText, { color: colors.danger }]}>
+              <AppText style={[styles.adminDangerText, { color: colors.danger }]}>
                 Delete
-              </Text>
+              </AppText>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -370,22 +372,22 @@ export default function HomeScreen() {
                     style={styles.categoryGradient}
                   >
                     <Image source={item.image} style={styles.categoryImage} />
-                    <Text
+                    <AppText
                       style={[
                         styles.categoryLabel,
                         { color: isActive ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {item.label}
-                    </Text>
-                    <Text
+                    </AppText>
+                    <AppText
                       style={[
                         styles.categoryMeta,
                         isActive ? styles.categoryMetaActive : { color: colors.textSecondary },
                       ]}
                     >
                       {item.subtitle}
-                    </Text>
+                    </AppText>
                   </LinearGradient>
                 </TouchableOpacity>
               );
@@ -417,14 +419,14 @@ export default function HomeScreen() {
                   ]}
                   onPress={() => setActiveFilter(filter.id)}
                 >
-                  <Text
+                  <AppText
                     style={[
                       styles.filterLabel,
                       { color: isActive ? colors.onPrimary : colors.text },
                     ]}
                   >
                     {filter.label}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
@@ -479,12 +481,11 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   categoryLabel: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   categoryMeta: {
-    fontSize: 12,
-    lineHeight: 18,
+    ...typeScale.caption,
     marginTop: spacing.xs,
   },
   categoryMetaActive: {
@@ -502,8 +503,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   filterLabel: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   section: {
     marginBottom: layout.sectionGap,
@@ -550,8 +551,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   offerText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   imageMeta: {
     position: "absolute",
@@ -564,8 +565,8 @@ const styles = StyleSheet.create({
   },
   imageMetaText: {
     color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   ratingPill: {
     flexDirection: "row",
@@ -577,20 +578,20 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     marginLeft: 4,
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   cardBody: {
     padding: spacing.lg,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "900",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   metaText: {
     marginTop: spacing.xs,
-    fontSize: 13,
-    lineHeight: 19,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   cardFooter: {
     marginTop: spacing.lg,
@@ -602,15 +603,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   footerLabel: {
-    fontSize: 13,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
   footerMeta: {
     marginTop: spacing.xs,
-    fontSize: 12,
-    lineHeight: 18,
+    ...typeScale.caption,
     maxWidth: 170,
   },
   footerArrow: {
@@ -637,12 +637,12 @@ const styles = StyleSheet.create({
   },
   adminActionText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   adminDangerText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
 });

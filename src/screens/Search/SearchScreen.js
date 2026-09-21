@@ -5,10 +5,10 @@ import {
   ScrollView,
   SectionList,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import LinearGradient from "react-native-linear-gradient";
@@ -20,9 +20,11 @@ import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
 import * as restaurantRepo from "../../database/repositories/restaurantRepo";
@@ -146,15 +148,15 @@ export default function SearchScreen({ navigation }) {
         style={styles.dishImage}
       />
       <View style={styles.dishContent}>
-        <Text style={[styles.dishName, { color: colors.text }]} numberOfLines={1}>
+        <AppText style={[styles.dishName, { color: colors.text }]} numberOfLines={1}>
           {dish.name}
-        </Text>
-        <Text style={[styles.dishRestaurant, { color: colors.textSecondary }]} numberOfLines={1}>
+        </AppText>
+        <AppText style={[styles.dishRestaurant, { color: colors.textSecondary }]} numberOfLines={1}>
           {dish.restaurant.name}
-        </Text>
-        <Text style={[styles.dishPrice, { color: colors.primaryStrong }]}>
+        </AppText>
+        <AppText style={[styles.dishPrice, { color: colors.primaryStrong }]}>
           Rs. {dish.price || 0}
-        </Text>
+        </AppText>
       </View>
       <AntDesign name="arrow-right" size={16} color={colors.textSecondary} />
     </TouchableOpacity>
@@ -179,9 +181,9 @@ export default function SearchScreen({ navigation }) {
       <Image source={resolveRestaurantImage(item)} style={styles.resultImage} />
       <View style={styles.resultContent}>
         <View style={styles.rowBetween}>
-          <Text style={[styles.resultTitle, { color: colors.text }]} numberOfLines={1}>
+          <AppText style={[styles.resultTitle, { color: colors.text }]} numberOfLines={1}>
             {item.name}
-          </Text>
+          </AppText>
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("HomeStack", {
@@ -196,18 +198,18 @@ export default function SearchScreen({ navigation }) {
               end={{ x: 1, y: 1 }}
               style={styles.menuButton}
             >
-              <Text style={styles.menuButtonText}>Menu</Text>
+              <AppText style={styles.menuButtonText}>Menu</AppText>
             </LinearGradient>
           </TouchableOpacity>
         </View>
-        <Text style={[styles.resultMeta, { color: colors.textSecondary }]}>
+        <AppText style={[styles.resultMeta, { color: colors.textSecondary }]}>
           ⭐ {item.rating || "4.6"} • {item.time || "20 min"}
-        </Text>
+        </AppText>
         {item.offer ? (
           <View style={[styles.dealPill, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[styles.dealText, { color: colors.accentText }]}>
+            <AppText style={[styles.dealText, { color: colors.accentText }]}>
               {item.offer}
-            </Text>
+            </AppText>
           </View>
         ) : null}
       </View>
@@ -253,14 +255,14 @@ export default function SearchScreen({ navigation }) {
                 ]}
                 onPress={() => setActiveFilter(filter.id)}
               >
-                <Text
+                <AppText
                   style={[
                     styles.filterText,
                     { color: isActive ? colors.onPrimary : colors.text },
                   ]}
                 >
                   {filter.label}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             );
           })}
@@ -284,7 +286,7 @@ export default function SearchScreen({ navigation }) {
                   onPress={() => setQuery(item)}
                 >
                   <AntDesign name="clock-circle" size={13} color={colors.textSecondary} />
-                  <Text style={[styles.recentText, { color: colors.text }]}>{item}</Text>
+                  <AppText style={[styles.recentText, { color: colors.text }]}>{item}</AppText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -304,9 +306,9 @@ export default function SearchScreen({ navigation }) {
         renderItem={renderSearchResult}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <AppText style={[styles.sectionTitle, { color: colors.text }]}>
               {section.title} ({section.data.length})
-            </Text>
+            </AppText>
           </View>
         )}
         stickySectionHeadersEnabled={false}
@@ -375,8 +377,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   filterText: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   recentRow: {
     flexDirection: "row",
@@ -395,8 +397,7 @@ const styles = StyleSheet.create({
   },
   recentText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "600",
+    ...typeScale.label,
   },
   searchSkeleton: {
     width: "100%",
@@ -407,8 +408,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   resultCard: {
     marginHorizontal: layout.pagePadding,
@@ -436,17 +437,18 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
   },
   dishName: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   dishRestaurant: {
     marginTop: spacing.xs,
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   dishPrice: {
     marginTop: spacing.xs,
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   resultImage: {
     width: "100%",
@@ -464,8 +466,8 @@ const styles = StyleSheet.create({
   resultTitle: {
     flex: 1,
     marginRight: spacing.sm,
-    fontSize: 18,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
     minWidth: 160,
   },
   menuButton: {
@@ -475,15 +477,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   menuButtonText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
     textTransform: "uppercase",
     color: "#FFFFFF",
     letterSpacing: 0.4,
   },
   resultMeta: {
     marginTop: spacing.sm,
-    fontSize: 14,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   dealPill: {
     alignSelf: "flex-start",
@@ -493,7 +496,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   dealText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
 });

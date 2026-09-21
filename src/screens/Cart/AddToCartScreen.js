@@ -4,12 +4,12 @@ import {
   Image,
   RefreshControl,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
@@ -21,9 +21,11 @@ import { useAuth } from "../Auth/AuthContext";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
 import { computeTotals, formatMoney } from "../../utils/pricing";
@@ -130,21 +132,21 @@ export default function AddToCartScreen() {
       />
 
       <View style={styles.itemContent}>
-        <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-        <Text style={[styles.itemMeta, { color: colors.textSecondary }]}>
+        <AppText style={[styles.itemName, { color: colors.text }]}>{item.name}</AppText>
+        <AppText style={[styles.itemMeta, { color: colors.textSecondary }]}>
           Prepared fresh for checkout
-        </Text>
-        <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
+        </AppText>
+        <AppText style={[styles.itemPrice, { color: colors.primaryStrong }]}>
           Rs. {item.price}
-        </Text>
+        </AppText>
 
         <View style={[styles.qtyRow, { backgroundColor: colors.badge }]}>
           <TouchableOpacity onPress={() => decreaseQty(item.menu_item_id)} hitSlop={8}>
             <AntDesign name="minus" size={16} color={colors.primaryStrong} />
           </TouchableOpacity>
-          <Text style={[styles.qtyValue, { color: colors.text }]}>
+          <AppText style={[styles.qtyValue, { color: colors.text }]}>
             {item.quantity || 1}
-          </Text>
+          </AppText>
           <TouchableOpacity onPress={() => increaseQty(item.menu_item_id)} hitSlop={8}>
             <AntDesign name="plus" size={16} color={colors.primaryStrong} />
           </TouchableOpacity>
@@ -185,12 +187,12 @@ export default function AddToCartScreen() {
                 <AntDesign name="arrow-left" size={20} color={colors.text} />
               </TouchableOpacity>
               <View style={styles.headerContent}>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Your cart</Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+                <AppText style={[styles.headerTitle, { color: colors.text }]}>Your cart</AppText>
+                <AppText style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
                   {cartItems.length
                     ? `${cartItems.length} selected dishes ready for checkout`
                     : "Add dishes to start building your order"}
-                </Text>
+                </AppText>
               </View>
             </View>
 
@@ -205,28 +207,28 @@ export default function AddToCartScreen() {
                   ]}
                 >
                   <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    <AppText style={[styles.summaryValue, { color: colors.text }]}>
                       {cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
-                    </Text>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    </AppText>
+                    <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                       Items
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    <AppText style={[styles.summaryValue, { color: colors.text }]}>
                       Rs. {subtotal}
-                    </Text>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    </AppText>
+                    <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                       Subtotal
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    <AppText style={[styles.summaryValue, { color: colors.text }]}>
                       {isLoggedIn ? "Express" : "Login"}
-                    </Text>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    </AppText>
+                    <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                       Checkout
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
@@ -243,13 +245,13 @@ export default function AddToCartScreen() {
                   >
                     <AntDesign name="tag" size={18} color={colors.success} />
                     <View style={styles.appliedPromoText}>
-                      <Text style={[styles.appliedPromoCode, { color: colors.text }]}>
+                      <AppText style={[styles.appliedPromoCode, { color: colors.text }]}>
                         {appliedCode} · {promo.percent}% off
-                      </Text>
-                      <Text style={[styles.appliedPromoMeta, { color: colors.textSecondary }]}>
+                      </AppText>
+                      <AppText style={[styles.appliedPromoMeta, { color: colors.textSecondary }]}>
                         You save {formatMoney(discount)}
                         {promo.min_order > 0 ? ` · min. order ${formatMoney(promo.min_order)}` : ""}
-                      </Text>
+                      </AppText>
                     </View>
                     <TouchableOpacity
                       onPress={removePromo}
@@ -257,7 +259,7 @@ export default function AddToCartScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`Remove promo code ${appliedCode}`}
                     >
-                      <Text style={[styles.removePromoText, { color: colors.danger }]}>Remove</Text>
+                      <AppText style={[styles.removePromoText, { color: colors.danger }]}>Remove</AppText>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -294,7 +296,7 @@ export default function AddToCartScreen() {
                         end={{ x: 1, y: 1 }}
                         style={styles.applyButtonGradient}
                       >
-                        <Text style={styles.applyButtonText}>Apply</Text>
+                        <AppText style={styles.applyButtonText}>Apply</AppText>
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -332,32 +334,32 @@ export default function AddToCartScreen() {
         >
           <SectionHeader title="Payment summary" />
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
               Subtotal
-            </Text>
-            <Text style={[styles.summaryText, { color: colors.text }]}>Rs. {subtotal}</Text>
+            </AppText>
+            <AppText style={[styles.summaryText, { color: colors.text }]}>Rs. {subtotal}</AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
               Delivery
-            </Text>
-            <Text style={[styles.summaryText, { color: colors.text }]}>
+            </AppText>
+            <AppText style={[styles.summaryText, { color: colors.text }]}>
               Rs. {deliveryFee}
-            </Text>
+            </AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
               {appliedCode ? `Discount (${appliedCode})` : "Discount"}
-            </Text>
-            <Text style={[styles.summaryText, { color: colors.success }]}>
+            </AppText>
+            <AppText style={[styles.summaryText, { color: colors.success }]}>
               - Rs. {discount}
-            </Text>
+            </AppText>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.text }]}>
+            <AppText style={[styles.totalLabel, { color: colors.text }]}>Total</AppText>
+            <AppText style={[styles.totalValue, { color: colors.text }]}>
               Rs. {Math.max(totalPrice, 0)}
-            </Text>
+            </AppText>
           </View>
 
           <TouchableOpacity
@@ -369,9 +371,9 @@ export default function AddToCartScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.checkoutButton}
             >
-              <Text style={styles.checkoutButtonText}>
+              <AppText style={styles.checkoutButtonText}>
                 {isLoggedIn ? "Proceed to checkout" : "Login to checkout"}
-              </Text>
+              </AppText>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -406,12 +408,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
+    ...typeScale.h1,
   },
   headerSubtitle: {
     marginTop: spacing.xs,
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   summaryStrip: {
     borderWidth: 1,
@@ -434,12 +436,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   summaryValue: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   summaryLabel: {
     marginTop: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   promoRow: {
     flexDirection: "row",
@@ -457,7 +459,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     marginRight: spacing.sm,
-    fontSize: 15,
+    ...typeScale.body,
   },
   promoInputStack: {
     marginRight: 0,
@@ -479,8 +481,8 @@ const styles = StyleSheet.create({
   },
   applyButtonText: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   appliedPromo: {
     minHeight: 56,
@@ -497,16 +499,16 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
   },
   appliedPromoCode: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   appliedPromoMeta: {
     marginTop: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   removePromoText: {
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   itemRow: {
     borderWidth: 1,
@@ -526,17 +528,18 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   itemMeta: {
     marginTop: spacing.xs,
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   itemPrice: {
     marginTop: spacing.sm,
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   qtyRow: {
     marginTop: spacing.md,
@@ -551,8 +554,8 @@ const styles = StyleSheet.create({
     minWidth: 24,
     textAlign: "center",
     marginHorizontal: spacing.sm,
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   removeButton: {
     width: 38,
@@ -577,20 +580,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   summaryText: {
-    fontSize: 14,
-    fontWeight: "600",
+    ...typeScale.label,
   },
   totalRow: {
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
   },
   totalLabel: {
-    fontSize: 18,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   totalValue: {
-    fontSize: 22,
-    fontWeight: "900",
+    ...typeScale.h2,
   },
   checkoutButton: {
     minHeight: 56,
@@ -600,8 +601,8 @@ const styles = StyleSheet.create({
   },
   checkoutButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   footerLarge: {
     height: 284,

@@ -6,17 +6,23 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 import * as userRepo from "../../database/repositories/userRepo";
 
@@ -129,12 +135,12 @@ export default function RegisterScreen({ navigation }) {
             />
             <View style={styles.heroContent}>
               <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>New customer</Text>
+                <AppText style={styles.heroBadgeText}>New customer</AppText>
               </View>
-              <Text style={styles.heroTitle}>Create your food profile</Text>
-              <Text style={styles.heroText}>
+              <AppText style={styles.heroTitle}>Create your food profile</AppText>
+              <AppText style={styles.heroText}>
                 Same orange design system, smoother onboarding, and a cleaner order flow.
-              </Text>
+              </AppText>
             </View>
           </ImageBackground>
 
@@ -153,12 +159,12 @@ export default function RegisterScreen({ navigation }) {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={[styles.title, { color: colors.text }]}>Create account</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <AppText style={[styles.title, { color: colors.text }]}>Create account</AppText>
+            <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
               Register once and keep the existing checkout and ordering flow smooth.
-            </Text>
+            </AppText>
 
-            <Text style={[styles.label, { color: colors.text }]}>Email</Text>
+            <AppText style={[styles.label, { color: colors.text }]}>Email</AppText>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -176,7 +182,7 @@ export default function RegisterScreen({ navigation }) {
               ]}
             />
 
-            <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+            <AppText style={[styles.label, { color: colors.text }]}>Password</AppText>
             {renderPasswordField({
               value: password,
               onChangeText: setPassword,
@@ -185,9 +191,9 @@ export default function RegisterScreen({ navigation }) {
               onToggle: () => setShowPassword((current) => !current),
             })}
 
-            <Text style={[styles.label, styles.secondaryLabel, { color: colors.text }]}>
+            <AppText style={[styles.label, styles.secondaryLabel, { color: colors.text }]}>
               Confirm password
-            </Text>
+            </AppText>
             {renderPasswordField({
               value: confirmPassword,
               onChangeText: setConfirmPassword,
@@ -204,14 +210,14 @@ export default function RegisterScreen({ navigation }) {
             />
 
             <View style={styles.footerRow}>
-              <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+              <AppText style={[styles.footerText, { color: colors.textSecondary }]}>
                 Already have an account?
-              </Text>
+              </AppText>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style={[styles.footerLink, { color: colors.primaryStrong }]}>
+                <AppText style={[styles.footerLink, { color: colors.primaryStrong }]}>
                   {" "}
                   Sign in
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -250,19 +256,18 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: {
     color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   heroTitle: {
     color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "900",
+    ...typeScale.h1,
     maxWidth: 220,
   },
   heroText: {
     color: "rgba(255,255,255,0.86)",
-    fontSize: 14,
-    lineHeight: 21,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     marginTop: spacing.sm,
     maxWidth: 280,
   },
@@ -280,20 +285,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "800",
+    ...typeScale.h1,
     textAlign: "center",
   },
   subtitle: {
     marginTop: spacing.sm,
-    fontSize: 14,
-    lineHeight: 21,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     textAlign: "center",
     marginBottom: spacing.xxl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
     marginBottom: spacing.sm,
   },
   secondaryLabel: {
@@ -304,7 +308,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     paddingHorizontal: spacing.lg,
-    fontSize: 15,
+    ...typeScale.body,
   },
   passwordWrap: {
     minHeight: 56,
@@ -316,7 +320,7 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
-    fontSize: 15,
+    ...typeScale.body,
     paddingVertical: spacing.md,
   },
   cta: {
@@ -328,10 +332,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   footerText: {
-    fontSize: 14,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   footerLink: {
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
 });

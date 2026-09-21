@@ -1,7 +1,17 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import AppText from "./AppText";
 import { useTheme } from "../../Context/ThemeProvider";
-import { radius, spacing } from "../../constants/designSystem";
+import {
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 
 export default function SectionHeader({
   title,
@@ -14,11 +24,11 @@ export default function SectionHeader({
   return (
     <View style={styles.row}>
       <View style={styles.titleWrap}>
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <AppText style={[styles.title, { color: colors.text }]}>{title}</AppText>
         {subtitle ? (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
             {subtitle}
-          </Text>
+          </AppText>
         ) : null}
       </View>
       {actionLabel ? (
@@ -27,9 +37,9 @@ export default function SectionHeader({
           activeOpacity={0.82}
           style={[styles.actionButton, { backgroundColor: colors.badge }]}
         >
-          <Text style={[styles.action, { color: colors.primaryStrong }]}>
+          <AppText style={[styles.action, { color: colors.primaryStrong }]}>
             {actionLabel}
-          </Text>
+          </AppText>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -48,14 +58,13 @@ const styles = StyleSheet.create({
     paddingRight: spacing.md,
   },
   title: {
-    fontSize: 21,
-    fontWeight: "800",
+    ...typeScale.h2,
     letterSpacing: 0.1,
   },
   subtitle: {
     marginTop: spacing.xs,
-    fontSize: 13,
-    lineHeight: 19,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   actionButton: {
     borderRadius: radius.pill,
@@ -63,7 +72,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   action: {
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
 });

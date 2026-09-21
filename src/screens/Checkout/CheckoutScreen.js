@@ -5,11 +5,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
@@ -21,10 +21,11 @@ import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
-  typography,
+  typeScale,
 } from "../../constants/designSystem";
 import { PAYMENT_METHODS } from "../../constants/paymentMethods";
 import * as orderRepo from "../../database/repositories/orderRepo";
@@ -131,7 +132,7 @@ export default function CheckoutScreen() {
       >
         <AntDesign name="arrow-left" size={20} color={colors.text} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: colors.text }]}>Checkout</Text>
+      <AppText style={[styles.headerTitle, { color: colors.text }]}>Checkout</AppText>
     </View>
   );
 
@@ -187,11 +188,11 @@ export default function CheckoutScreen() {
           ]}
         />
         {showAddressError && addressError ? (
-          <Text style={[styles.errorText, { color: colors.danger }]}>{addressError}</Text>
+          <AppText style={[styles.errorText, { color: colors.danger }]}>{addressError}</AppText>
         ) : (
-          <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+          <AppText style={[styles.helperText, { color: colors.textSecondary }]}>
             {address.trim().length}/{ADDRESS_MAX_LENGTH}
-          </Text>
+          </AppText>
         )}
 
         <SectionHeader title="Payment" subtitle="Choose how you would like to pay." />
@@ -218,8 +219,8 @@ export default function CheckoutScreen() {
                 ) : null}
               </View>
               <View style={styles.paymentText}>
-                <Text style={[styles.paymentLabel, { color: colors.text }]}>{method.label}</Text>
-                <Text style={[styles.helperText, { color: colors.textSecondary }]}>{method.hint}</Text>
+                <AppText style={[styles.paymentLabel, { color: colors.text }]}>{method.label}</AppText>
+                <AppText style={[styles.helperText, { color: colors.textSecondary }]}>{method.hint}</AppText>
               </View>
             </Pressable>
           );
@@ -235,45 +236,45 @@ export default function CheckoutScreen() {
         >
           {items.map((item) => (
             <View key={item.menu_item_id} style={styles.summaryRow}>
-              <Text style={[styles.summaryName, { color: colors.text }]} numberOfLines={1}>
+              <AppText style={[styles.summaryName, { color: colors.text }]} numberOfLines={1}>
                 {item.quantity} × {item.name}
-              </Text>
-              <Text style={[styles.summaryValue, { color: colors.text }]}>
+              </AppText>
+              <AppText style={[styles.summaryValue, { color: colors.text }]}>
                 {formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}
-              </Text>
+              </AppText>
             </View>
           ))}
 
           <View style={[styles.divider, { backgroundColor: colors.borderSoft }]} />
 
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Subtotal</Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>{formatMoney(totals.subtotal)}</Text>
+            <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>Subtotal</AppText>
+            <AppText style={[styles.summaryValue, { color: colors.text }]}>{formatMoney(totals.subtotal)}</AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Delivery</Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>{formatMoney(totals.deliveryFee)}</Text>
+            <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>Delivery</AppText>
+            <AppText style={[styles.summaryValue, { color: colors.text }]}>{formatMoney(totals.deliveryFee)}</AppText>
           </View>
           {totals.promoCode ? (
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+              <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                 Discount ({totals.promoCode})
-              </Text>
-              <Text style={[styles.summaryValue, { color: colors.success }]}>
+              </AppText>
+              <AppText style={[styles.summaryValue, { color: colors.success }]}>
                 - {formatMoney(totals.discount)}
-              </Text>
+              </AppText>
             </View>
           ) : null}
 
           <View style={[styles.divider, { backgroundColor: colors.borderSoft }]} />
 
           <View style={styles.summaryRow}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.text }]}>{formatMoney(totals.total)}</Text>
+            <AppText style={[styles.totalLabel, { color: colors.text }]}>Total</AppText>
+            <AppText style={[styles.totalValue, { color: colors.text }]}>{formatMoney(totals.total)}</AppText>
           </View>
-          <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+          <AppText style={[styles.helperText, { color: colors.textSecondary }]}>
             Paying by {selectedMethod.label.toLowerCase()}.
-          </Text>
+          </AppText>
         </View>
 
         <AppButton
@@ -310,8 +311,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     marginLeft: spacing.md,
-    fontSize: typography.h1,
-    fontWeight: "800",
+    ...typeScale.h1,
   },
   addressInput: {
     minHeight: 96,
@@ -320,16 +320,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
-    fontSize: typography.body,
+    ...typeScale.body,
   },
   helperText: {
     marginTop: spacing.xs,
-    fontSize: typography.caption,
+    ...typeScale.caption,
   },
   errorText: {
     marginTop: spacing.xs,
-    fontSize: typography.caption,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   paymentCard: {
     flexDirection: "row",
@@ -357,8 +357,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   paymentLabel: {
-    fontSize: typography.body,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   summaryCard: {
     borderWidth: 1,
@@ -374,27 +374,25 @@ const styles = StyleSheet.create({
   summaryName: {
     flex: 1,
     marginRight: spacing.md,
-    fontSize: typography.body,
-    fontWeight: "600",
+    ...typeScale.body,
+    fontFamily: fontFamily.semibold,
   },
   summaryLabel: {
-    fontSize: typography.body,
+    ...typeScale.body,
   },
   summaryValue: {
-    fontSize: typography.body,
-    fontWeight: "700",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   divider: {
     height: 1,
     marginVertical: spacing.sm,
   },
   totalLabel: {
-    fontSize: typography.h2,
-    fontWeight: "800",
+    ...typeScale.h2,
   },
   totalValue: {
-    fontSize: typography.h2,
-    fontWeight: "800",
+    ...typeScale.h2,
   },
   placeButton: {
     marginTop: spacing.xxl,

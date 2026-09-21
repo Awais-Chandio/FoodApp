@@ -18,14 +18,29 @@ export const radius = {
   pill: 999,
 };
 
-export const typography = {
-  hero: 34,
-  title: 30,
-  h1: 24,
-  h2: 20,
-  body: 15,
-  caption: 13,
+// Plus Jakarta Sans as static files: Android cannot pick a weight from one
+// family, so every weight is its own fontFamily name and fontWeight is never
+// combined with it. Weights collapse to three: regular, semibold, bold.
+export const fontFamily = {
+  regular: "PlusJakartaSans-Regular",
+  semibold: "PlusJakartaSans-SemiBold",
+  bold: "PlusJakartaSans-Bold",
 };
+
+// Text sizes, weights and line heights. Use through <AppText variant="...">, or
+// spread into a style: { ...typeScale.h2 }.
+export const typeScale = {
+  display: { fontFamily: fontFamily.bold, fontSize: 34, lineHeight: 42 },
+  h1: { fontFamily: fontFamily.bold, fontSize: 28, lineHeight: 36 },
+  h2: { fontFamily: fontFamily.bold, fontSize: 22, lineHeight: 30 },
+  h3: { fontFamily: fontFamily.semibold, fontSize: 18, lineHeight: 26 },
+  body: { fontFamily: fontFamily.regular, fontSize: 15, lineHeight: 22 },
+  label: { fontFamily: fontFamily.semibold, fontSize: 14, lineHeight: 20 },
+  caption: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 18 },
+};
+
+// Largest the OS "font size" setting may scale text, so layouts cannot break.
+export const MAX_FONT_SCALE = 1.3;
 
 // ---------------------------------------------------------------------------
 // Ember palette. Given: light primary/background/surface/text/accent and dark

@@ -3,18 +3,24 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppButton from "../../components/ui/AppButton";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
-import { layout, radius, spacing } from "../../constants/designSystem";
+import {
+  fontFamily,
+  layout,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { insertAdminUser, updateAdminUser } from "../../database/dbs";
 
 export const formSchema = {
@@ -176,9 +182,9 @@ const Users = ({ navigation, route }) => {
             .filter((field) => field.type !== "button")
             .map((field) => (
               <View key={field.id} style={styles.fieldBlock}>
-                <Text style={[styles.label, { color: colors.text }]}>
+                <AppText style={[styles.label, { color: colors.text }]}>
                   {field.label} {field.required ? "*" : ""}
-                </Text>
+                </AppText>
 
                 {(field.type === "text" || field.type === "number") && (
                   <TextInput
@@ -217,9 +223,9 @@ const Users = ({ navigation, route }) => {
                         ]}
                         onPress={() => setFormData({ ...formData, [field.id]: option })}
                       >
-                        <Text style={[styles.choiceText, { color: colors.text }]}>
+                        <AppText style={[styles.choiceText, { color: colors.text }]}>
                           {selected ? "●" : "○"} {option}
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                     );
                   })}
@@ -241,9 +247,9 @@ const Users = ({ navigation, route }) => {
                         ]}
                         onPress={() => toggleHobby(option, field.id)}
                       >
-                        <Text style={[styles.choiceText, { color: colors.text }]}>
+                        <AppText style={[styles.choiceText, { color: colors.text }]}>
                           {selected ? "☑" : "☐"} {option}
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                     );
                   })}
@@ -286,11 +292,11 @@ const Users = ({ navigation, route }) => {
                       ]}
                       onPress={() => setShowDatePickerField(field.id)}
                     >
-                      <Text style={{ color: colors.text }}>
+                      <AppText style={{ color: colors.text }}>
                         {formData[field.id] instanceof Date
                           ? formData[field.id].toDateString()
                           : formData[field.id]}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                     {showDatePickerField === field.id ? (
                       <DateTimePicker
@@ -383,8 +389,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
     marginBottom: spacing.sm,
   },
   input: {
@@ -392,7 +398,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
-    fontSize: 15,
+    ...typeScale.body,
     justifyContent: "center",
   },
   dateButton: {
@@ -416,8 +422,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   choiceText: {
-    fontSize: 14,
-    fontWeight: "600",
+    ...typeScale.label,
   },
   saveButton: {
     marginTop: spacing.lg,

@@ -3,16 +3,22 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../components/ui/AppText";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppButton from "../components/ui/AppButton";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
-import { layout, radius, spacing } from "../constants/designSystem";
+import {
+  fontFamily,
+  layout,
+  radius,
+  spacing,
+  typeScale,
+} from "../constants/designSystem";
 import * as menuRepo from "../database/repositories/menuRepo";
 
 export default function ManageMenuItem({ navigation, route }) {
@@ -86,7 +92,7 @@ export default function ManageMenuItem({ navigation, route }) {
         />
 
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.label, { color: colors.text }]}>Name *</Text>
+          <AppText style={[styles.label, { color: colors.text }]}>Name *</AppText>
           <TextInput
             style={[
               styles.input,
@@ -100,7 +106,7 @@ export default function ManageMenuItem({ navigation, route }) {
             onChangeText={setName}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Price (Rs.) *</Text>
+          <AppText style={[styles.label, { color: colors.text }]}>Price (Rs.) *</AppText>
           <TextInput
             style={[
               styles.input,
@@ -115,7 +121,7 @@ export default function ManageMenuItem({ navigation, route }) {
             keyboardType="numeric"
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Image key or URL</Text>
+          <AppText style={[styles.label, { color: colors.text }]}>Image key or URL</AppText>
           <TextInput
             style={[
               styles.input,
@@ -169,8 +175,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
@@ -179,7 +185,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
-    fontSize: 15,
+    ...typeScale.body,
   },
   textArea: {
     minHeight: 84,

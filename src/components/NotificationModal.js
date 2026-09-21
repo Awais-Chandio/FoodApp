@@ -3,18 +3,20 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "./ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../constants/designSystem";
 
 const typeConfig = {
@@ -86,21 +88,21 @@ export default function NotificationModal({
             <AntDesign name={config.icon} size={24} color={colors.onPrimary} />
           </LinearGradient>
 
-          <Text style={[styles.eyebrow, { color: colors.primaryStrong }]}>
+          <AppText style={[styles.eyebrow, { color: colors.primaryStrong }]}>
             {notification?.eyebrow || config.eyebrow}
-          </Text>
-          <Text style={[styles.title, { color: colors.text }]}>
+          </AppText>
+          <AppText style={[styles.title, { color: colors.text }]}>
             {notification?.title || "New update"}
-          </Text>
-          <Text style={[styles.body, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText style={[styles.body, { color: colors.textSecondary }]}>
             {notification?.body || "Tap below to view this update in the app."}
-          </Text>
+          </AppText>
 
           {notification?.meta ? (
             <View style={[styles.metaPill, { backgroundColor: colors.badge }]}>
-              <Text style={[styles.metaText, { color: colors.primaryDeep }]}>
+              <AppText style={[styles.metaText, { color: colors.primaryDeep }]}>
                 {notification.meta}
-              </Text>
+              </AppText>
             </View>
           ) : null}
 
@@ -114,9 +116,9 @@ export default function NotificationModal({
               activeOpacity={0.82}
             >
               <AntDesign name="close" size={16} color={colors.textSecondary} />
-              <Text style={[styles.secondaryText, { color: colors.text }]}>
+              <AppText style={[styles.secondaryText, { color: colors.text }]}>
                 Later
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -130,9 +132,9 @@ export default function NotificationModal({
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryFill}
               >
-                <Text style={styles.primaryText}>
+                <AppText style={styles.primaryText}>
                   {notification?.actionLabel || config.actionLabel}
-                </Text>
+                </AppText>
                 <AntDesign name="arrow-right" size={16} color={colors.onPrimary} />
               </LinearGradient>
             </TouchableOpacity>
@@ -166,21 +168,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   eyebrow: {
-    fontSize: 12,
-    fontWeight: "900",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   title: {
     marginTop: spacing.sm,
-    fontSize: 22,
-    fontWeight: "900",
-    lineHeight: 28,
+    ...typeScale.h2,
   },
   body: {
     marginTop: spacing.sm,
-    fontSize: 15,
-    lineHeight: 22,
+    ...typeScale.body,
   },
   metaPill: {
     alignSelf: "flex-start",
@@ -190,8 +189,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   metaText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   actions: {
     flexDirection: "row",
@@ -209,8 +208,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   secondaryText: {
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   primaryButton: {
     flex: 1,
@@ -229,7 +228,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "900",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
 });

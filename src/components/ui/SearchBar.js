@@ -8,7 +8,13 @@ import {
 } from "react-native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 
 export default function SearchBar({
   value,
@@ -84,8 +90,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginLeft: spacing.md,
-    fontSize: 15,
-    fontWeight: "600",
+    ...typeScale.body,
+    fontFamily: fontFamily.semibold,
     paddingVertical: spacing.md + 1,
   },
   trailingButton: {
