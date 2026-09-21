@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Animated, FlatList, Image, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Animated, Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import AppText from "../../components/ui/AppText";
 import AppButton from "../../components/ui/AppButton";

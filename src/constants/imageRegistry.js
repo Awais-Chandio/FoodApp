@@ -31,13 +31,6 @@ export const restaurantImageMap = {
   food3: require("../assets/food3.jpg"),
 };
 
-export const categoryAssetMap = {
-  all: require("../assets/all.png"),
-  pizza: require("../assets/pizza.png"),
-  beverages: require("../assets/beverages.png"),
-  asian: require("../assets/asian.png"),
-};
-
 const cleanKey = (value) => String(value || "").trim().replace(/\.(png|jpe?g|webp)$/i, "");
 
 export const resolveFoodImage = (value, fallbackKey = "food1") => {

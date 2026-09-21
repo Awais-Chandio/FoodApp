@@ -532,3 +532,31 @@ describeSqlite('full menu seeds on real SQLite', () => {
     expect(duplicates).toEqual([]);
   });
 });
+
+describeSqlite('Home data on real SQLite', () => {
+  it('promoRepo.listActive returns only usable promos, best discount first', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const now = Date.UTC(2026, 8, 21);
+    expect((await m.promos.listActive(now)).map(p => p.code)).toEqual(['WELCOME20', 'SAVE10', 'FOOD5']);
+    // after WELCOME20 expires it is gone; the never-expiring ones stay
+    expect((await m.promos.listActive(Date.UTC(2027, 0, 2))).map(p => p.code)).toEqual(['SAVE10', 'FOOD5']);
+  });
+
+  it('orderRepo.listRecentOrders returns the newest N orders with their items only', async () => {
+    const m = load();
+    await fillCart(m);
+    const first = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await fillCart(m);
+    const second = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await fillCart(m);
+    const third = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    m.raw.prepare('UPDATE orders SET created_at = id * 1000');
+
+    const recent = await m.orders.listRecentOrders(USER, 2);
+    expect(recent.map(o => o.id)).toEqual([third.id, second.id]);
+    recent.forEach(o => expect(o.items.length).toBe(2));
+    expect(recent.map(o => o.id)).not.toContain(first.id);
+    expect(await m.orders.listRecentOrders(999, 2)).toEqual([]);
+  });
+});
