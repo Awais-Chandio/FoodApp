@@ -342,7 +342,7 @@ export default function AddToCartScreen() {
               style={styles.checkoutButton}
             >
               <Text style={styles.checkoutButtonText}>
-                {isLoggedIn ? "Proceed to tracking" : "Login to checkout"}
+                {isLoggedIn ? "Proceed to checkout" : "Login to checkout"}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
