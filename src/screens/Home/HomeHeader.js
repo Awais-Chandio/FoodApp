@@ -57,7 +57,7 @@ export default function HomeHeader({
         <View style={styles.topRow}>
           <View style={styles.locationWrap}>
             <View style={styles.iconBubble}>
-              <AntDesign name="environment" size={15} color={colors.white} />
+              <AntDesign name="environment" size={15} color={colors.onPrimary} />
             </View>
             <View>
               <Text style={styles.locationLabel}>Deliver to</Text>
@@ -78,7 +78,7 @@ export default function HomeHeader({
 
         <View style={styles.heroCopy}>
           <View style={styles.kicker}>
-            <AntDesign name="heart" size={12} color={colors.white} />
+            <AntDesign name="heart" size={12} color={colors.onPrimary} />
             <Text style={styles.kickerText}>Curated for your cravings</Text>
           </View>
           <Text style={styles.title}>{title}</Text>
@@ -91,7 +91,7 @@ export default function HomeHeader({
               key={item.id}
               style={[styles.highlightPill, createShadow(colors.shadow, 8)]}
             >
-              <AntDesign name={item.icon} size={13} color={colors.white} />
+              <AntDesign name={item.icon} size={13} color={colors.onPrimary} />
               <Text style={styles.highlightText}>{item.label}</Text>
             </View>
           ))}

@@ -74,7 +74,7 @@ export default function TabNavigator() {
             <TabBarIcon
               name={iconMap[route.name]}
               backgroundColor={focused ? "gradient" : colors.badge}
-              color={focused ? colors.white : colors.textSecondary}
+              color={focused ? colors.onPrimary : colors.textSecondary}
             />
           );
         },
@@ -96,7 +96,7 @@ export default function TabNavigator() {
           tabBarBadge: cartCount > 0 ? cartCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: colors.primaryStrong,
-            color: colors.white,
+            color: colors.onPrimary,
             fontWeight: "700",
           },
         }}

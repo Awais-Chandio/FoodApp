@@ -145,11 +145,11 @@ export default function DetailScreen() {
             </Text>
             <View style={styles.heroChips}>
               <View style={styles.heroChip}>
-                <AntDesign name="star" size={12} color={colors.white} />
+                <AntDesign name="star" size={12} color={colors.onImage} />
                 <Text style={styles.heroChipText}>{restaurant.rating || "4.6"} rating</Text>
               </View>
               <View style={styles.heroChip}>
-                <AntDesign name="clockcircleo" size={12} color={colors.white} />
+                <AntDesign name="clockcircleo" size={12} color={colors.onImage} />
                 <Text style={styles.heroChipText}>{restaurant.time || "20 min"}</Text>
               </View>
             </View>
@@ -245,7 +245,7 @@ export default function DetailScreen() {
                   <Text
                     style={[
                       styles.filterLabel,
-                      { color: isActive ? colors.white : colors.text },
+                      { color: isActive ? colors.onPrimary : colors.text },
                     ]}
                   >
                     {filter.label}
@@ -307,7 +307,7 @@ export default function DetailScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.inlineAdd}
                   >
-                    <AntDesign name="plus" size={16} color={colors.white} />
+                    <AntDesign name="plus" size={16} color={colors.onPrimary} />
                   </LinearGradient>
                 </TouchableOpacity>
               </View>

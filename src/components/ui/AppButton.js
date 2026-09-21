@@ -9,7 +9,7 @@ const variantStyles = {
     gradientColors: colors.buttonGradient,
     pressedGradientColors: colors.buttonGradientPressed,
     borderColor: colors.primaryStrong,
-    textColor: colors.white,
+    textColor: colors.onPrimary,
   }),
   secondary: (colors) => ({
     backgroundColor: colors.surface,
@@ -24,7 +24,7 @@ const variantStyles = {
   ghost: (colors) => ({
     backgroundColor: colors.accentSoft,
     borderColor: colors.accentSoft,
-    textColor: colors.accent,
+    textColor: colors.accentText,
   }),
 };
 

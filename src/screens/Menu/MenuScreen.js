@@ -191,7 +191,7 @@ export default function MenuScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.addButton}
             >
-              <AntDesign name="plus" size={16} color={colors.white} />
+              <AntDesign name="plus" size={16} color={colors.onPrimary} />
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -305,7 +305,7 @@ export default function MenuScreen() {
                     <Text
                       style={[
                         styles.filterLabel,
-                        { color: isActive ? colors.white : colors.text },
+                        { color: isActive ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {filter.label}

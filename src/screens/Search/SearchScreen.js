@@ -205,7 +205,7 @@ export default function SearchScreen({ navigation }) {
         </Text>
         {item.offer ? (
           <View style={[styles.dealPill, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[styles.dealText, { color: colors.accent }]}>
+            <Text style={[styles.dealText, { color: colors.accentText }]}>
               {item.offer}
             </Text>
           </View>
@@ -256,7 +256,7 @@ export default function SearchScreen({ navigation }) {
                 <Text
                   style={[
                     styles.filterText,
-                    { color: isActive ? colors.white : colors.text },
+                    { color: isActive ? colors.onPrimary : colors.text },
                   ]}
                 >
                   {filter.label}

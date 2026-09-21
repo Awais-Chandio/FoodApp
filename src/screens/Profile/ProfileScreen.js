@@ -115,7 +115,7 @@ export default function ProfileScreen({ route }) {
 
             <View style={styles.heroActions}>
               <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
-                <AntDesign name="bulb" size={16} color={colors.white} />
+                <AntDesign name="bulb" size={16} color={colors.onPrimary} />
                 <Text style={styles.themeButtonText}>
                   {theme === "light" ? "Dark mode" : "Light mode"}
                 </Text>

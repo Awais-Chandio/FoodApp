@@ -91,7 +91,7 @@ export default function OrderStatusStepper({ status }) {
                     },
                   ]}
                 >
-                  {done ? <AntDesign name="check" size={14} color={colors.white} /> : null}
+                  {done ? <AntDesign name="check" size={14} color={colors.onPrimary} /> : null}
                 </View>
               </View>
 

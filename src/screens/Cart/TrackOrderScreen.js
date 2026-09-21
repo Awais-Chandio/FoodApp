@@ -188,13 +188,13 @@ export default function TrackOrderScreen() {
           </TouchableOpacity>
 
           <View style={styles.heroContent}>
-            <Text style={[styles.heroLabel, { color: colors.white }]}>
+            <Text style={[styles.heroLabel, { color: colors.onPrimary }]}>
               {delivered ? "Order status" : "Estimated arrival"}
             </Text>
-            <Text style={[styles.heroTime, { color: colors.white }]}>
+            <Text style={[styles.heroTime, { color: colors.onPrimary }]}>
               {delivered ? "Delivered" : `${minutes} min`}
             </Text>
-            <Text style={[styles.heroMeta, { color: colors.white }]}>{currentStep.description}</Text>
+            <Text style={[styles.heroMeta, { color: colors.onPrimary }]}>{currentStep.description}</Text>
           </View>
         </ImageBackground>
 

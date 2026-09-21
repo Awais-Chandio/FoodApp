@@ -83,7 +83,7 @@ export default function NotificationModal({
             end={{ x: 1, y: 1 }}
             style={styles.iconShell}
           >
-            <AntDesign name={config.icon} size={24} color={colors.white} />
+            <AntDesign name={config.icon} size={24} color={colors.onPrimary} />
           </LinearGradient>
 
           <Text style={[styles.eyebrow, { color: colors.primaryStrong }]}>
@@ -133,7 +133,7 @@ export default function NotificationModal({
                 <Text style={styles.primaryText}>
                   {notification?.actionLabel || config.actionLabel}
                 </Text>
-                <AntDesign name="arrow-right" size={16} color={colors.white} />
+                <AntDesign name="arrow-right" size={16} color={colors.onPrimary} />
               </LinearGradient>
             </TouchableOpacity>
           </View>

@@ -189,7 +189,7 @@ export default function HomeScreen() {
             style={styles.imageFade}
           />
           <TouchableOpacity
-            style={[styles.favoriteButton, { backgroundColor: colors.white }]}
+            style={[styles.favoriteButton, { backgroundColor: colors.imageChip }]}
             onPress={() => toggleFavorite(item.id)}
             hitSlop={8}
             accessibilityRole="button"
@@ -373,7 +373,7 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.categoryLabel,
-                        { color: isActive ? colors.white : colors.text },
+                        { color: isActive ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {item.label}
@@ -420,7 +420,7 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.filterLabel,
-                      { color: isActive ? colors.white : colors.text },
+                      { color: isActive ? colors.onPrimary : colors.text },
                     ]}
                   >
                     {filter.label}
