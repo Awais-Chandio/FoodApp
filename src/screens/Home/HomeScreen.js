@@ -30,11 +30,7 @@ import {
   categoryAssetMap,
   resolveRestaurantImage,
 } from "../../constants/imageRegistry";
-import {
-  deleteRestaurant,
-  fetchRestaurants,
-  useCreateTables,
-} from "../../database/dbs";
+import { deleteRestaurant, fetchRestaurants } from "../../database/dbs";
 import { useAuth } from "../Auth/AuthContext";
 
 const homeFilters = [
@@ -82,7 +78,6 @@ export default function HomeScreen() {
   const { role } = useAuth();
   const { width } = useWindowDimensions();
   const isAdmin = role === "admin";
-  useCreateTables();
 
   const [nearest, setNearest] = useState([]);
   const [popular, setPopular] = useState([]);
