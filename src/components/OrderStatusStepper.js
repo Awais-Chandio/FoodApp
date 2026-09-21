@@ -1,10 +1,14 @@
-import React, { useEffect, useRef } from "react";
-import {
-  Animated,
+import React, { useEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, {
+  cancelAnimation,
   Easing,
-  StyleSheet,
-  View,
-} from "react-native";
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import AppText from "./ui/AppText";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../Context/ThemeProvider";
@@ -20,6 +24,43 @@ const DOT_SIZE = 28;
 const LINE_WIDTH = 4;
 const LINE_MIN_HEIGHT = 36;
 
+// The connecting line fills as the order advances. It starts at its current
+// fill (so reopening an order does not replay the animation) and animates only
+// when the status changes.
+function StepLine({ index, currentIndex, color, trackColor }) {
+  const target = Math.min(Math.max(currentIndex - index, 0), 1);
+  const fill = useSharedValue(target);
+
+  useEffect(() => {
+    fill.value = withTiming(target, { duration: 700, easing: Easing.out(Easing.cubic) });
+  }, [target, fill]);
+
+  const fillStyle = useAnimatedStyle(() => ({ height: `${fill.value * 100}%` }));
+
+  return (
+    <View style={[styles.line, { backgroundColor: trackColor }]}>
+      <Animated.View style={[styles.lineFill, { backgroundColor: color }, fillStyle]} />
+    </View>
+  );
+}
+
+// The ring behind the current step grows and fades, again and again.
+function PulseRing({ color }) {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withRepeat(withTiming(1, { duration: 900 }), -1, true);
+    return () => cancelAnimation(pulse);
+  }, [pulse]);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(pulse.value, [0, 1], [0.5, 0]),
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [1, 1.6]) }],
+  }));
+
+  return <Animated.View style={[styles.ring, { backgroundColor: color }, ringStyle]} />;
+}
+
 /**
  * Vertical progress stepper for an order. Completed steps show a check, the
  * current step pulses, and the connecting line fills as the status advances.
@@ -29,38 +70,6 @@ export default function OrderStatusStepper({ status }) {
   const currentIndex = statusIndex(status);
   const lastIndex = ORDER_STEPS.length - 1;
   const finished = currentIndex === lastIndex;
-
-  // Line fill: starts at the current position (so reopening an order does not
-  // replay the animation) and animates only when the status changes.
-  const progress = useRef(new Animated.Value(currentIndex)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: currentIndex,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false, // animates height, which the native driver cannot do
-    }).start();
-  }, [currentIndex, progress]);
-
-  useEffect(() => {
-    if (finished) {
-      pulse.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 900, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [finished, currentIndex, pulse]);
-
-  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
-  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] });
 
   return (
     <View>
@@ -81,18 +90,7 @@ export default function OrderStatusStepper({ status }) {
           >
             <View style={styles.indicator}>
               <View style={styles.dotWrap}>
-                {current ? (
-                  <Animated.View
-                    style={[
-                      styles.ring,
-                      {
-                        backgroundColor: colors.primaryStrong,
-                        opacity: ringOpacity,
-                        transform: [{ scale: ringScale }],
-                      },
-                    ]}
-                  />
-                ) : null}
+                {current ? <PulseRing color={colors.primaryStrong} /> : null}
                 <View
                   style={[
                     styles.dot,
@@ -107,21 +105,12 @@ export default function OrderStatusStepper({ status }) {
               </View>
 
               {!isLast ? (
-                <View style={[styles.line, { backgroundColor: colors.borderSoft }]}>
-                  <Animated.View
-                    style={[
-                      styles.lineFill,
-                      {
-                        backgroundColor: colors.success,
-                        height: progress.interpolate({
-                          inputRange: [index, index + 1],
-                          outputRange: ["0%", "100%"],
-                          extrapolate: "clamp",
-                        }),
-                      },
-                    ]}
-                  />
-                </View>
+                <StepLine
+                  index={index}
+                  currentIndex={currentIndex}
+                  color={colors.success}
+                  trackColor={colors.borderSoft}
+                />
               ) : null}
             </View>
 

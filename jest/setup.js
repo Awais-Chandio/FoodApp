@@ -30,7 +30,7 @@ jest.mock('react-native-reanimated', () => {
     withDelay: (_delay, value) => value,
     cancelAnimation: () => {},
     interpolate: (value, input, output) => output[0] + ((value - input[0]) / (input[1] - input[0])) * (output[1] - output[0]),
-    Easing: {inOut: identity, ease: identity, linear: identity, quad: identity, out: identity, in: identity, bezier: () => identity},
+    Easing: {cubic: identity, inOut: identity, ease: identity, linear: identity, quad: identity, out: identity, in: identity, bezier: () => identity},
     FadeIn: chain(),
     FadeInDown: chain(),
     FadeInUp: chain(),

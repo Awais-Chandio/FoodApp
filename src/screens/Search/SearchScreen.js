@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import HomeHeader from "../Home/HomeHeader";
 import EmptyState from "../../components/ui/EmptyState";
+import FadeInItem from "../../components/ui/FadeInItem";
 import FilterChip from "../../components/ui/FilterChip";
 import MenuItemCard from "../../components/ui/MenuItemCard";
 import RestaurantCard from "../../components/ui/RestaurantCard";
@@ -147,8 +148,11 @@ export default function SearchScreen({ navigation }) {
     />
   );
 
-  const renderSearchResult = ({ item, section }) =>
-    section.key === "dishes" ? renderDish(item) : renderRestaurant(item);
+  const renderSearchResult = ({ item, section, index }) => (
+    <FadeInItem index={index}>
+      {section.key === "dishes" ? renderDish(item) : renderRestaurant(item)}
+    </FadeInItem>
+  );
 
   const renderRestaurant = (item) => (
     <RestaurantCard

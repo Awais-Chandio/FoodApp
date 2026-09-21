@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
   ScrollView,
@@ -29,6 +29,7 @@ import {
   withAlpha,
 } from "../../constants/designSystem";
 import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
+import useAsyncData from "../../hooks/useAsyncData";
 import * as menuRepo from "../../database/repositories/menuRepo";
 import { useFavorites } from "../../Context/FavoritesContext";
 
@@ -45,10 +46,6 @@ export default function DetailScreen() {
   const { width } = useWindowDimensions();
   const [activeFilter, setActiveFilter] = useState("all");
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
-  // null until the menu has been read from the database.
-  const [loadedMenu, setLoadedMenu] = useState(null);
-  const [menuFailed, setMenuFailed] = useState(false);
-
   const restaurant = route?.params?.restaurant;
   const restaurantId = restaurant?.id;
   const favorite = isFavorite(restaurantId);
@@ -56,28 +53,33 @@ export default function DetailScreen() {
 
   // The menu is read by restaurant id, so it is fresh and also works when the
   // restaurant arrives without nested items (for example from Profile favorites).
-  const loadMenu = useCallback(() => {
-    if (!restaurantId) {
-      return;
-    }
-    setMenuFailed(false);
-    menuRepo
-      .listByRestaurant(restaurantId)
-      .then(setLoadedMenu)
-      .catch((error) => {
-        console.log("detail menu load error", error);
-        setMenuFailed(true);
-      });
-  }, [restaurantId]);
-
-  useFocusEffect(loadMenu);
+  const {
+    data: loadedMenu,
+    loading: menuLoadingNow,
+    error: menuError,
+    reload: reloadMenu,
+  } = useAsyncData(
+    () => (restaurantId ? menuRepo.listByRestaurant(restaurantId) : Promise.resolve([])),
+    [restaurantId]
+  );
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      reloadMenu({ quiet: true });
+    }, [reloadMenu])
+  );
+  const menuFailed = Boolean(menuError);
 
   const menuPreview = useMemo(
     () => loadedMenu ?? restaurant?.menu_items ?? [],
     [loadedMenu, restaurant]
   );
   // Nothing to show yet: not loaded, and no nested items passed in.
-  const menuLoading = loadedMenu === null && !menuFailed && menuPreview.length === 0;
+  const menuLoading = menuLoadingNow && menuPreview.length === 0;
   const filteredPreviewItems = useMemo(() => {
     switch (activeFilter) {
       case "budget":
@@ -251,7 +253,7 @@ export default function DetailScreen() {
               message="Check your connection and try again."
               icon="warning"
               actionLabel="Try again"
-              onActionPress={loadMenu}
+              onActionPress={() => reloadMenu()}
             />
           ) : menuPreview.length === 0 ? (
             <EmptyState

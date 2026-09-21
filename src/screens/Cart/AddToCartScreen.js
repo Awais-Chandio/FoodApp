@@ -145,9 +145,10 @@ export default function AddToCartScreen() {
     });
   };
 
-  const renderCartItem = ({ item }) => (
+  const renderCartItem = ({ item, index }) => (
     <CartLine
       item={item}
+      index={index}
       onIncrease={increaseQty}
       onDecrease={decreaseQty}
       onDelete={removeItem}

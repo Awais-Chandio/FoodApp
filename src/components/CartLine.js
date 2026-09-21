@@ -1,8 +1,9 @@
 import React, { useRef } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppText from "./ui/AppText";
+import FadeInItem from "./ui/FadeInItem";
 import MenuItemCard from "./ui/MenuItemCard";
 import QtyStepper from "./ui/QtyStepper";
 import { useTheme } from "../Context/ThemeProvider";
@@ -16,7 +17,7 @@ const DELETE_ACTION = { name: "delete", label: "Delete" };
  * "Delete" accessibility action instead (swipes are not discoverable without
  * sight), and the stepper's minus removes the line at quantity 1.
  */
-export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
+export default function CartLine({ item, index = 0, onIncrease, onDecrease, onDelete }) {
   const { colors } = useTheme();
   const swipeRef = useRef(null);
 
@@ -38,7 +39,7 @@ export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
   );
 
   return (
-    <View style={styles.row}>
+    <FadeInItem index={index} style={styles.row}>
       <ReanimatedSwipeable
         ref={swipeRef}
         renderRightActions={renderDelete}
@@ -71,7 +72,7 @@ export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
           }
         />
       </ReanimatedSwipeable>
-    </View>
+    </FadeInItem>
   );
 }
 
