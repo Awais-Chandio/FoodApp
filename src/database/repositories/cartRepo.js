@@ -1,64 +1,93 @@
 import { batch, execute, query } from "../sql";
+import { buildCartRow } from "../../utils/cartLines";
 
-export const list = () => query("SELECT * FROM cart ORDER BY id");
+// A cart line is a dish plus one exact combination of options, identified by
+// its line_key (see utils/cartLines). Plain dishes have line_key = String(id).
+
+export const list = () => query("SELECT * FROM cart_items ORDER BY id");
+
+const INSERT_LINE = `INSERT INTO cart_items
+  (line_key, menu_item_id, restaurant_id, name, base_price, price, selected_options, image_key, quantity)
+  SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+  WHERE NOT EXISTS (SELECT 1 FROM cart_items WHERE line_key = ?)`;
+
+// Adds `row.quantity` to the line if it exists, otherwise inserts it. Both
+// statements are meant to run in one transaction.
+const upsertStatements = (row) => [
+  ["UPDATE cart_items SET quantity = quantity + ? WHERE line_key = ?", [row.quantity, row.line_key]],
+  [
+    INSERT_LINE,
+    [
+      row.line_key,
+      row.menu_item_id,
+      row.restaurant_id,
+      row.name,
+      row.base_price,
+      row.price,
+      row.selected_options,
+      row.image_key,
+      row.quantity,
+      row.line_key,
+    ],
+  ],
+];
 
 /**
- * Adds one unit of a menu item: increments the row if the item is already in
- * the cart, otherwise inserts it with quantity 1. Both statements run in one
- * transaction. `item` is a menu_items row.
+ * Adds `quantity` of a dish with the chosen options: increments the matching
+ * line, otherwise inserts a new one. `item` is a menu_items row and
+ * `selectedOptions` a list of selected options (see utils/cartLines).
  */
-export const addItem = (item) => {
+export const addLine = (item, selectedOptions = [], quantity = 1) => {
   // TODO(me): enforce the single-restaurant rule here. Compare
   // item.restaurant_id with the restaurant already in the cart before adding.
-  const restaurantId = item.restaurant_id ?? null;
-
-  return batch([
-    ["UPDATE cart SET quantity = quantity + 1 WHERE menu_item_id = ?", [item.id]],
-    [
-      `INSERT INTO cart (menu_item_id, name, price, image_key, restaurant_id, quantity)
-       SELECT ?, ?, ?, ?, ?, 1
-       WHERE NOT EXISTS (SELECT 1 FROM cart WHERE menu_item_id = ?)`,
-      [item.id, item.name, item.price, item.image_key || null, restaurantId, item.id],
-    ],
-  ]);
+  return batch(upsertStatements(buildCartRow(item, selectedOptions, quantity)));
 };
 
-/** Sets an absolute quantity. A quantity of 0 or less removes the row. */
-export const setQuantity = (menuItemId, quantity) => {
-  if (quantity <= 0) {
-    return remove(menuItemId);
-  }
-  return execute("UPDATE cart SET quantity = ? WHERE menu_item_id = ?", [
-    quantity,
-    menuItemId,
-  ]);
-};
+/** One unit of a plain dish. */
+export const addItem = (item) => addLine(item, [], 1);
 
 /**
- * Atomically adds `delta` to a row's quantity (delta may be negative).
- * Rows that drop to 0 or below are deleted. Safe against rapid repeated taps.
+ * Replaces one line with another choice of options and quantity, in one
+ * transaction. If the new choice matches a different existing line the two merge.
  */
-export const changeQuantity = (menuItemId, delta) =>
-  batch([
-    ["UPDATE cart SET quantity = quantity + ? WHERE menu_item_id = ?", [delta, menuItemId]],
-    ["DELETE FROM cart WHERE quantity <= 0 AND menu_item_id = ?", [menuItemId]],
+export const replaceLine = (oldLineKey, item, selectedOptions, quantity) => {
+  const row = buildCartRow(item, selectedOptions, quantity);
+  return batch([
+    ["DELETE FROM cart_items WHERE line_key = ?", [oldLineKey]],
+    ...upsertStatements(row),
   ]);
+};
 
-export const remove = (menuItemId) =>
-  execute("DELETE FROM cart WHERE menu_item_id = ?", [menuItemId]);
-
-export const clear = () => execute("DELETE FROM cart");
+/** Sets an absolute quantity. A quantity of 0 or less removes the line. */
+export const setQuantity = (lineKey, quantity) => {
+  if (quantity <= 0) {
+    return remove(lineKey);
+  }
+  return execute("UPDATE cart_items SET quantity = ? WHERE line_key = ?", [quantity, lineKey]);
+};
 
 /**
- * Replaces the whole cart with `lines` ([{ item, quantity }], `item` being a
- * menu_items row) in one transaction. Used by "Reorder".
+ * Atomically adds `delta` to a line's quantity (delta may be negative).
+ * Lines that drop to 0 or below are deleted. Safe against rapid repeated taps.
+ */
+export const changeQuantity = (lineKey, delta) =>
+  batch([
+    ["UPDATE cart_items SET quantity = quantity + ? WHERE line_key = ?", [delta, lineKey]],
+    ["DELETE FROM cart_items WHERE quantity <= 0 AND line_key = ?", [lineKey]],
+  ]);
+
+export const remove = (lineKey) => execute("DELETE FROM cart_items WHERE line_key = ?", [lineKey]);
+
+export const clear = () => execute("DELETE FROM cart_items");
+
+/**
+ * Replaces the whole cart with `lines` ([{ item, quantity, selectedOptions? }],
+ * `item` being a menu_items row) in one transaction. Used by "Reorder".
  */
 export const replaceAll = (lines) =>
   batch([
-    ["DELETE FROM cart"],
-    ...lines.map(({ item, quantity }) => [
-      `INSERT INTO cart (menu_item_id, name, price, image_key, restaurant_id, quantity)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [item.id, item.name, item.price, item.image_key || null, item.restaurant_id ?? null, quantity],
-    ]),
+    ["DELETE FROM cart_items"],
+    ...lines.flatMap(({ item, quantity, selectedOptions = [] }) =>
+      upsertStatements(buildCartRow(item, selectedOptions, quantity))
+    ),
   ]);

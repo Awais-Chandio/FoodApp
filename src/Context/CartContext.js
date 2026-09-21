@@ -10,6 +10,7 @@ import React, {
 import Toast from "react-native-toast-message";
 import * as cartRepo from "../database/repositories/cartRepo";
 import * as promoRepo from "../database/repositories/promoRepo";
+import { buildCartRow } from "../utils/cartLines";
 import { normalizePromo, PROMO_MESSAGES, validatePromo } from "../utils/pricing";
 
 const CartContext = createContext(null);
@@ -96,53 +97,66 @@ export function CartProvider({ children }) {
     [reload]
   );
 
+  // Adds `quantity` of a dish with the chosen options (a plain dish by default).
+  // Identical choices merge into one line; different ones become separate lines.
   const add = useCallback(
-    (menuItem) => {
+    (menuItem, { selectedOptions = [], quantity = 1 } = {}) => {
+      const row = buildCartRow(menuItem, selectedOptions, quantity);
       const current = itemsRef.current;
-      const existing = current.find((row) => row.menu_item_id === menuItem.id);
+      const existing = current.find((line) => line.line_key === row.line_key);
 
       commit(
         existing
-          ? current.map((row) =>
-              row === existing ? { ...row, quantity: (row.quantity || 0) + 1 } : row
+          ? current.map((line) =>
+              line === existing ? { ...line, quantity: (line.quantity || 0) + quantity } : line
             )
-          : [
-              ...current,
-              {
-                menu_item_id: menuItem.id,
-                name: menuItem.name,
-                price: menuItem.price,
-                image_key: menuItem.image_key || null,
-                restaurant_id: menuItem.restaurant_id ?? null,
-                quantity: 1,
-              },
-            ]
+          : [...current, row]
       );
 
-      return enqueue(() => cartRepo.addItem(menuItem));
+      return enqueue(() => cartRepo.addLine(menuItem, selectedOptions, quantity));
     },
     [commit, enqueue]
   );
 
-  // Sets an absolute quantity; 0 or less removes the line.
+  // Sets an absolute quantity on one line; 0 or less removes it.
   const updateQty = useCallback(
-    (menuItemId, quantity) => {
+    (lineKey, quantity) => {
       commit(
         quantity <= 0
-          ? itemsRef.current.filter((row) => row.menu_item_id !== menuItemId)
+          ? itemsRef.current.filter((row) => row.line_key !== lineKey)
           : itemsRef.current.map((row) =>
-              row.menu_item_id === menuItemId ? { ...row, quantity } : row
+              row.line_key === lineKey ? { ...row, quantity } : row
             )
       );
-      return enqueue(() => cartRepo.setQuantity(menuItemId, quantity));
+      return enqueue(() => cartRepo.setQuantity(lineKey, quantity));
     },
     [commit, enqueue]
   );
 
   const remove = useCallback(
-    (menuItemId) => {
-      commit(itemsRef.current.filter((row) => row.menu_item_id !== menuItemId));
-      return enqueue(() => cartRepo.remove(menuItemId));
+    (lineKey) => {
+      commit(itemsRef.current.filter((row) => row.line_key !== lineKey));
+      return enqueue(() => cartRepo.remove(lineKey));
+    },
+    [commit, enqueue]
+  );
+
+  // Turns one line into another choice of options/quantity ("Customize" in the cart).
+  const replaceLine = useCallback(
+    (lineKey, menuItem, selectedOptions, quantity) => {
+      const row = buildCartRow(menuItem, selectedOptions, quantity);
+      const current = itemsRef.current;
+      const without = current.filter((line) => line.line_key !== lineKey);
+      const merged = without.find((line) => line.line_key === row.line_key);
+
+      commit(
+        merged
+          ? without.map((line) =>
+              line === merged ? { ...line, quantity: (line.quantity || 0) + quantity } : line
+            )
+          : [...without, row] // the database appends a new line too
+      );
+      return enqueue(() => cartRepo.replaceLine(lineKey, menuItem, selectedOptions, quantity));
     },
     [commit, enqueue]
   );
@@ -153,19 +167,14 @@ export function CartProvider({ children }) {
     return enqueue(() => cartRepo.clear());
   }, [commit, enqueue]);
 
-  // Replaces the whole cart with `lines` ([{ item, quantity }], `item` being a
-  // menu_items row). Used by "Reorder".
+  // Replaces the whole cart with `lines` ([{ item, quantity, selectedOptions? }],
+  // `item` being a menu_items row). Used by "Reorder".
   const replaceAll = useCallback(
     (lines) => {
       commit(
-        lines.map(({ item, quantity }) => ({
-          menu_item_id: item.id,
-          name: item.name,
-          price: item.price,
-          image_key: item.image_key || null,
-          restaurant_id: item.restaurant_id ?? null,
-          quantity,
-        }))
+        lines.map(({ item, quantity, selectedOptions = [] }) =>
+          buildCartRow(item, selectedOptions, quantity)
+        )
       );
       return enqueue(() => cartRepo.replaceAll(lines));
     },
@@ -222,9 +231,17 @@ export function CartProvider({ children }) {
     }
   }, [promo, items, loading]);
 
+  const getLineQty = useCallback(
+    (lineKey) => itemsRef.current.find((row) => row.line_key === lineKey)?.quantity || 0,
+    []
+  );
+
+  // Total quantity of a dish across all its lines (every combination of options).
   const getQty = useCallback(
     (menuItemId) =>
-      itemsRef.current.find((row) => row.menu_item_id === menuItemId)?.quantity || 0,
+      itemsRef.current
+        .filter((row) => row.menu_item_id === menuItemId)
+        .reduce((sum, row) => sum + (row.quantity || 0), 0),
     []
   );
 
@@ -246,9 +263,11 @@ export function CartProvider({ children }) {
       applyPromo,
       removePromo,
       getQty,
+      getLineQty,
       add,
       updateQty,
       remove,
+      replaceLine,
       clear,
       replaceAll,
       reload,
@@ -261,9 +280,11 @@ export function CartProvider({ children }) {
     applyPromo,
     removePromo,
     getQty,
+    getLineQty,
     add,
     updateQty,
     remove,
+    replaceLine,
     clear,
     replaceAll,
     reload,

@@ -163,7 +163,7 @@ export default function MenuScreen() {
     }
 
     try {
-      await updateQty(item.id, quantity - 1);
+      await updateQty(String(item.id), quantity - 1);
     } catch (updateError) {
       Toast.show({ type: "error", text1: "Could not update your cart" });
     }

@@ -25,7 +25,7 @@ const {useAuth} = require('../src/screens/Auth/AuthContext');
 const AddToCartScreen = require('../src/screens/Cart/AddToCartScreen').default;
 const FreeDeliveryBar = require('../src/components/FreeDeliveryBar').default;
 
-const line = (id, name, price, quantity) => ({menu_item_id: id, name, price, quantity, image_key: 'food1', restaurant_id: 5});
+const line = (id, name, price, quantity) => ({line_key: String(id), menu_item_id: id, name, price, base_price: price, selected_options: '[]', quantity, image_key: 'food1', restaurant_id: 5});
 const texts = tree => tree.root.findAllByType(Text).map(n => [n.props.children].flat(Infinity).join('')).join(' | ');
 
 let cart;
@@ -58,7 +58,7 @@ beforeEach(() => {
     add: jest.fn(() => Promise.resolve()),
     updateQty: jest.fn(() => Promise.resolve()),
     remove: jest.fn(() => Promise.resolve()),
-    getQty: id => (id === 1 ? 2 : 1),
+    getLineQty: key => (key === '1' ? 2 : 1),
   };
   useCart.mockImplementation(() => cart);
 });
@@ -82,7 +82,7 @@ it('each line has a Delete accessibility action and a swipe Delete button', asyn
   await ReactTestRenderer.act(async () => {
     content[0].props.onAccessibilityAction({nativeEvent: {actionName: 'delete'}});
   });
-  expect(cart.remove).toHaveBeenCalledWith(1);
+  expect(cart.remove).toHaveBeenCalledWith('1');
 });
 
 it('deleting shows an Undo toast; tapping it restores the line with its quantity', async () => {
@@ -95,17 +95,19 @@ it('deleting shows an Undo toast; tapping it restores the line with its quantity
   expect(toast).toMatchObject({text1: 'Burger removed', text2: 'Tap to undo'});
 
   await ReactTestRenderer.act(async () => toast.onPress());
-  expect(cart.add).toHaveBeenCalledWith(expect.objectContaining({id: 1, name: 'Burger', price: 170, restaurant_id: 5}));
-  expect(cart.updateQty).toHaveBeenCalledWith(1, 2);
+  expect(cart.add).toHaveBeenCalledWith(
+    expect.objectContaining({id: 1, name: 'Burger', price: 170, restaurant_id: 5}),
+    {selectedOptions: [], quantity: 2},
+  );
 });
 
 it('minus at quantity 1 removes the line (with Undo) instead of doing nothing', async () => {
   await mount();
   const minus = [...new Map(tree.root.findAllByProps({accessibilityLabel: 'Decrease quantity'}).filter(n => typeof n.props.onPress === 'function').map(n => [n.props.onPress, n])).values()];
   await ReactTestRenderer.act(async () => minus[1].props.onPress()); // Pizza, quantity 1
-  expect(cart.remove).toHaveBeenCalledWith(2);
+  expect(cart.remove).toHaveBeenCalledWith('2');
   await ReactTestRenderer.act(async () => minus[0].props.onPress()); // Burger 2 -> 1
-  expect(cart.updateQty).toHaveBeenCalledWith(1, 1);
+  expect(cart.updateQty).toHaveBeenCalledWith('1', 1);
 });
 
 it('shows skeletons while loading and a retry state on error', async () => {

@@ -24,6 +24,7 @@ import {
   typeScale,
 } from "../../constants/designSystem";
 import * as orderRepo from "../../database/repositories/orderRepo";
+import { lineLabel } from "../../utils/cartLines";
 import { formatMoney } from "../../utils/pricing";
 import { getStatusLabel, isDelivered, ORDER_STATUS } from "../../utils/orderStatus";
 
@@ -43,7 +44,7 @@ const getStatusColors = (status, colors) => {
 };
 
 const summarizeItems = (items) =>
-  items.map((item) => `${item.quantity}× ${item.name}`).join(", ");
+  items.map((item) => `${item.quantity}× ${lineLabel(item)}`).join(", ");
 
 export default function OrderHistoryScreen() {
   const navigation = useNavigation();

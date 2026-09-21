@@ -30,6 +30,7 @@ import {
   spacing,
   typeScale,
 } from "../../constants/designSystem";
+import { parseSelectedOptions } from "../../utils/cartLines";
 import { computeTotals, formatMoney } from "../../utils/pricing";
 
 export default function AddToCartScreen() {
@@ -50,7 +51,7 @@ export default function AddToCartScreen() {
     add,
     updateQty,
     remove,
-    getQty,
+    getLineQty,
   } = useCart();
   const [refreshing, setRefreshing] = useState(false);
   const [promoInput, setPromoInput] = useState("");
@@ -65,43 +66,46 @@ export default function AddToCartScreen() {
   const showCartError = () =>
     Toast.show({ type: "error", text1: "Could not update your cart" });
 
-  // Deleting shows an Undo toast (tap it) that puts the line back with its quantity.
+  // Deleting shows an Undo toast (tap it) that puts the line back with its
+  // options and quantity.
   const removeItem = (line) => {
-    const { menu_item_id: id, quantity } = line;
     const restore = () => {
       Toast.hide();
-      add({
-        id,
-        name: line.name,
-        price: line.price,
-        image_key: line.image_key,
-        restaurant_id: line.restaurant_id,
-      })
-        .then(() => (quantity > 1 ? updateQty(id, quantity) : undefined))
-        .catch(showCartError);
+      add(
+        {
+          id: line.menu_item_id,
+          name: line.name,
+          price: line.base_price ?? line.price,
+          image_key: line.image_key,
+          restaurant_id: line.restaurant_id,
+        },
+        { selectedOptions: parseSelectedOptions(line.selected_options), quantity: line.quantity }
+      ).catch(showCartError);
     };
 
-    remove(id).then(() =>
-      Toast.show({
-        type: "info",
-        text1: `${line.name} removed`,
-        text2: "Tap to undo",
-        visibilityTime: 5000,
-        onPress: restore,
-      })
-    , showCartError);
+    remove(line.line_key).then(
+      () =>
+        Toast.show({
+          type: "info",
+          text1: `${line.name} removed`,
+          text2: "Tap to undo",
+          visibilityTime: 5000,
+          onPress: restore,
+        }),
+      showCartError
+    );
   };
 
   const increaseQty = (line) =>
-    updateQty(line.menu_item_id, getQty(line.menu_item_id) + 1).catch(showCartError);
+    updateQty(line.line_key, getLineQty(line.line_key) + 1).catch(showCartError);
 
   // Minus at quantity 1 removes the line (with Undo), like swiping it away.
   const decreaseQty = (line) => {
-    const quantity = getQty(line.menu_item_id);
+    const quantity = getLineQty(line.line_key);
     if (quantity <= 1) {
       return removeItem(line);
     }
-    return updateQty(line.menu_item_id, quantity - 1).catch(showCartError);
+    return updateQty(line.line_key, quantity - 1).catch(showCartError);
   };
 
   const {
@@ -159,7 +163,7 @@ export default function AddToCartScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={cartItems}
-        keyExtractor={(item) => String(item.menu_item_id)}
+        keyExtractor={(item) => item.line_key}
         renderItem={renderCartItem}
         showsVerticalScrollIndicator={false}
         refreshControl={

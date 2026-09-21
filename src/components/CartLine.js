@@ -8,6 +8,7 @@ import MenuItemCard from "./ui/MenuItemCard";
 import QtyStepper from "./ui/QtyStepper";
 import { useTheme } from "../Context/ThemeProvider";
 import { radius, spacing } from "../constants/designSystem";
+import { describeOptions, parseSelectedOptions } from "../utils/cartLines";
 import { resolveFoodImage } from "../constants/imageRegistry";
 
 const DELETE_ACTION = { name: "delete", label: "Delete" };
@@ -20,6 +21,7 @@ const DELETE_ACTION = { name: "delete", label: "Delete" };
 export default function CartLine({ item, index = 0, onIncrease, onDecrease, onDelete }) {
   const { colors } = useTheme();
   const swipeRef = useRef(null);
+  const options = describeOptions(parseSelectedOptions(item.selected_options));
 
   const renderDelete = () => (
     <Pressable
@@ -50,11 +52,11 @@ export default function CartLine({ item, index = 0, onIncrease, onDecrease, onDe
         <MenuItemCard
           image={resolveFoodImage(item.image_path || item.image_key || item.name)}
           title={item.name}
-          subtitle="Prepared fresh for checkout"
+          subtitle={options || "Prepared fresh for checkout"}
           price={`Rs. ${item.price}`}
           style={styles.card}
           contentAccessibility={{
-            accessibilityLabel: `${item.name}, ${item.quantity || 1} in cart, Rs. ${item.price} each`,
+            accessibilityLabel: `${item.name}${options ? `, ${options}` : ""}, ${item.quantity || 1} in cart, Rs. ${item.price} each`,
             accessibilityActions: [DELETE_ACTION],
             onAccessibilityAction: (event) => {
               if (event.nativeEvent.actionName === DELETE_ACTION.name) {

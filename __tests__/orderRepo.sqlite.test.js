@@ -36,6 +36,7 @@ const load = () => {
       menu: require('../src/database/repositories/menuRepo'),
       restaurants: require('../src/database/repositories/restaurantRepo'),
       promos: require('../src/database/repositories/promoRepo'),
+      options: require('../src/database/repositories/optionsRepo'),
     };
   });
   modules.raw = modules.client.default.raw;
@@ -61,7 +62,7 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(8);
+    expect(version).toBe(9);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
@@ -90,12 +91,14 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(8);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(9);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
-    const cartRow = m.raw.prepare('SELECT * FROM cart').get();
+    const cartRow = m.raw.prepare('SELECT * FROM cart_items').get();
     expect(cartRow.quantity).toBe(3);
-    expect(cartRow.restaurant_id).toBeNull(); // new nullable column
+    expect(cartRow).toMatchObject({line_key: '1', menu_item_id: 1, name: 'Kept Dish', base_price: 99, price: 99, selected_options: '[]'});
+    expect(cartRow.restaurant_id).toBeNull();
+    expect(m.raw.prepare("SELECT name FROM sqlite_master WHERE name = 'cart'").get()).toBeUndefined(); // old table dropped
     expect(count(m.raw, 'orders')).toBe(0);
     // Legacy plaintext is still there for the later upgrade pass, and the new column exists.
     const sam = m.raw.prepare("SELECT password, password_hash FROM users WHERE email = 'sam@x.com'").get();
@@ -174,7 +177,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
       ['Burger Deluxe', 170, 2],
       ['Margherita Pizza', 180, 1],
     ]);
-    expect(count(m.raw, 'cart')).toBe(0);
+    expect(count(m.raw, 'cart_items')).toBe(0);
   });
 
   it('leaves order history intact after the menu changes', async () => {
@@ -211,7 +214,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
     ).rejects.toThrow('INVALID_PROMO');
 
     expect(count(m.raw, 'orders')).toBe(0);
-    expect(count(m.raw, 'cart')).toBe(2);
+    expect(count(m.raw, 'cart_items')).toBe(2);
   });
 
   it('re-reads the promo inside the transaction: an expired code is rejected with the reason', async () => {
@@ -226,7 +229,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
     expect(error.message).toBe('INVALID_PROMO');
     expect(error.promoMessage).toMatch(/^SAVE10 expired on \d{1,2} \w{3} \d{4}\.$/);
     expect(count(m.raw, 'orders')).toBe(0);
-    expect(count(m.raw, 'cart')).toBe(2); // cart stays intact
+    expect(count(m.raw, 'cart_items')).toBe(2); // cart stays intact
   });
 
   it('rejects a code whose minimum order is not met, naming the shortfall', async () => {
@@ -277,7 +280,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
 
     await expect(m.orders.placeOrder(input)).rejects.toThrow(message);
     expect(count(m.raw, 'orders')).toBe(0);
-    expect(count(m.raw, 'cart')).toBe(2);
+    expect(count(m.raw, 'cart_items')).toBe(2);
   });
 
   it('is atomic: if a later step fails, no order exists and the cart is untouched', async () => {
@@ -290,7 +293,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
     ).rejects.toThrow();
 
     expect(count(m.raw, 'orders')).toBe(0); // the order INSERT was rolled back
-    expect(count(m.raw, 'cart')).toBe(2); // cart not cleared
+    expect(count(m.raw, 'cart_items')).toBe(2); // cart not cleared
   });
 
   it('two orders in a row get their own items', async () => {
@@ -412,7 +415,7 @@ describeSqlite('reorder', () => {
 
     await m.cart.replaceAll(lines);
 
-    const cart = m.raw.prepare('SELECT name, price, quantity, restaurant_id FROM cart').all();
+    const cart = m.raw.prepare('SELECT name, price, quantity, restaurant_id FROM cart_items').all();
     expect(cart).toEqual([{name: 'Burger Deluxe', price: 200, quantity: 2, restaurant_id: 1}]); // old cart replaced
   });
 
@@ -421,7 +424,7 @@ describeSqlite('reorder', () => {
     await fillCart(m);
     const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
 
-    expect(await m.orders.getReorderLines(placed.id, 999)).toEqual({lines: [], unavailable: 0});
+    expect(await m.orders.getReorderLines(placed.id, 999)).toEqual({lines: [], unavailable: 0, optionsDropped: 0});
   });
 });
 
@@ -591,5 +594,126 @@ describeSqlite('Home data on real SQLite', () => {
     recent.forEach(o => expect(o.items.length).toBe(2));
     expect(recent.map(o => o.id)).not.toContain(first.id);
     expect(await m.orders.listRecentOrders(999, 2)).toEqual([]);
+  });
+});
+
+describeSqlite('dish options on real SQLite', () => {
+  const dishId = (m, name) => m.raw.prepare('SELECT id FROM menu_items WHERE name = ?').get(name).id;
+
+  it('seeds Size + Add-ons on mains, Size on drinks, and nothing on breads and desserts', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    const burger = await m.options.listGroupsForItem(dishId(m, 'Burger Deluxe'));
+    expect(burger.map(g => [g.name, g.type, g.required, g.max_select])).toEqual([
+      ['Size', 'single', true, 1],
+      ['Add-ons', 'multi', false, 3],
+    ]);
+    expect(burger[0].options.map(o => [o.name, o.price_delta, o.is_default])).toEqual([
+      ['Small', -30, false], ['Regular', 0, true], ['Large', 60, false],
+    ]);
+    expect((await m.options.listGroupsForItem(dishId(m, 'Sweet Lassi'))).map(g => g.name)).toEqual(['Size']);
+    expect(await m.options.listGroupsForItem(dishId(m, 'Garlic Naan'))).toEqual([]);
+    expect(await m.options.listGroupsForItem(dishId(m, 'Kheer'))).toEqual([]);
+  });
+
+  it('every seeded main has exactly one default size, and customizable ids are reported per restaurant', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const groups = m.raw.prepare("SELECT id FROM option_groups WHERE name = 'Size'").all();
+    groups.forEach(g => {
+      expect(m.raw.prepare('SELECT COUNT(*) AS n FROM options WHERE group_id = ? AND is_default = 1').get(g.id).n).toBe(1);
+    });
+    const ids = await m.options.listCustomizableIds(1);
+    expect(ids).toContain(dishId(m, 'Burger Deluxe'));
+    expect(ids).not.toContain(dishId(m, 'Loaded Fries'));
+    expect(await m.options.filterCustomizable([dishId(m, 'Burger Deluxe'), dishId(m, 'Kheer')])).toEqual([dishId(m, 'Burger Deluxe')]);
+    expect(await m.options.filterCustomizable([])).toEqual([]);
+  });
+
+  it('cart lines: same dish with different options are separate rows, identical ones merge', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size] = await m.options.listGroupsForItem(burger.id);
+    const large = {...size.options[2], group_id: size.id, group_name: 'Size'};
+    const small = {...size.options[0], group_id: size.id, group_name: 'Size'};
+
+    await m.cart.addLine(burger, [large], 1);
+    await m.cart.addLine(burger, [small], 1);
+    await m.cart.addLine(burger, [large], 2);
+
+    const rows = m.raw.prepare('SELECT line_key, price, base_price, quantity FROM cart_items ORDER BY id').all();
+    expect(rows).toEqual([
+      {line_key: `${burger.id}:${large.id}`, price: 230, base_price: 170, quantity: 3},
+      {line_key: `${burger.id}:${small.id}`, price: 140, base_price: 170, quantity: 1},
+    ]);
+  });
+
+  it('replaceLine swaps one line and merges into an existing identical one', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size] = await m.options.listGroupsForItem(burger.id);
+    const opt = i => ({...size.options[i], group_id: size.id, group_name: 'Size'});
+    await m.cart.addLine(burger, [opt(2)], 1);
+    await m.cart.addLine(burger, [opt(0)], 1);
+
+    await m.cart.replaceLine(`${burger.id}:${opt(2).id}`, burger, [opt(0)], 2);
+
+    expect(m.raw.prepare('SELECT line_key, quantity FROM cart_items').all()).toEqual([
+      {line_key: `${burger.id}:${opt(0).id}`, quantity: 3},
+    ]);
+  });
+
+  it('placeOrder snapshots the chosen options and restaurant on the order item', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size, addons] = await m.options.listGroupsForItem(burger.id);
+    const large = {...size.options[2], group_id: size.id, group_name: 'Size'};
+    const cheese = {...addons.options[0], group_id: addons.id, group_name: 'Add-ons'};
+    await m.cart.addLine(burger, [large, cheese], 2);
+
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    expect(placed.total).toBe(2 * 260 + 120);
+    const item = m.raw.prepare('SELECT * FROM order_items WHERE order_id = ?').get(placed.id);
+    expect(item).toMatchObject({name: 'Burger Deluxe', price: 260, quantity: 2, restaurant_id: 1});
+    expect(JSON.parse(item.selected_options).map(o => o.name)).toEqual(['Large', 'Extra cheese']);
+  });
+
+  it('reorder re-applies the choices to the CURRENT options: drops removed ones, uses new prices', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size, addons] = await m.options.listGroupsForItem(burger.id);
+    const large = {...size.options[2], group_id: size.id, group_name: 'Size'};
+    const cheese = {...addons.options[0], group_id: addons.id, group_name: 'Add-ons'};
+    await m.cart.addLine(burger, [large, cheese], 1);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    m.raw.prepare('DELETE FROM options WHERE id = ?').run(cheese.id); // the menu changed
+    m.raw.prepare('UPDATE options SET price_delta = 80 WHERE id = ?').run(large.id);
+    m.raw.prepare('UPDATE menu_items SET price = 200 WHERE id = ?').run(burger.id);
+
+    const {lines, optionsDropped} = await m.orders.getReorderLines(placed.id, USER);
+    expect(optionsDropped).toBe(1);
+    expect(lines).toHaveLength(1);
+    expect(lines[0].selectedOptions.map(o => o.name)).toEqual(['Large']);
+    expect(lines[0].item.price).toBe(200);
+
+    await m.cart.replaceAll(lines);
+    expect(m.raw.prepare('SELECT price FROM cart_items').get().price).toBe(280); // 200 + 80
+  });
+
+  it('reordering an order from before options existed gives required groups their default', async () => {
+    const m = load();
+    await fillCart(m); // plain lines, no options chosen
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    const {lines, optionsDropped} = await m.orders.getReorderLines(placed.id, USER);
+    expect(optionsDropped).toBe(0);
+    expect(lines[0].selectedOptions.map(o => o.name)).toEqual(['Regular']);
+    expect(lines[0].item.price).toBe(170);
   });
 });

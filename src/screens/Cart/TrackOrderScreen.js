@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
+import { lineLabel } from "../../utils/cartLines";
 import { BackButton } from "../../components/ui/ScreenHeader";
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -221,7 +222,7 @@ export default function TrackOrderScreen() {
             {order.items.map((item) => (
               <View key={item.id} style={styles.row}>
                 <AppText style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                  {item.quantity} × {item.name}
+                  {item.quantity} × {lineLabel(item)}
                 </AppText>
                 <AppText style={[styles.value, { color: colors.text }]}>
                   {formatMoney(item.price * item.quantity)}

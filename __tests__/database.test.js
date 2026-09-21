@@ -93,18 +93,19 @@ describe('cartRepo', () => {
     price: 170,
     image_key: 'food2',
   };
+  const large = {id: 12, name: 'Large', price_delta: 60, group_id: 4, group_name: 'Size'};
 
-  it('addItem increments then inserts-if-missing in ONE transaction', async () => {
+  it('addItem increments then inserts-if-missing in ONE transaction, keyed by line_key', async () => {
     runStatements.mockResolvedValue([result(), result()]);
 
     await cartRepo.addItem(dish);
 
     expect(runStatements).toHaveBeenCalledTimes(1);
     const [update, insert] = runStatements.mock.calls[0][0];
-    expect(update[0]).toMatch(/^UPDATE cart SET quantity = quantity \+ 1/);
-    expect(update[1]).toEqual([3]);
+    expect(update[0]).toMatch(/^UPDATE cart_items SET quantity = quantity \+ \?/);
+    expect(update[1]).toEqual([1, '3']);
     expect(insert[0]).toMatch(/WHERE NOT EXISTS/);
-    expect(insert[1]).toEqual([3, 'Burger', 170, 'food2', 1, 3]);
+    expect(insert[1]).toEqual(['3', 3, 1, 'Burger', 170, 170, '[]', 'food2', 1, '3']);
   });
 
   it('addItem stores a null restaurant_id when the dish has none', async () => {
@@ -113,38 +114,64 @@ describe('cartRepo', () => {
     await cartRepo.addItem({id: 4, name: 'Soup', price: 90});
 
     const insert = runStatements.mock.calls[0][0][1];
-    expect(insert[1]).toEqual([4, 'Soup', 90, null, null, 4]);
+    expect(insert[1]).toEqual(['4', 4, null, 'Soup', 90, 90, '[]', null, 1, '4']);
   });
 
-  it('changeQuantity updates then deletes rows at or below zero atomically', async () => {
+  it('addLine keys a line by dish + sorted option ids and prices it with the options', async () => {
     runStatements.mockResolvedValue([result(), result()]);
 
-    await cartRepo.changeQuantity(3, -1);
+    await cartRepo.addLine(dish, [large], 2);
+
+    const [update, insert] = runStatements.mock.calls[0][0];
+    expect(update[1]).toEqual([2, '3:12']);
+    expect(insert[1].slice(0, 9)).toEqual([
+      '3:12', 3, 1, 'Burger', 170, 230,
+      JSON.stringify([{id: 12, name: 'Large', price_delta: 60, group_id: 4, group_name: 'Size'}]),
+      'food2', 2,
+    ]);
+  });
+
+  it('replaceLine deletes the old line and upserts the new one in one transaction', async () => {
+    runStatements.mockResolvedValue([result(), result(), result()]);
+
+    await cartRepo.replaceLine('3', dish, [large], 1);
+
+    expect(runStatements).toHaveBeenCalledTimes(1);
+    const statements = runStatements.mock.calls[0][0];
+    expect(statements[0]).toEqual(['DELETE FROM cart_items WHERE line_key = ?', ['3']]);
+    expect(statements[1][1]).toEqual([1, '3:12']);
+    expect(statements).toHaveLength(3);
+  });
+
+  it('changeQuantity updates then deletes lines at or below zero atomically', async () => {
+    runStatements.mockResolvedValue([result(), result()]);
+
+    await cartRepo.changeQuantity('3', -1);
 
     expect(runStatements).toHaveBeenCalledTimes(1);
     const [update, cleanup] = runStatements.mock.calls[0][0];
     expect(update).toEqual([
-      'UPDATE cart SET quantity = quantity + ? WHERE menu_item_id = ?',
-      [-1, 3],
+      'UPDATE cart_items SET quantity = quantity + ? WHERE line_key = ?',
+      [-1, '3'],
     ]);
-    expect(cleanup[0]).toMatch(/DELETE FROM cart WHERE quantity <= 0/);
+    expect(cleanup[0]).toMatch(/DELETE FROM cart_items WHERE quantity <= 0/);
   });
 
-  it('setQuantity deletes the row when the quantity is 0 or less', async () => {
+  it('setQuantity deletes the line when the quantity is 0 or less', async () => {
     runStatements.mockResolvedValue([result()]);
 
-    await cartRepo.setQuantity(3, 0);
+    await cartRepo.setQuantity('3', 0);
 
-    expect(runStatements.mock.calls[0][0][0][0]).toMatch(/^DELETE FROM cart/);
+    expect(runStatements.mock.calls[0][0][0][0]).toMatch(/^DELETE FROM cart_items/);
   });
 
   it('setQuantity writes an absolute quantity otherwise', async () => {
     runStatements.mockResolvedValue([result()]);
 
-    await cartRepo.setQuantity(3, 4);
+    await cartRepo.setQuantity('3', 4);
 
     expect(runStatements.mock.calls[0][0]).toEqual([
-      ['UPDATE cart SET quantity = ? WHERE menu_item_id = ?', [4, 3]],
+      ['UPDATE cart_items SET quantity = ? WHERE line_key = ?', [4, '3']],
     ]);
   });
 });
@@ -216,8 +243,9 @@ describe('schema migrations', () => {
     expect(run.mock.calls[4][0][0][0]).toMatch(/CREATE TABLE orders/);
 
     const inserts = run.mock.calls[latest + 2][0];
-    const {MENU_SEED, RESTAURANT_SEED} = require('../src/database/seedData');
-    expect(inserts).toHaveLength(1 + RESTAURANT_SEED.length + MENU_SEED.length); // admin + restaurants + every dish
+    const {MENU_SEED, RESTAURANT_SEED, optionSeedStatements} = require('../src/database/seedData');
+    // admin + restaurants + every dish + every dish's option groups and options
+    expect(inserts).toHaveLength(1 + RESTAURANT_SEED.length + MENU_SEED.length + optionSeedStatements().length);
     // The seeded admin gets a hash and no plaintext password.
     const adminInsert = inserts.find(([sql]) => /INTO users/.test(sql));
     expect(adminInsert[0]).toMatch(/VALUES \(\?, NULL, \?, \?\)/);
