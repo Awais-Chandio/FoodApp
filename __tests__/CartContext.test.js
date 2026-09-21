@@ -10,7 +10,12 @@ jest.mock('../src/database/repositories/cartRepo', () => ({
   replaceAll: jest.fn(),
 }));
 
+jest.mock('../src/database/repositories/promoRepo', () => ({findByCode: jest.fn()}));
+jest.mock('react-native-toast-message', () => ({__esModule: true, default: {show: jest.fn()}}));
+
 const cartRepo = require('../src/database/repositories/cartRepo');
+const promoRepo = require('../src/database/repositories/promoRepo');
+const Toast = require('react-native-toast-message').default;
 const {CartProvider, useCart} = require('../src/Context/CartContext');
 
 const burger = {id: 1, restaurant_id: 5, name: 'Burger', price: 170, image_key: 'food2'};
@@ -227,4 +232,131 @@ it('useCart throws a clear error outside the provider', async () => {
 
   expect(caught.message).toBe('useCart must be used inside a CartProvider');
   console.error.mockRestore();
+});
+
+describe('applied promo', () => {
+  const save10 = {code: 'SAVE10', percent: 10, min_order: 0, expires_at: null};
+  const welcome = {code: 'WELCOME20', percent: 20, min_order: 400, expires_at: null};
+  const promos = {SAVE10: save10, WELCOME20: welcome};
+
+  beforeEach(() => {
+    promoRepo.findByCode.mockImplementation(code =>
+      Promise.resolve(promos[String(code).trim().toUpperCase()] || null),
+    );
+  });
+
+  it('starts without a promo', async () => {
+    await mount();
+    expect(cart.promo).toBeNull();
+    expect(cart.promoCode).toBeNull();
+  });
+
+  it('applyPromo holds a valid promo in the context', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 2}]);
+    await mount();
+
+    let result;
+    await run(async () => {
+      result = await cart.applyPromo(' save10 ');
+    });
+
+    expect(result).toEqual({ok: true, promo: save10, discount: 34});
+    expect(cart.promoCode).toBe('SAVE10');
+    expect(cart.promo).toBe(save10);
+  });
+
+  it('reports empty input, an unknown code, and an empty cart without applying anything', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 1}]);
+    await mount();
+
+    let empty;
+    let unknown;
+    await run(async () => {
+      empty = await cart.applyPromo('   ');
+      unknown = await cart.applyPromo('NOPE');
+    });
+    expect(empty).toEqual({ok: false, message: 'Enter a promo code first.'});
+    expect(unknown).toEqual({ok: false, message: "We couldn't find that code."});
+    expect(cart.promo).toBeNull();
+
+    setUpFakeTable([]);
+    await run(() => cart.reload());
+    let noItems;
+    await run(async () => {
+      noItems = await cart.applyPromo('SAVE10');
+    });
+    expect(noItems.ok).toBe(false);
+    expect(cart.promo).toBeNull();
+  });
+
+  it('refuses a code whose minimum order is not met', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 1}]);
+    await mount();
+
+    let result;
+    await run(async () => {
+      result = await cart.applyPromo('WELCOME20');
+    });
+
+    expect(result).toEqual({ok: false, message: 'Add Rs. 230 more to use WELCOME20.'});
+    expect(cart.promo).toBeNull();
+  });
+
+  it('removes the promo, with a toast saying why, when the subtotal drops below the minimum', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 3}]); // 510
+    await mount();
+    await run(() => cart.applyPromo('WELCOME20'));
+    expect(cart.promoCode).toBe('WELCOME20');
+
+    await run(() => cart.updateQty(1, 2)); // 340 < 400
+
+    expect(cart.promo).toBeNull();
+    expect(Toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({text1: 'Promo removed', text2: 'Add Rs. 60 more to use WELCOME20.'}),
+    );
+  });
+
+  it('keeps the promo while the subtotal still qualifies', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 3}]);
+    await mount();
+    await run(() => cart.applyPromo('SAVE10'));
+
+    await run(() => cart.updateQty(1, 1));
+
+    expect(cart.promoCode).toBe('SAVE10');
+    expect(Toast.show).not.toHaveBeenCalled();
+  });
+
+  it('removePromo() clears it', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 1}]);
+    await mount();
+    await run(() => cart.applyPromo('SAVE10'));
+
+    await run(async () => cart.removePromo());
+
+    expect(cart.promo).toBeNull();
+  });
+
+  it('clears silently when the cart becomes empty (order placed, cart cleared, logout)', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 1}]);
+    await mount();
+    await run(() => cart.applyPromo('SAVE10'));
+
+    await run(() => cart.clear());
+
+    expect(cart.promo).toBeNull();
+    expect(Toast.show).not.toHaveBeenCalled();
+  });
+
+  it('clears when the table is emptied behind its back (placeOrder empties the cart in SQL)', async () => {
+    setUpFakeTable([{menu_item_id: 1, name: 'Burger', price: 170, quantity: 1}]);
+    await mount();
+    await run(() => cart.applyPromo('SAVE10'));
+
+    setUpFakeTable([]);
+    await run(() => cart.reload());
+
+    expect(cart.promo).toBeNull();
+    expect(Toast.show).not.toHaveBeenCalled();
+  });
 });

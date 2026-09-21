@@ -26,7 +26,7 @@ import {
   spacing,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
-import { computeTotals, isValidPromo, normalizePromo } from "../../utils/pricing";
+import { computeTotals, formatMoney } from "../../utils/pricing";
 
 export default function AddToCartScreen() {
   const navigation = useNavigation();
@@ -37,14 +37,17 @@ export default function AddToCartScreen() {
   const {
     items: cartItems,
     subtotal,
+    promo,
+    applyPromo,
+    removePromo,
     reload: reloadCart,
     updateQty,
     remove,
     getQty,
   } = useCart();
   const [refreshing, setRefreshing] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   const refreshCart = async () => {
     setRefreshing(true);
@@ -73,46 +76,40 @@ export default function AddToCartScreen() {
     deliveryFee,
     discount,
     total: totalPrice,
+    promoCode: appliedCode,
   } = computeTotals({
     subtotal,
     itemCount: cartItems.length,
-    promoCode: appliedPromo,
+    promo,
   });
   const isCompact = width < 390;
 
   const handleCheckout = () => {
     if (isLoggedIn) {
-      navigation.navigate("Checkout", { promoCode: appliedPromo });
+      navigation.navigate("Checkout");
     } else {
       navigation.navigate("Login");
     }
   };
 
-  const applyPromoCode = () => {
-    const normalized = normalizePromo(promoCode);
+  const applyPromoCode = async () => {
+    if (applyingPromo) {
+      return;
+    }
+    setApplyingPromo(true);
+    const result = await applyPromo(promoInput);
+    setApplyingPromo(false);
 
-    if (!normalized) {
-      Toast.show({
-        type: "error",
-        text1: "Enter a promo code first",
-      });
+    if (!result.ok) {
+      Toast.show({ type: "error", text1: result.message });
       return;
     }
 
-    if (!isValidPromo(normalized)) {
-      Toast.show({
-        type: "error",
-        text1: "Promo code not valid",
-        text2: "Try SAVE10 or FOOD5.",
-      });
-      return;
-    }
-
-    setAppliedPromo(normalized);
+    setPromoInput("");
     Toast.show({
       type: "success",
       text1: "Promo applied",
-      text2: `${normalized} is now active.`,
+      text2: `${result.promo.code} takes ${result.promo.percent}% off (${formatMoney(result.discount)}).`,
     });
   };
 
@@ -235,42 +232,73 @@ export default function AddToCartScreen() {
 
                 <SectionHeader
                   title="Promo code"
-                  subtitle="Optional frontend-only discount preview."
+                  subtitle="Have a code? Enter it to see your discount."
                 />
-                <View style={[styles.promoRow, isCompact ? styles.promoRowStack : null]}>
-                  <TextInput
-                    value={promoCode}
-                    onChangeText={setPromoCode}
-                    placeholder="Try SAVE10 or FOOD5"
-                    placeholderTextColor={colors.textSecondary}
+                {appliedCode ? (
+                  <View
                     style={[
-                      styles.promoInput,
-                      isCompact ? styles.promoInputStack : null,
-                      {
-                        backgroundColor: colors.surface,
-                        color: colors.text,
-                        borderColor: colors.border,
-                      },
+                      styles.appliedPromo,
+                      { backgroundColor: colors.accentSoft, borderColor: colors.success },
                     ]}
-                    autoCapitalize="characters"
-                  />
-                  <TouchableOpacity
-                    style={[
-                      styles.applyButton,
-                      isCompact ? styles.applyButtonStack : null,
-                    ]}
-                    onPress={applyPromoCode}
                   >
-                    <LinearGradient
-                      colors={colors.buttonGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.applyButtonGradient}
+                    <AntDesign name="tag" size={18} color={colors.success} />
+                    <View style={styles.appliedPromoText}>
+                      <Text style={[styles.appliedPromoCode, { color: colors.text }]}>
+                        {appliedCode} · {promo.percent}% off
+                      </Text>
+                      <Text style={[styles.appliedPromoMeta, { color: colors.textSecondary }]}>
+                        You save {formatMoney(discount)}
+                        {promo.min_order > 0 ? ` · min. order ${formatMoney(promo.min_order)}` : ""}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={removePromo}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove promo code ${appliedCode}`}
                     >
-                      <Text style={styles.applyButtonText}>Apply</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
+                      <Text style={[styles.removePromoText, { color: colors.danger }]}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={[styles.promoRow, isCompact ? styles.promoRowStack : null]}>
+                    <TextInput
+                      value={promoInput}
+                      onChangeText={setPromoInput}
+                      placeholder="Try SAVE10, FOOD5 or WELCOME20"
+                      placeholderTextColor={colors.textSecondary}
+                      style={[
+                        styles.promoInput,
+                        isCompact ? styles.promoInputStack : null,
+                        {
+                          backgroundColor: colors.surface,
+                          color: colors.text,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                      autoCapitalize="characters"
+                      autoCorrect={false}
+                      onSubmitEditing={applyPromoCode}
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.applyButton,
+                        isCompact ? styles.applyButtonStack : null,
+                      ]}
+                      onPress={applyPromoCode}
+                      disabled={applyingPromo}
+                    >
+                      <LinearGradient
+                        colors={colors.buttonGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.applyButtonGradient}
+                      >
+                        <Text style={styles.applyButtonText}>Apply</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 <SectionHeader
                   title="Order items"
@@ -319,7 +347,7 @@ export default function AddToCartScreen() {
           </View>
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
-              Discount
+              {appliedCode ? `Discount (${appliedCode})` : "Discount"}
             </Text>
             <Text style={[styles.summaryText, { color: colors.success }]}>
               - Rs. {discount}
@@ -452,6 +480,32 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
+    fontWeight: "800",
+  },
+  appliedPromo: {
+    minHeight: 56,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: layout.sectionGap,
+  },
+  appliedPromoText: {
+    flex: 1,
+    marginHorizontal: spacing.md,
+  },
+  appliedPromoCode: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  appliedPromoMeta: {
+    marginTop: spacing.xs,
+    fontSize: 12,
+  },
+  removePromoText: {
+    fontSize: 14,
     fontWeight: "800",
   },
   itemRow: {

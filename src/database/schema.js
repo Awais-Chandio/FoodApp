@@ -105,6 +105,24 @@ const MIGRATIONS = [
       )`,
     ],
   },
+  {
+    // Promo codes move from a hardcoded object into a table. percent is a whole
+    // number; min_order is a subtotal in Rs. (0 = none); expires_at is epoch ms
+    // (NULL = never). SAVE10 and FOOD5 keep their old behaviour; WELCOME20 is
+    // the demo for a minimum order and an expiry (31 Dec 2026, end of day UTC).
+    version: 6,
+    statements: [
+      `CREATE TABLE promos (
+        code TEXT PRIMARY KEY COLLATE NOCASE,
+        percent INTEGER NOT NULL,
+        min_order REAL NOT NULL DEFAULT 0,
+        expires_at INTEGER
+      )`,
+      "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('SAVE10', 10, 0, NULL)",
+      "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('FOOD5', 5, 0, NULL)",
+      "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('WELCOME20', 20, 400, 1798761599999)",
+    ],
+  },
 ];
 
 // The version a fully migrated database ends at.
