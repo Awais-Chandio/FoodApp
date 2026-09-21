@@ -24,7 +24,7 @@ import {
   spacing,
 } from "../../constants/designSystem";
 import { resolveRestaurantImage } from "../../constants/imageRegistry";
-import { fetchRestaurants } from "../../database/dbs";
+import * as restaurantRepo from "../../database/repositories/restaurantRepo";
 
 const STORAGE_KEY = "recent_searches";
 
@@ -60,7 +60,7 @@ export default function SearchScreen({ navigation }) {
       const savedSearches = await AsyncStorage.getItem(STORAGE_KEY);
       setRecentSearches(savedSearches ? JSON.parse(savedSearches) : []);
 
-      const { nearest, popular } = await fetchRestaurants();
+      const { nearest, popular } = await restaurantRepo.listWithMenus();
       const allRestaurants = [...nearest, ...popular].filter(
         (item, index, list) => list.findIndex((entry) => entry.id === item.id) === index
       );

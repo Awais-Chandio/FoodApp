@@ -14,7 +14,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import db from "../../database/dbs";
+import * as cartRepo from "../../database/repositories/cartRepo";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../Auth/AuthContext";
@@ -43,21 +43,12 @@ export default function AddToCartScreen() {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(null);
 
-  const fetchCart = useCallback(() => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "SELECT * FROM cart",
-        [],
-        (_t, result) => {
-          const items = [];
-          for (let i = 0; i < result.rows.length; i += 1) {
-            items.push(result.rows.item(i));
-          }
-          setCartItems(items);
-        },
-        (_t, error) => console.log("Cart fetch error", error)
-      );
-    });
+  const fetchCart = useCallback(async () => {
+    try {
+      setCartItems(await cartRepo.list());
+    } catch (error) {
+      console.log("Cart fetch error", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -72,47 +63,41 @@ export default function AddToCartScreen() {
 
   const refreshCart = async () => {
     setRefreshing(true);
-    fetchCart();
+    await fetchCart();
     setRefreshing(false);
   };
 
-  const removeItem = (menuItemId) => {
-    db.transaction(
-      (tx) => {
-        tx.executeSql("DELETE FROM cart WHERE menu_item_id=?", [menuItemId]);
-      },
-      (error) => console.log("remove cart error", error),
-      () => fetchCart()
-    );
+  const removeItem = async (menuItemId) => {
+    try {
+      await cartRepo.remove(menuItemId);
+      fetchCart();
+    } catch (error) {
+      console.log("remove cart error", error);
+    }
   };
 
-  const increaseQty = (menuItemId) => {
-    db.transaction(
-      (tx) => {
-        tx.executeSql(
-          "UPDATE cart SET quantity = quantity + 1 WHERE menu_item_id=?",
-          [menuItemId]
-        );
-      },
-      (error) => console.log("increase qty error", error),
-      () => fetchCart()
-    );
+  const increaseQty = async (menuItemId) => {
+    try {
+      await cartRepo.changeQuantity(menuItemId, 1);
+      fetchCart();
+    } catch (error) {
+      console.log("increase qty error", error);
+    }
   };
 
-  const decreaseQty = (menuItemId) => {
-    db.transaction(
-      (tx) => {
-        tx.executeSql(
-          "UPDATE cart SET quantity = quantity - 1 WHERE menu_item_id=? AND quantity > 1",
-          [menuItemId]
-        );
-        tx.executeSql("DELETE FROM cart WHERE quantity <= 0 AND menu_item_id=?", [
-          menuItemId,
-        ]);
-      },
-      (error) => console.log("decrease qty error", error),
-      () => fetchCart()
-    );
+  const decreaseQty = async (menuItemId) => {
+    // The stepper never removes the last unit; the trash button does that.
+    const row = cartItems.find((item) => item.menu_item_id === menuItemId);
+    if (!row || (row.quantity || 0) <= 1) {
+      return;
+    }
+
+    try {
+      await cartRepo.changeQuantity(menuItemId, -1);
+      fetchCart();
+    } catch (error) {
+      console.log("decrease qty error", error);
+    }
   };
 
   const subtotal = useMemo(

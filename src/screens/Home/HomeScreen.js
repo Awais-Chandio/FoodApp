@@ -30,7 +30,7 @@ import {
   categoryAssetMap,
   resolveRestaurantImage,
 } from "../../constants/imageRegistry";
-import { deleteRestaurant, fetchRestaurants } from "../../database/dbs";
+import * as restaurantRepo from "../../database/repositories/restaurantRepo";
 import { useAuth } from "../Auth/AuthContext";
 
 const homeFilters = [
@@ -92,11 +92,11 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const { nearest: nearestRestaurants, popular: popularRestaurants } =
-        await fetchRestaurants();
+        await restaurantRepo.listWithMenus();
       setNearest(nearestRestaurants);
       setPopular(popularRestaurants);
     } catch (error) {
-      console.log("fetchRestaurants error:", error);
+      console.log("listWithMenus error:", error);
       Toast.show({
         type: "error",
         text1: "Could not load restaurants",
@@ -154,8 +154,7 @@ export default function HomeScreen() {
           if (!isAdmin) {
             return;
           }
-          deleteRestaurant(
-            item.id,
+          restaurantRepo.remove(item.id).then(
             () => {
               Toast.show({
                 type: "success",

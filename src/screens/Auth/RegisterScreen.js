@@ -18,7 +18,7 @@ import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
 import { createShadow, radius, spacing } from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
-import { registerUser } from "../../database/dbs";
+import * as userRepo from "../../database/repositories/userRepo";
 
 export default function RegisterScreen({ navigation }) {
   const { colors } = useTheme();
@@ -48,20 +48,17 @@ export default function RegisterScreen({ navigation }) {
     }
 
     setSubmitting(true);
-    registerUser(
-      email.trim(),
-      password,
-      () => {
-        setSubmitting(false);
+    userRepo
+      .register({ email: email.trim(), password })
+      .then(() => {
         Toast.show({
           type: "success",
           text1: "Account created",
           text2: "You can sign in now.",
         });
         navigation.replace("Login");
-      },
-      (error) => {
-        setSubmitting(false);
+      })
+      .catch((error) => {
         if (error.message.includes("UNIQUE constraint")) {
           Toast.show({
             type: "error",
@@ -74,8 +71,8 @@ export default function RegisterScreen({ navigation }) {
             text2: error.message,
           });
         }
-      }
-    );
+      })
+      .finally(() => setSubmitting(false));
   };
 
   const renderPasswordField = ({
