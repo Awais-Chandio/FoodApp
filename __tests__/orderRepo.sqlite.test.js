@@ -1,0 +1,370 @@
+/**
+ * Runs the real migrations and repositories against a real (in-memory) SQLite
+ * database through jest/sqliteStorageAdapter.js. Skipped on Node versions
+ * without node:sqlite.
+ */
+jest.mock('react-native-sqlite-storage', () => require('../jest/sqliteStorageAdapter'));
+jest.mock('react-native-quick-crypto', () => {
+  const nodeCrypto = require('crypto');
+  return {
+    Buffer: require('buffer').Buffer,
+    pbkdf2: nodeCrypto.pbkdf2,
+    randomBytes: nodeCrypto.randomBytes,
+    timingSafeEqual: nodeCrypto.timingSafeEqual,
+  };
+});
+
+const {sqliteAvailable} = require('../jest/sqliteStorageAdapter');
+const describeSqlite = sqliteAvailable ? describe : describe.skip;
+
+beforeAll(() => jest.spyOn(console, 'log').mockImplementation(() => {}));
+afterAll(() => console.log.mockRestore());
+
+const USER = 7;
+const ADDRESS = 'House 12, Street 4, Clifton, Karachi';
+
+// Fresh module registry = fresh in-memory database and fresh init promise.
+const load = () => {
+  let modules;
+  jest.isolateModules(() => {
+    modules = {
+      client: require('../src/database/client'),
+      schema: require('../src/database/schema'),
+      orders: require('../src/database/repositories/orderRepo'),
+      cart: require('../src/database/repositories/cartRepo'),
+      menu: require('../src/database/repositories/menuRepo'),
+      restaurants: require('../src/database/repositories/restaurantRepo'),
+    };
+  });
+  modules.raw = modules.client.default.raw;
+  return modules;
+};
+
+const count = (raw, table) => raw.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
+
+// Seeded menu: Moonland Special 210, Burger Deluxe 170, Veggie Supreme 150, Margherita 180.
+const fillCart = async m => {
+  await m.schema.initDatabase();
+  const menu = await m.menu.listByRestaurant(1);
+  const byName = name => menu.find(item => item.name === name);
+  await m.cart.addItem(byName('Burger Deluxe'));
+  await m.cart.addItem(byName('Burger Deluxe'));
+  await m.cart.addItem(byName('Margherita Pizza'));
+  return menu;
+};
+
+describeSqlite('schema on real SQLite', () => {
+  it('creates everything on a fresh database and seeds it', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    const version = m.raw.prepare('PRAGMA user_version').get().user_version;
+    expect(version).toBe(4);
+    expect(count(m.raw, 'orders')).toBe(0);
+    expect(count(m.raw, 'order_items')).toBe(0);
+    expect(count(m.raw, 'restaurants')).toBe(6);
+    expect(count(m.raw, 'menu_items')).toBe(4);
+    const admin = m.raw.prepare("SELECT password, password_hash FROM users WHERE role = 'admin'").get();
+    expect(admin.password).toBeNull();
+    expect(admin.password_hash).toMatch(/^pbkdf2-sha256\$/);
+  });
+
+  it('upgrades a pre-versioning install, keeping its data', async () => {
+    const m = load();
+    // The schema exactly as it was before any migration existed, with real data.
+    m.raw.exec(`
+      CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'user');
+      CREATE TABLE admin_users (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT);
+      CREATE TABLE restaurants (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, rating REAL, time TEXT, offer TEXT, category TEXT, image_path TEXT);
+      CREATE TABLE menu_items (id INTEGER PRIMARY KEY AUTOINCREMENT, restaurant_id INTEGER, name TEXT, price REAL, type TEXT, image_key TEXT);
+      CREATE TABLE cart (id INTEGER PRIMARY KEY AUTOINCREMENT, menu_item_id INTEGER UNIQUE, name TEXT, price REAL, image_key TEXT, quantity INTEGER);
+      INSERT INTO users (email, password, role) VALUES ('admin@foodapp.com', 'admin123', 'admin');
+      INSERT INTO users (email, password, role) VALUES ('sam@x.com', 'pw', 'user');
+      INSERT INTO restaurants (id, name, rating, time, offer, category) VALUES (1, 'Mine', 4.5, '10 min', NULL, 'nearest');
+      INSERT INTO menu_items (restaurant_id, name, price, type, image_key) VALUES (1, 'Kept Dish', 99, NULL, 'food1');
+      INSERT INTO cart (menu_item_id, name, price, image_key, quantity) VALUES (1, 'Kept Dish', 99, 'food1', 3);
+    `);
+
+    await m.schema.initDatabase();
+
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(4);
+    expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
+    expect(count(m.raw, 'menu_items')).toBe(1);
+    const cartRow = m.raw.prepare('SELECT * FROM cart').get();
+    expect(cartRow.quantity).toBe(3);
+    expect(cartRow.restaurant_id).toBeNull(); // new nullable column
+    expect(count(m.raw, 'orders')).toBe(0);
+    // Legacy plaintext is still there for the later upgrade pass, and the new column exists.
+    const sam = m.raw.prepare("SELECT password, password_hash FROM users WHERE email = 'sam@x.com'").get();
+    expect(sam).toEqual({password: 'pw', password_hash: null});
+  });
+});
+
+describeSqlite('runTransaction rollback rules', () => {
+  it('rolls everything back when a callback THROWS (the library would only log it)', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    await expect(
+      m.client.runTransaction((tx, control) => {
+        tx.executeSql(
+          "INSERT INTO restaurants (name, category) VALUES ('Ghost', 'nearest')",
+          [],
+          control.guard(() => {
+            throw new Error('bug in a callback');
+          }),
+        );
+      }),
+    ).rejects.toThrow('bug in a callback');
+
+    expect(m.raw.prepare("SELECT COUNT(*) AS n FROM restaurants WHERE name = 'Ghost'").get().n).toBe(0);
+  });
+
+  it('WITHOUT guard a throwing callback silently commits (documents the library trap)', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    await m.client.runTransaction(tx => {
+      tx.executeSql(
+        "INSERT INTO restaurants (name, category) VALUES ('Ghost', 'nearest')",
+        [],
+        () => {
+          throw new Error('swallowed');
+        },
+      );
+    });
+
+    expect(m.raw.prepare("SELECT COUNT(*) AS n FROM restaurants WHERE name = 'Ghost'").get().n).toBe(1);
+  });
+});
+
+describeSqlite('orderRepo.placeOrder on real SQLite', () => {
+  it('creates the order, snapshots the items and empties the cart in one go', async () => {
+    const m = load();
+    await fillCart(m); // Burger x2 (340) + Pizza x1 (180) = 520
+
+    const placed = await m.orders.placeOrder({
+      userId: USER,
+      address: `  ${ADDRESS}  `,
+      paymentMethod: 'cod',
+      promoCode: 'save10',
+    });
+
+    // 520 subtotal + 120 delivery - 52 discount
+    expect(placed).toMatchObject({status: 'placed', total: 588, deliveryFee: 120, discount: 52, promoCode: 'SAVE10'});
+
+    const order = m.raw.prepare('SELECT * FROM orders WHERE id = ?').get(placed.id);
+    expect(order).toMatchObject({
+      user_id: USER,
+      status: 'placed',
+      total: 588,
+      delivery_fee: 120,
+      discount: 52,
+      promo_code: 'SAVE10',
+      address: ADDRESS, // trimmed
+      payment_method: 'cod',
+    });
+    expect(order.created_at).toBe(order.updated_at);
+
+    const items = m.raw.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id').all(placed.id);
+    expect(items.map(i => [i.name, i.price, i.quantity])).toEqual([
+      ['Burger Deluxe', 170, 2],
+      ['Margherita Pizza', 180, 1],
+    ]);
+    expect(count(m.raw, 'cart')).toBe(0);
+  });
+
+  it('leaves order history intact after the menu changes', async () => {
+    const m = load();
+    const menu = await fillCart(m);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    m.raw.prepare('UPDATE menu_items SET price = 999, name = ? WHERE id = ?').run('Renamed', menu[1].id);
+    m.raw.prepare('DELETE FROM menu_items WHERE name = ?').run('Margherita Pizza');
+
+    const order = await m.orders.getOrderForUser(placed.id, USER);
+    expect(order.items.map(i => [i.name, i.price])).toEqual([
+      ['Burger Deluxe', 170],
+      ['Margherita Pizza', 180],
+    ]);
+  });
+
+  it('rejects an empty cart and writes nothing', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    await expect(
+      m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'}),
+    ).rejects.toThrow('EMPTY_CART');
+    expect(count(m.raw, 'orders')).toBe(0);
+  });
+
+  it('rejects an invalid promo without touching the cart or creating an order', async () => {
+    const m = load();
+    await fillCart(m);
+
+    await expect(
+      m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod', promoCode: 'BOGUS'}),
+    ).rejects.toThrow('INVALID_PROMO');
+
+    expect(count(m.raw, 'orders')).toBe(0);
+    expect(count(m.raw, 'cart')).toBe(2);
+  });
+
+  it.each([
+    ['no user', {userId: null, address: ADDRESS, paymentMethod: 'cod'}, 'NOT_LOGGED_IN'],
+    ['a short address', {userId: USER, address: 'home', paymentMethod: 'cod'}, /address/i],
+    ['an unknown payment method', {userId: USER, address: ADDRESS, paymentMethod: 'bitcoin'}, 'INVALID_PAYMENT_METHOD'],
+  ])('rejects %s before touching the database', async (_name, input, message) => {
+    const m = load();
+    await fillCart(m);
+
+    await expect(m.orders.placeOrder(input)).rejects.toThrow(message);
+    expect(count(m.raw, 'orders')).toBe(0);
+    expect(count(m.raw, 'cart')).toBe(2);
+  });
+
+  it('is atomic: if a later step fails, no order exists and the cart is untouched', async () => {
+    const m = load();
+    await fillCart(m);
+    m.raw.exec('DROP TABLE order_items'); // make the second write fail
+
+    await expect(
+      m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'}),
+    ).rejects.toThrow();
+
+    expect(count(m.raw, 'orders')).toBe(0); // the order INSERT was rolled back
+    expect(count(m.raw, 'cart')).toBe(2); // cart not cleared
+  });
+
+  it('two orders in a row get their own items', async () => {
+    const m = load();
+    await fillCart(m);
+    const first = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await fillCart(m);
+    const second = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'card'});
+
+    expect(second.id).not.toBe(first.id);
+    expect(count(m.raw, 'order_items')).toBe(4);
+    const payments = m.raw.prepare('SELECT payment_method FROM orders ORDER BY id').all();
+    expect(payments.map(p => p.payment_method)).toEqual(['cod', 'card']);
+  });
+});
+
+describeSqlite('orderRepo reads and status', () => {
+  const place = (m, userId = USER) =>
+    m.orders.placeOrder({userId, address: ADDRESS, paymentMethod: 'cod'});
+
+  it('only returns an order to its owner', async () => {
+    const m = load();
+    await fillCart(m);
+    const {id} = await place(m);
+
+    expect((await m.orders.getOrderForUser(id, USER)).id).toBe(id);
+    expect(await m.orders.getOrderForUser(id, 999)).toBeNull();
+    expect(await m.orders.getOrderForUser(12345, USER)).toBeNull();
+  });
+
+  it('lists a user\'s orders newest first with items, and no one else\'s', async () => {
+    const m = load();
+    await fillCart(m);
+    const a = await place(m);
+    await fillCart(m);
+    const b = await place(m);
+    await fillCart(m);
+    await place(m, 99); // someone else
+
+    const list = await m.orders.listOrders(USER);
+
+    expect(list.map(o => o.id)).toEqual([b.id, a.id]);
+    expect(list[0].items).toHaveLength(2);
+  });
+
+  it('remembers the last address used', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    expect(await m.orders.getLastAddress(USER)).toBe('');
+
+    await fillCart(m);
+    await place(m);
+    expect(await m.orders.getLastAddress(USER)).toBe(ADDRESS);
+    expect(await m.orders.getLastAddress(99)).toBe('');
+  });
+
+  it('advances an order to the status it should have by now, and persists it', async () => {
+    const m = load();
+    await fillCart(m);
+    const placed = await place(m);
+    const order = await m.orders.getOrderForUser(placed.id, USER);
+
+    const t = order.created_at;
+    expect((await m.orders.advanceIfDue(order, t + 5000)).status).toBe('placed');
+
+    const preparing = await m.orders.advanceIfDue(order, t + 25000);
+    expect(preparing.status).toBe('preparing');
+    expect(preparing.items).toHaveLength(2); // items preserved
+    expect(m.raw.prepare('SELECT status, updated_at FROM orders WHERE id = ?').get(placed.id))
+      .toEqual({status: 'preparing', updated_at: t + 25000});
+
+    // Skips straight ahead after a long absence, and stays delivered.
+    const delivered = await m.orders.advanceIfDue(preparing, t + 10 * 60000);
+    expect(delivered.status).toBe('delivered');
+    expect((await m.orders.advanceIfDue(delivered, t + 20 * 60000)).status).toBe('delivered');
+  });
+
+  it('never moves an order backwards', async () => {
+    const m = load();
+    await fillCart(m);
+    const placed = await place(m);
+    let order = await m.orders.getOrderForUser(placed.id, USER);
+    order = await m.orders.advanceIfDue(order, order.created_at + 70000); // on_the_way
+
+    const earlier = await m.orders.advanceIfDue(order, order.created_at + 1000);
+
+    expect(earlier.status).toBe('on_the_way');
+  });
+
+  it('advanceAllDue updates every order in a list', async () => {
+    const m = load();
+    await fillCart(m);
+    await place(m);
+    await fillCart(m);
+    await place(m);
+    const orders = await m.orders.listOrders(USER);
+
+    const later = Math.max(...orders.map(o => o.created_at)) + 130000;
+    const advanced = await m.orders.advanceAllDue(orders, later);
+
+    expect(advanced.map(o => o.status)).toEqual(['delivered', 'delivered']);
+  });
+});
+
+describeSqlite('reorder', () => {
+  it('rebuilds the cart at current prices and reports dishes that no longer exist', async () => {
+    const m = load();
+    const menu = await fillCart(m); // Burger x2, Pizza x1
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    // Something else is in the cart, the price changed, and the pizza was removed.
+    await m.cart.addItem(menu.find(i => i.name === 'Moonland Special'));
+    m.raw.prepare("UPDATE menu_items SET price = 200 WHERE name = 'Burger Deluxe'").run();
+    m.raw.prepare("DELETE FROM menu_items WHERE name = 'Margherita Pizza'").run();
+
+    const {lines, unavailable} = await m.orders.getReorderLines(placed.id, USER);
+    expect(unavailable).toBe(1);
+    expect(lines).toHaveLength(1);
+
+    await m.cart.replaceAll(lines);
+
+    const cart = m.raw.prepare('SELECT name, price, quantity, restaurant_id FROM cart').all();
+    expect(cart).toEqual([{name: 'Burger Deluxe', price: 200, quantity: 2, restaurant_id: 1}]); // old cart replaced
+  });
+
+  it('refuses to reorder someone else\'s order', async () => {
+    const m = load();
+    await fillCart(m);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    expect(await m.orders.getReorderLines(placed.id, 999)).toEqual({lines: [], unavailable: 0});
+  });
+});

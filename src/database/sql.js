@@ -1,4 +1,4 @@
-import { runStatements } from "./client";
+import { runStatements, runTransaction } from "./client";
 import { initDatabase } from "./schema";
 
 // Promise helpers used by the repositories. Each one waits for the schema, so
@@ -29,4 +29,13 @@ export const queryMany = async (statements) => {
 export const batch = async (statements) => {
   await initDatabase();
   await runStatements(statements);
+};
+
+/**
+ * Runs `work(tx, control)` as one transaction, for writes that need a value
+ * from an earlier statement (for example an insertId). See runTransaction.
+ */
+export const transaction = async (work) => {
+  await initDatabase();
+  return runTransaction(work);
 };
