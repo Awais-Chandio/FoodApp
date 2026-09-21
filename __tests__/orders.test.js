@@ -3,6 +3,8 @@ const {
   DELIVERY_FEE,
   formatMoney,
   formatPromoDate,
+  FREE_DELIVERY_THRESHOLD,
+  freeDeliveryProgress,
   normalizePromo,
   PROMO_MESSAGES,
   validatePromo,
@@ -26,6 +28,24 @@ describe('pricing', () => {
       total: 500 + DELIVERY_FEE,
       promoCode: null,
     });
+  });
+
+  it('makes delivery free from Rs. 800 on the subtotal BEFORE the discount', () => {
+    expect(FREE_DELIVERY_THRESHOLD).toBe(800);
+    expect(computeTotals({subtotal: 799, itemCount: 2}).deliveryFee).toBe(DELIVERY_FEE);
+    const free = computeTotals({subtotal: 800, itemCount: 2});
+    expect(free).toMatchObject({deliveryFee: 0, total: 800});
+    // a 10% discount takes the payable amount under 800, but delivery stays free
+    const discounted = computeTotals({subtotal: 800, itemCount: 2, promo: {code: 'SAVE10', percent: 10, min_order: 0, expires_at: null}});
+    expect(discounted).toMatchObject({deliveryFee: 0, discount: 80, total: 720});
+  });
+
+  it('reports progress towards free delivery', () => {
+    expect(freeDeliveryProgress(0)).toEqual({unlocked: false, remaining: 800, fraction: 0});
+    expect(freeDeliveryProgress(500)).toEqual({unlocked: false, remaining: 300, fraction: 0.625});
+    expect(freeDeliveryProgress(800)).toEqual({unlocked: true, remaining: 0, fraction: 1});
+    expect(freeDeliveryProgress(1500)).toEqual({unlocked: true, remaining: 0, fraction: 1});
+    expect(freeDeliveryProgress(undefined)).toEqual({unlocked: false, remaining: 800, fraction: 0});
   });
 
   it('charges no delivery fee for an empty cart', () => {

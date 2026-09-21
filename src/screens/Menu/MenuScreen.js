@@ -33,6 +33,7 @@ import {
   typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
+import { tapHaptic } from "../../utils/haptics";
 import {
   activeCategoryAt,
   buildMenuRows,
@@ -143,6 +144,7 @@ export default function MenuScreen() {
     const existing = getQty(item.id) > 0;
 
     try {
+      tapHaptic();
       await add(item);
       Toast.show({
         type: "success",

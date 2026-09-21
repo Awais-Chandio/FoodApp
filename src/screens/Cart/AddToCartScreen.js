@@ -14,8 +14,9 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import { useCart } from "../../Context/CartContext";
 import EmptyState from "../../components/ui/EmptyState";
-import MenuItemCard from "../../components/ui/MenuItemCard";
-import QtyStepper from "../../components/ui/QtyStepper";
+import CartLine from "../../components/CartLine";
+import FreeDeliveryBar from "../../components/FreeDeliveryBar";
+import SkeletonCard from "../../components/ui/SkeletonCard";
 import ScreenHeader from "../../components/ui/ScreenHeader";
 import TextField from "../../components/ui/TextField";
 import SectionHeader from "../../components/ui/SectionHeader";
@@ -29,7 +30,6 @@ import {
   spacing,
   typeScale,
 } from "../../constants/designSystem";
-import { resolveFoodImage } from "../../constants/imageRegistry";
 import { computeTotals, formatMoney } from "../../utils/pricing";
 
 export default function AddToCartScreen() {
@@ -45,6 +45,9 @@ export default function AddToCartScreen() {
     applyPromo,
     removePromo,
     reload: reloadCart,
+    loading: cartLoading,
+    error: cartError,
+    add,
     updateQty,
     remove,
     getQty,
@@ -62,18 +65,43 @@ export default function AddToCartScreen() {
   const showCartError = () =>
     Toast.show({ type: "error", text1: "Could not update your cart" });
 
-  const removeItem = (menuItemId) => remove(menuItemId).catch(showCartError);
+  // Deleting shows an Undo toast (tap it) that puts the line back with its quantity.
+  const removeItem = (line) => {
+    const { menu_item_id: id, quantity } = line;
+    const restore = () => {
+      Toast.hide();
+      add({
+        id,
+        name: line.name,
+        price: line.price,
+        image_key: line.image_key,
+        restaurant_id: line.restaurant_id,
+      })
+        .then(() => (quantity > 1 ? updateQty(id, quantity) : undefined))
+        .catch(showCartError);
+    };
 
-  const increaseQty = (menuItemId) =>
-    updateQty(menuItemId, getQty(menuItemId) + 1).catch(showCartError);
+    remove(id).then(() =>
+      Toast.show({
+        type: "info",
+        text1: `${line.name} removed`,
+        text2: "Tap to undo",
+        visibilityTime: 5000,
+        onPress: restore,
+      })
+    , showCartError);
+  };
 
-  const decreaseQty = (menuItemId) => {
-    // The stepper never removes the last unit; the trash button does that.
-    const quantity = getQty(menuItemId);
+  const increaseQty = (line) =>
+    updateQty(line.menu_item_id, getQty(line.menu_item_id) + 1).catch(showCartError);
+
+  // Minus at quantity 1 removes the line (with Undo), like swiping it away.
+  const decreaseQty = (line) => {
+    const quantity = getQty(line.menu_item_id);
     if (quantity <= 1) {
-      return undefined;
+      return removeItem(line);
     }
-    return updateQty(menuItemId, quantity - 1).catch(showCartError);
+    return updateQty(line.menu_item_id, quantity - 1).catch(showCartError);
   };
 
   const {
@@ -118,29 +146,11 @@ export default function AddToCartScreen() {
   };
 
   const renderCartItem = ({ item }) => (
-    <MenuItemCard
-      image={resolveFoodImage(item.image_path || item.image_key || item.name)}
-      title={item.name}
-      subtitle="Prepared fresh for checkout"
-      price={`Rs. ${item.price}`}
-      footer={
-        <QtyStepper
-          value={item.quantity || 1}
-          onDecrease={() => decreaseQty(item.menu_item_id)}
-          onIncrease={() => increaseQty(item.menu_item_id)}
-          style={styles.stepper}
-        />
-      }
-      trailing={
-        <TouchableOpacity
-          style={[styles.removeButton, { backgroundColor: colors.surfaceMuted }]}
-          onPress={() => removeItem(item.menu_item_id)}
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${item.name}`}
-        >
-          <AntDesign name="delete" size={16} color={colors.danger} />
-        </TouchableOpacity>
-      }
+    <CartLine
+      item={item}
+      onIncrease={increaseQty}
+      onDecrease={decreaseQty}
+      onDelete={removeItem}
     />
   );
 
@@ -278,13 +288,29 @@ export default function AddToCartScreen() {
           </>
         }
         ListEmptyComponent={
-          <EmptyState
-            title="Your cart is empty"
-            message="Browse the menu and add a few dishes to see your summary here."
-            icon="shopping-cart"
-            actionLabel="Browse menu"
-            onActionPress={() => navigation.navigate("HomeStack")}
-          />
+          cartLoading ? (
+            <View>
+              {[1, 2].map((key) => (
+                <SkeletonCard key={key} width={null} height={120} style={styles.skeleton} />
+              ))}
+            </View>
+          ) : cartError ? (
+            <EmptyState
+              title="Could not load your cart"
+              message="Check your connection and try again."
+              icon="warning"
+              actionLabel="Try again"
+              onActionPress={refreshCart}
+            />
+          ) : (
+            <EmptyState
+              title="Your cart is empty"
+              message="Browse the menu and add a few dishes to see your summary here."
+              icon="shopping-cart"
+              actionLabel="Browse menu"
+              onActionPress={() => navigation.navigate("HomeStack")}
+            />
+          )
         }
         ListFooterComponent={
           <View style={cartItems.length ? styles.footerLarge : styles.footerSmall} />
@@ -299,6 +325,7 @@ export default function AddToCartScreen() {
             { backgroundColor: colors.surface, borderColor: colors.borderSoft },
           ]}
         >
+          <FreeDeliveryBar subtotal={subtotal} />
           <SectionHeader title="Payment summary" />
           <View style={styles.summaryRow}>
             <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
@@ -404,9 +431,9 @@ const styles = StyleSheet.create({
     marginRight: 0,
     marginBottom: spacing.md,
   },
-  stepper: {
-    marginTop: spacing.md,
-    alignSelf: "flex-start",
+  skeleton: {
+    width: "100%",
+    marginBottom: spacing.lg,
   },
   applyButton: {
     minHeight: 56,
@@ -452,13 +479,6 @@ const styles = StyleSheet.create({
     ...typeScale.label,
     fontFamily: fontFamily.bold,
   },
-  removeButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   checkoutCard: {
     position: "absolute",
     left: layout.pagePadding,
@@ -499,7 +519,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
   },
   footerLarge: {
-    height: 284,
+    height: 340,
   },
   footerSmall: {
     height: 72,

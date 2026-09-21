@@ -21,6 +21,7 @@ export default function MenuItemCard({
   titleAccessory,
   titleLines = 2,
   subtitleLines = 2,
+  contentAccessibility,
   style,
   accessibilityLabel,
 }) {
@@ -42,7 +43,7 @@ export default function MenuItemCard({
         source={image}
         style={[styles.image, { width: imageSize, height: imageSize }]}
       />
-      <View style={styles.content}>
+      <View style={styles.content} accessible={Boolean(contentAccessibility)} {...contentAccessibility}>
         <View style={styles.titleLine}>
           <AppText variant="body" style={[styles.title, styles.titleText]} numberOfLines={titleLines}>
             {title}
