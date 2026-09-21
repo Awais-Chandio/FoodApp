@@ -115,9 +115,17 @@ FoodApp/
 
 ## Navigation
 
-`Loader` → `Onboarding1-3` → `Tab` (Home, Search, Cart, Profile). Inside the
-Home tab: `HomeScreen` → `Details` → `MenuScreen`. Login, Register,
-TrackOrder and the admin screens live on the root stack.
+`Loader` decides where to go: a restored session goes straight to `Tab`, a
+first launch shows `Onboarding1-3` once (flag `has_seen_onboarding` in
+AsyncStorage), and everyone else lands on `Tab` as a guest. `Tab` holds Home,
+Search, Cart and Profile. Inside the Home tab: `HomeScreen` → `Details` →
+`MenuScreen`. Login, Register and TrackOrder live on the root stack.
+
+Login and logout use `navigation.reset`, so Back never returns to a stale
+screen. The admin routes (`ManageMenuItems`, `ManageUsers`, `Users`, and
+`ManageItems` in the Home stack) are only registered when the signed-in user
+has the `admin` role. This is a UI guard: with a local database it cannot stop
+someone who controls the device.
 
 ## Release builds
 

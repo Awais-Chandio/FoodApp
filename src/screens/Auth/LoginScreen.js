@@ -57,11 +57,15 @@ export default function LoginScreen({ navigation }) {
         text1: user.role === "admin" ? "Welcome back, admin" : "Login successful",
       });
 
-      if (user.role === "admin") {
-        navigation.navigate("Tab");
-      } else {
-        navigation.navigate("Tab", { screen: "AddToCartScreen" });
-      }
+      // reset (not navigate) so Back cannot return to the Login screen.
+      navigation.reset({
+        index: 0,
+        routes: [
+          user.role === "admin"
+            ? { name: "Tab" }
+            : { name: "Tab", params: { screen: "AddToCartScreen" } },
+        ],
+      });
     } catch (error) {
       console.log("Login error:", error);
       Toast.show({

@@ -15,6 +15,7 @@ import AppButton from "../../components/ui/AppButton";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import { useCart } from "../../Context/CartContext";
+import { navigationRef } from "../../navigation/rootNavigation";
 import {
   createShadow,
   layout,
@@ -45,7 +46,7 @@ export default function ProfileScreen({ route }) {
       console.log("could not clear cart on logout", error);
     }
     await logout();
-    navigation.replace("Login");
+    navigationRef.reset({ index: 0, routes: [{ name: "Login" }] });
   };
 
   if (!role) {
