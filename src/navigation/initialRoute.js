@@ -8,5 +8,5 @@ export const resolveInitialRoute = ({ isLoggedIn, hasSeenOnboarding }) => {
   if (isLoggedIn) {
     return "Tab";
   }
-  return hasSeenOnboarding ? "Tab" : "Onboarding1";
+  return hasSeenOnboarding ? "Tab" : "Onboarding";
 };
