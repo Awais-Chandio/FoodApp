@@ -71,8 +71,8 @@ describe('restaurantRepo.listWithMenus', () => {
 });
 
 describe('restaurantRepo.remove', () => {
-  it('deletes menu items, favorites, then the restaurant in one transaction', async () => {
-    runStatements.mockResolvedValue([result(), result(), result()]);
+  it('deletes menu items, favorites, reviews, then the restaurant in one transaction', async () => {
+    runStatements.mockResolvedValue([result(), result(), result(), result()]);
 
     await restaurantRepo.remove(5);
 
@@ -80,6 +80,7 @@ describe('restaurantRepo.remove', () => {
     expect(runStatements.mock.calls[0][0]).toEqual([
       ['DELETE FROM menu_items WHERE restaurant_id = ?', [5]],
       ['DELETE FROM favorites WHERE restaurant_id = ?', [5]],
+      ['DELETE FROM reviews WHERE restaurant_id = ?', [5]],
       ['DELETE FROM restaurants WHERE id = ?', [5]],
     ]);
   });

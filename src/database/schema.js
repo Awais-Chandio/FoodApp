@@ -197,6 +197,29 @@ const MIGRATIONS = [
       ...optionSeedStatements(),
     ],
   },
+  {
+    // Reviews. One review per (order, restaurant). restaurants.rating becomes a
+    // blend of base_rating (the seeded/admin value) and the real reviews, kept up
+    // to date by reviewRepo.add; review_count counts them. Orders placed before
+    // this migration have no restaurant_id on their items and cannot be reviewed.
+    version: 10,
+    statements: [
+      `CREATE TABLE reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL,
+        restaurant_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        rating INTEGER NOT NULL,
+        comment TEXT,
+        created_at INTEGER NOT NULL,
+        UNIQUE (order_id, restaurant_id)
+      )`,
+      "CREATE INDEX idx_reviews_restaurant ON reviews (restaurant_id, created_at DESC)",
+      "ALTER TABLE restaurants ADD COLUMN review_count INTEGER NOT NULL DEFAULT 0",
+      "ALTER TABLE restaurants ADD COLUMN base_rating REAL",
+      "UPDATE restaurants SET base_rating = rating",
+    ],
+  },
 ];
 
 // The version a fully migrated database ends at.
@@ -243,8 +266,8 @@ const seed = async () => {
   if (restaurants.rows[0].count === 0) {
     RESTAURANT_SEED.forEach((row) =>
       statements.push([
-        "INSERT INTO restaurants (id, name, rating, time, offer, category, image_path) VALUES (?,?,?,?,?,?,?)",
-        row,
+        "INSERT INTO restaurants (id, name, rating, time, offer, category, image_path, base_rating) VALUES (?,?,?,?,?,?,?,?)",
+        [...row, row[2]],
       ])
     );
   }

@@ -37,19 +37,29 @@ export const listWithMenus = async () => {
   return { nearest, popular };
 };
 
+// `rating` here is the BASE rating (what the admin enters). The displayed
+// rating is that base blended with real reviews (see utils/ratings.js).
 export const insert = ({ name, rating, time, offer, category, imagePath }) =>
   execute(
-    `INSERT INTO restaurants (name, rating, time, offer, category, image_path)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [name, rating, time, offer, category, imagePath]
+    `INSERT INTO restaurants (name, rating, base_rating, time, offer, category, image_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [name, rating, rating, time, offer, category, imagePath]
   );
 
+// Saving a new base rating recomputes the blended rating from the existing reviews.
 export const update = (id, { name, rating, time, offer, category, imagePath }) =>
   execute(
     `UPDATE restaurants
-     SET name = ?, rating = ?, time = ?, offer = ?, category = ?, image_path = ?
+     SET name = ?, base_rating = ?, time = ?, offer = ?, category = ?, image_path = ?,
+         rating = CASE
+           WHEN ? IS NULL THEN
+             (SELECT ROUND(1.0 * SUM(rating) / COUNT(*), 1) FROM reviews WHERE restaurant_id = restaurants.id)
+           ELSE ROUND(
+             (? * 5 + COALESCE((SELECT SUM(rating) FROM reviews WHERE restaurant_id = restaurants.id), 0))
+             / (5 + review_count), 1)
+         END
      WHERE id = ?`,
-    [name, rating, time, offer, category, imagePath, id]
+    [name, rating, time, offer, category, imagePath, rating, rating, id]
   );
 
 /** Deletes a restaurant, its menu items and everyone's favorites of it atomically. */
@@ -57,5 +67,6 @@ export const remove = (id) =>
   batch([
     ["DELETE FROM menu_items WHERE restaurant_id = ?", [id]],
     ["DELETE FROM favorites WHERE restaurant_id = ?", [id]],
+    ["DELETE FROM reviews WHERE restaurant_id = ?", [id]],
     ["DELETE FROM restaurants WHERE id = ?", [id]],
   ]);

@@ -37,6 +37,7 @@ const load = () => {
       restaurants: require('../src/database/repositories/restaurantRepo'),
       promos: require('../src/database/repositories/promoRepo'),
       options: require('../src/database/repositories/optionsRepo'),
+      reviews: require('../src/database/repositories/reviewRepo'),
     };
   });
   modules.raw = modules.client.default.raw;
@@ -62,7 +63,7 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(9);
+    expect(version).toBe(10);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
@@ -91,7 +92,7 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(9);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(10);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
     const cartRow = m.raw.prepare('SELECT * FROM cart_items').get();
@@ -715,5 +716,137 @@ describeSqlite('dish options on real SQLite', () => {
     expect(optionsDropped).toBe(0);
     expect(lines[0].selectedOptions.map(o => o.name)).toEqual(['Regular']);
     expect(lines[0].item.price).toBe(170);
+  });
+});
+
+describeSqlite('reviews on real SQLite', () => {
+  // Places a delivered order for USER containing one Westway dish (restaurant 1).
+  const deliveredOrder = async m => {
+    await m.schema.initDatabase();
+    const menu = await m.menu.listByRestaurant(1);
+    await m.cart.addItem(menu[1]);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    m.raw.prepare('UPDATE orders SET status = ?, created_at = ? WHERE id = ?').run('delivered', Date.now() - 600000, placed.id);
+    return placed;
+  };
+  const restaurant = (m, id = 1) => m.raw.prepare('SELECT rating, base_rating, review_count FROM restaurants WHERE id = ?').get(id);
+
+  it('the migration keeps each restaurant rating as its base rating with zero reviews', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    expect(restaurant(m)).toEqual({rating: 4.6, base_rating: 4.6, review_count: 0});
+    expect(m.raw.prepare("SELECT name FROM sqlite_master WHERE name = 'reviews'").get()).toBeTruthy();
+  });
+
+  it('adds a review and updates the blended rating and count in one transaction', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+
+    const result = await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 3, comment: '  Cold fries  '});
+
+    // (4.6 * 5 + 3) / 6 = 4.3, not 3.0
+    expect(result).toMatchObject({rating: 4.3, reviewCount: 1});
+    expect(restaurant(m)).toEqual({rating: 4.3, base_rating: 4.6, review_count: 1});
+    expect(m.raw.prepare('SELECT comment, rating FROM reviews').get()).toEqual({comment: 'Cold fries', rating: 3});
+  });
+
+  it('a second review for the same order and restaurant is rejected and changes nothing', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5});
+
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 1})).rejects.toThrow('ALREADY_REVIEWED');
+
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(1);
+    expect(restaurant(m).review_count).toBe(1);
+  });
+
+  it.each([
+    ['someone else\'s order', o => ({userId: 999}), 'NOT_YOUR_ORDER'],
+    ['a restaurant that is not in the order', o => ({restaurantId: 2}), 'RESTAURANT_NOT_IN_ORDER'],
+    ['an unknown order', o => ({orderId: 12345}), 'NOT_YOUR_ORDER'],
+    ['a rating of 0', o => ({rating: 0}), 'INVALID_REVIEW'],
+    ['a rating of 6', o => ({rating: 6}), 'INVALID_REVIEW'],
+    ['no user', o => ({userId: null}), 'NOT_LOGGED_IN'],
+  ])('rejects %s and writes nothing', async (_name, override, message) => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    await expect(
+      m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5, ...override(placed)}),
+    ).rejects.toThrow(message);
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(0);
+    expect(restaurant(m)).toEqual({rating: 4.6, base_rating: 4.6, review_count: 0});
+  });
+
+  it('an order that is not delivered yet cannot be reviewed', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const menu = await m.menu.listByRestaurant(1);
+    await m.cart.addItem(menu[0]);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5})).rejects.toThrow('NOT_DELIVERED');
+  });
+
+  it('orders from before reviews existed (no restaurant on their items) cannot be reviewed', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    m.raw.prepare('UPDATE order_items SET restaurant_id = NULL').run();
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5})).rejects.toThrow('RESTAURANT_NOT_IN_ORDER');
+    expect(await m.reviews.listTargets(placed.id, USER)).toEqual([]);
+  });
+
+  it('a rollback leaves neither the review nor a changed rating', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    m.raw.exec('CREATE TRIGGER fail_update BEFORE UPDATE ON restaurants BEGIN SELECT RAISE(ABORT, \'boom\'); END');
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5})).rejects.toThrow();
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(0);
+    expect(restaurant(m)).toEqual({rating: 4.6, base_rating: 4.6, review_count: 0});
+  });
+
+  it('listTargets shows which restaurants are reviewed; listForRestaurant returns newest first with the summary', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    expect(await m.reviews.listTargets(placed.id, USER)).toEqual([{restaurant_id: 1, name: 'Westway', review: null}]);
+    expect(await m.reviews.listTargets(placed.id, 999)).toEqual([]);
+
+    await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 4, comment: 'Nice'});
+    expect((await m.reviews.listTargets(placed.id, USER))[0].review).toEqual({rating: 4, comment: 'Nice'});
+
+    m.raw.prepare("INSERT INTO users (id, email, role) VALUES (?, 'sam@x.com', 'user')").run(USER);
+    const list = await m.reviews.listForRestaurant(1, 5);
+    expect(list).toMatchObject({rating: 4.5, reviewCount: 1}); // (23 + 4) / 6
+    expect(list.reviews).toHaveLength(1);
+    expect(list.reviews[0]).toMatchObject({rating: 4, comment: 'Nice', reviewer_email: 'sam@x.com'});
+  });
+
+  it('listForRestaurant limits to the newest N', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    for (let i = 1; i <= 7; i += 1) {
+      m.raw.prepare('INSERT INTO reviews (order_id, restaurant_id, user_id, rating, comment, created_at) VALUES (?,?,?,?,?,?)').run(i, 1, USER, 5, `c${i}`, i * 1000);
+    }
+    const list = await m.reviews.listForRestaurant(1, 5);
+    expect(list.reviews.map(r => r.comment)).toEqual(['c7', 'c6', 'c5', 'c4', 'c3']);
+  });
+
+  it('changing the base rating recomputes the blend from existing reviews; deleting the restaurant deletes its reviews', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5}); // (23 + 5) / 6 = 4.7
+    expect(restaurant(m).rating).toBe(4.7);
+
+    await m.restaurants.update(1, {name: 'Westway', rating: 3.0, time: '15 min', offer: null, category: 'nearest', imagePath: null});
+    expect(restaurant(m)).toEqual({rating: 3.3, base_rating: 3, review_count: 1}); // (15 + 5) / 6 = 3.33
+
+    await m.restaurants.remove(1);
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(0);
+  });
+
+  it('a restaurant an admin creates starts with base = rating and no reviews', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    await m.restaurants.insert({name: 'New Place', rating: 4.2, time: '10 min', offer: null, category: 'nearest', imagePath: null});
+    expect(m.raw.prepare("SELECT rating, base_rating, review_count FROM restaurants WHERE name = 'New Place'").get()).toEqual({rating: 4.2, base_rating: 4.2, review_count: 0});
   });
 });

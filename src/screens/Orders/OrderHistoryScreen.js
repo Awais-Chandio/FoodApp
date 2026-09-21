@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import RateOrderButton from "../../components/RateOrderButton";
 import AppButton from "../../components/ui/AppButton";
 import ScreenHeader from "../../components/ui/ScreenHeader";
 import EmptyState from "../../components/ui/EmptyState";
@@ -133,6 +134,12 @@ export default function OrderHistoryScreen() {
             />
           </View>
         </View>
+
+        {delivered ? (
+          <View style={styles.rateRow}>
+            <RateOrderButton order={order} delivered compact />
+          </View>
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -260,6 +267,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: spacing.lg,
     gap: spacing.md,
+  },
+  rateRow: {
+    marginTop: spacing.md,
   },
   actionCell: {
     flex: 1,
