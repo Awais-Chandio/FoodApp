@@ -17,6 +17,7 @@ jest.mock('../src/Context/ThemeProvider', () => ({
 }));
 jest.mock('../src/Context/CartContext', () => ({useCart: jest.fn()}));
 jest.mock('../src/screens/Auth/AuthContext', () => ({useAuth: jest.fn()}));
+jest.mock('../src/database/repositories/optionsRepo', () => ({filterCustomizable: jest.fn(() => Promise.resolve([])), listGroupsForItem: jest.fn(() => Promise.resolve([]))}));
 
 const Toast = require('react-native-toast-message').default;
 const {useNavigation} = require('@react-navigation/native');

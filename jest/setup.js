@@ -52,3 +52,12 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
     }),
   };
 });
+
+// Gesture recognition cannot run in Node; render the wrapped view as-is.
+jest.mock('react-native-gesture-handler', () => {
+  const actual = jest.requireActual('react-native-gesture-handler');
+  return {
+    ...actual,
+    GestureDetector: ({children}) => children,
+  };
+});

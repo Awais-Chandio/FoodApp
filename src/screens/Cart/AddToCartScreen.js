@@ -14,6 +14,9 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import { useCart } from "../../Context/CartContext";
 import EmptyState from "../../components/ui/EmptyState";
+import DishOptionsSheet from "../../components/DishOptionsSheet";
+import useAsyncData from "../../hooks/useAsyncData";
+import * as optionsRepo from "../../database/repositories/optionsRepo";
 import CartLine from "../../components/CartLine";
 import FreeDeliveryBar from "../../components/FreeDeliveryBar";
 import SkeletonCard from "../../components/ui/SkeletonCard";
@@ -51,9 +54,19 @@ export default function AddToCartScreen() {
     add,
     updateQty,
     remove,
+    replaceLine,
     getLineQty,
   } = useCart();
   const [refreshing, setRefreshing] = useState(false);
+  const [editingLine, setEditingLine] = useState(null);
+
+  // Which cart dishes have options, so those lines offer "Customize".
+  const cartDishIds = cartItems.map((line) => line.menu_item_id).join(",");
+  const { data: customizableIds } = useAsyncData(
+    () => optionsRepo.filterCustomizable(cartItems.map((line) => line.menu_item_id)),
+    [cartDishIds]
+  );
+  const customizable = new Set(customizableIds || []);
   const [promoInput, setPromoInput] = useState("");
   const [applyingPromo, setApplyingPromo] = useState(false);
 
@@ -156,6 +169,7 @@ export default function AddToCartScreen() {
       onIncrease={increaseQty}
       onDecrease={decreaseQty}
       onDelete={removeItem}
+      onCustomize={customizable.has(item.menu_item_id) ? setEditingLine : undefined}
     />
   );
 
@@ -377,6 +391,40 @@ export default function AddToCartScreen() {
           </TouchableOpacity>
         </View>
       ) : null}
+      <DishOptionsSheet
+        visible={Boolean(editingLine)}
+        mode="edit"
+        item={
+          editingLine
+            ? {
+                id: editingLine.menu_item_id,
+                name: editingLine.name,
+                price: editingLine.base_price ?? editingLine.price,
+                image_key: editingLine.image_key,
+                restaurant_id: editingLine.restaurant_id,
+              }
+            : null
+        }
+        initialOptions={editingLine ? parseSelectedOptions(editingLine.selected_options) : null}
+        initialQuantity={editingLine ? editingLine.quantity : 1}
+        onClose={() => setEditingLine(null)}
+        onSubmit={({ selectedOptions, quantity }) => {
+          const line = editingLine;
+          setEditingLine(null);
+          replaceLine(
+            line.line_key,
+            {
+              id: line.menu_item_id,
+              name: line.name,
+              price: line.base_price ?? line.price,
+              image_key: line.image_key,
+              restaurant_id: line.restaurant_id,
+            },
+            selectedOptions,
+            quantity
+          ).catch(showCartError);
+        }}
+      />
     </View>
   );
 }

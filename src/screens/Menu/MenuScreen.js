@@ -13,6 +13,8 @@ import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/nativ
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import * as menuRepo from "../../database/repositories/menuRepo";
+import * as optionsRepo from "../../database/repositories/optionsRepo";
+import DishOptionsSheet from "../../components/DishOptionsSheet";
 import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
 import useAsyncData from "../../hooks/useAsyncData";
@@ -62,11 +64,20 @@ export default function MenuScreen() {
 
   const { count: totalItems, subtotal: totalPrice, getQty, add, updateQty } = useCart();
   const {
-    data: menuItems,
+    data: menuData,
     loading,
     error,
     reload,
-  } = useAsyncData(() => menuRepo.listByRestaurant(restaurant.id), [restaurant.id]);
+  } = useAsyncData(async () => {
+    const [items, customizableIds] = await Promise.all([
+      menuRepo.listByRestaurant(restaurant.id),
+      optionsRepo.listCustomizableIds(restaurant.id),
+    ]);
+    return { items, customizableIds };
+  }, [restaurant.id]);
+  const menuItems = menuData?.items;
+  const customizable = useMemo(() => new Set(menuData?.customizableIds || []), [menuData]);
+  const [sheetItem, setSheetItem] = useState(null);
   const [priceFilter, setPriceFilter] = useState("all");
   const [vegOnly, setVegOnly] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
@@ -138,6 +149,31 @@ export default function MenuScreen() {
     setActiveCategory(tab.category);
     tapLockUntil.current = Date.now() + TAP_LOCK_MS;
     listRef.current?.scrollToOffset({ offset: headerHeight + tab.offset, animated: true });
+  };
+
+  // A dish with options opens the customize sheet; a plain dish is added at once.
+  const handleAdd = (item) => {
+    if (customizable.has(item.id)) {
+      setSheetItem(item);
+      return undefined;
+    }
+    return increaseQty(item);
+  };
+
+  const submitSheet = async ({ selectedOptions, quantity }) => {
+    const item = sheetItem;
+    setSheetItem(null);
+    try {
+      tapHaptic();
+      await add(item, { selectedOptions, quantity });
+      Toast.show({
+        type: "success",
+        text1: "Added to cart",
+        text2: `${quantity} × ${item.name} is ready for checkout.`,
+      });
+    } catch (addError) {
+      Toast.show({ type: "error", text1: "Could not update your cart" });
+    }
   };
 
   const increaseQty = async (item) => {
@@ -240,7 +276,7 @@ export default function MenuScreen() {
         trailing={
           <>
             {adminButtons}
-            {quantity > 0 ? (
+            {quantity > 0 && !customizable.has(item.id) ? (
               <QtyStepper
                 vertical
                 value={quantity}
@@ -249,9 +285,13 @@ export default function MenuScreen() {
               />
             ) : (
               <TouchableOpacity
-                onPress={() => increaseQty(item)}
+                onPress={() => handleAdd(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`Add ${item.name} to cart`}
+                accessibilityLabel={
+                  customizable.has(item.id)
+                    ? `Customize ${item.name}${quantity ? `, ${quantity} in cart` : ""}`
+                    : `Add ${item.name} to cart`
+                }
               >
                 <LinearGradient
                   colors={colors.buttonGradient}
@@ -260,6 +300,13 @@ export default function MenuScreen() {
                   style={styles.addButton}
                 >
                   <AntDesign name="plus" size={16} color={colors.onPrimary} />
+                  {quantity > 0 ? (
+                    <View style={[styles.countBadge, { backgroundColor: colors.onPrimary }]}>
+                      <AppText variant="caption" color="primaryDeep" style={styles.countText}>
+                        {quantity}
+                      </AppText>
+                    </View>
+                  ) : null}
                 </LinearGradient>
               </TouchableOpacity>
             )}
@@ -413,6 +460,13 @@ export default function MenuScreen() {
         showsVerticalScrollIndicator={false}
       />
 
+      <DishOptionsSheet
+        visible={Boolean(sheetItem)}
+        item={sheetItem}
+        onClose={() => setSheetItem(null)}
+        onSubmit={submitSheet}
+      />
+
       <TouchableOpacity
         activeOpacity={totalItems ? 0.9 : 0.95}
         style={[
@@ -521,6 +575,20 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+  },
+  countBadge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countText: {
+    fontFamily: fontFamily.bold,
   },
   addButton: {
     width: 42,
