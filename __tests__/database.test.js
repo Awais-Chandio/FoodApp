@@ -216,7 +216,8 @@ describe('schema migrations', () => {
     expect(run.mock.calls[4][0][0][0]).toMatch(/CREATE TABLE orders/);
 
     const inserts = run.mock.calls[latest + 2][0];
-    expect(inserts).toHaveLength(11); // 1 admin + 6 restaurants + 4 menu items
+    const {MENU_SEED, RESTAURANT_SEED} = require('../src/database/seedData');
+    expect(inserts).toHaveLength(1 + RESTAURANT_SEED.length + MENU_SEED.length); // admin + restaurants + every dish
     // The seeded admin gets a hash and no plaintext password.
     const adminInsert = inserts.find(([sql]) => /INTO users/.test(sql));
     expect(adminInsert[0]).toMatch(/VALUES \(\?, NULL, \?, \?\)/);

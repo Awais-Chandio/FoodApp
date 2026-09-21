@@ -15,6 +15,7 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import AppButton from "../../components/ui/AppButton";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
+import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
@@ -32,11 +33,6 @@ const previewFilters = [
   { id: "premium", label: "Premium" },
 ];
 
-const fallbackItems = [
-  { id: "1", name: "Margherita Pizza", price: 180, image_key: "food3" },
-  { id: "2", name: "Veggie Supreme", price: 150, image_key: "food2" },
-];
-
 export default function DetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -46,6 +42,7 @@ export default function DetailScreen() {
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   // null until the menu has been read from the database.
   const [loadedMenu, setLoadedMenu] = useState(null);
+  const [menuFailed, setMenuFailed] = useState(false);
 
   const restaurant = route?.params?.restaurant;
   const restaurantId = restaurant?.id;
@@ -54,20 +51,28 @@ export default function DetailScreen() {
 
   // The menu is read by restaurant id, so it is fresh and also works when the
   // restaurant arrives without nested items (for example from Profile favorites).
-  useFocusEffect(
-    useCallback(() => {
-      if (!restaurantId) {
-        return;
-      }
-      menuRepo
-        .listByRestaurant(restaurantId)
-        .then(setLoadedMenu)
-        .catch((error) => console.log("detail menu load error", error));
-    }, [restaurantId])
-  );
+  const loadMenu = useCallback(() => {
+    if (!restaurantId) {
+      return;
+    }
+    setMenuFailed(false);
+    menuRepo
+      .listByRestaurant(restaurantId)
+      .then(setLoadedMenu)
+      .catch((error) => {
+        console.log("detail menu load error", error);
+        setMenuFailed(true);
+      });
+  }, [restaurantId]);
 
-  const menuSource = loadedMenu ?? restaurant?.menu_items;
-  const menuPreview = menuSource?.length ? menuSource : fallbackItems;
+  useFocusEffect(loadMenu);
+
+  const menuPreview = useMemo(
+    () => loadedMenu ?? restaurant?.menu_items ?? [],
+    [loadedMenu, restaurant]
+  );
+  // Nothing to show yet: not loaded, and no nested items passed in.
+  const menuLoading = loadedMenu === null && !menuFailed && menuPreview.length === 0;
   const filteredPreviewItems = useMemo(() => {
     switch (activeFilter) {
       case "budget":
@@ -179,7 +184,7 @@ export default function DetailScreen() {
             <View style={[styles.statDivider, { backgroundColor: colors.borderSoft }]} />
             <View style={styles.statBlock}>
               <Text style={[styles.statValue, { color: colors.text }]}>
-                {menuPreview.length}
+                {menuLoading ? "–" : menuPreview.length}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Dishes
@@ -250,7 +255,25 @@ export default function DetailScreen() {
             })}
           </ScrollView>
 
-          {filteredPreviewItems.length ? (
+          {menuLoading ? (
+            [1, 2].map((key) => (
+              <SkeletonCard key={key} width={null} height={116} style={styles.itemSkeleton} />
+            ))
+          ) : menuFailed && menuPreview.length === 0 ? (
+            <EmptyState
+              title="Could not load the menu"
+              message="Check your connection and try again."
+              icon="warning"
+              actionLabel="Try again"
+              onActionPress={loadMenu}
+            />
+          ) : menuPreview.length === 0 ? (
+            <EmptyState
+              title="No dishes yet"
+              message="This restaurant hasn't added any dishes. Check back soon."
+              icon="profile"
+            />
+          ) : filteredPreviewItems.length ? (
             filteredPreviewItems.map((item) => (
               <View
                 key={String(item.id)}
@@ -465,6 +488,10 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  itemSkeleton: {
+    width: "100%",
+    marginBottom: spacing.lg,
   },
   itemCard: {
     borderWidth: 1,

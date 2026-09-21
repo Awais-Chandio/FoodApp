@@ -19,12 +19,19 @@ is Firebase Cloud Messaging for push notifications.
 - Home: restaurant lists ("Nearby favorites", "Popular right now") with
   filters (deals, quick bites, top rated), skeleton and empty states.
 - Restaurant details, menu with price filters, and an add/remove cart
-  stepper.
-- Search across restaurants (name, offer, delivery time) with recent
-  searches.
+  stepper. Every seeded restaurant has a full demo menu.
+- Favorites: the heart on Home and Details saves a restaurant for the signed-in
+  user (stored in SQLite, per user). Saved restaurants are listed on Profile.
+  Guests get a "Log in to save favorites" prompt.
+- Search across restaurants (name, offer, delivery time) and dishes (name),
+  shown as Restaurants and Dishes sections, with recent searches. Tapping a
+  dish opens its restaurant's menu.
 - Cart with quantity controls, a count badge on the Cart tab, a flat delivery
-  fee, and the promo codes `SAVE10` (10%) and `FOOD5` (5%). Checkout requires
-  login. The cart is cleared on logout.
+  fee, and promo codes read from the `promos` table: `SAVE10` (10%), `FOOD5`
+  (5%) and `WELCOME20` (20%, minimum order Rs. 400, expires 31 Dec 2026). The
+  applied code is shown as a chip with Remove, and is dropped with a message if
+  the cart stops qualifying. Checkout requires login. The cart is cleared on
+  logout.
 - Checkout: a validated delivery address (prefilled from your last order) and
   a payment choice, Cash on delivery or Card (demo, no card details are ever
   collected). Placing the order saves it, its items and the totals, and empties
@@ -49,13 +56,13 @@ is Firebase Cloud Messaging for push notifications.
 - No backend: data is per device, and there is no real kitchen, rider or
   payment. Order progress is simulated from the time the order was placed, and
   only advances while the app is open or the next time you open it.
-- Favorites (hearts) are in-memory only and are lost on reload.
 - Sign-in is checked on the device. Passwords are stored as salted PBKDF2
   hashes in SQLite and the saved session holds only id, email and role, which
   protects a copied database file. It is not server-side authentication, so do
   not use real credentials.
-- Only restaurant 1 has seeded menu items; other restaurants show an empty
-  menu until an admin adds dishes.
+- Dish photos are reused (`food1`, `food2`, `food3`, `chicken`) until real
+  ones exist, so photos repeat across menus.
+- Promo codes have no admin screen yet; they live in the `promos` table.
 - Push notifications are configured for Android. iOS has no
   `GoogleService-Info.plist` or Firebase setup, so iOS push is not expected
   to work.
@@ -114,19 +121,21 @@ FoodApp/
 ├── .github/workflows/     CI: signed release APK on push to main
 └── src/
     ├── Admin/             ManageItems (restaurant form), ManageMenuItems (dish form)
-    ├── Context/           ThemeProvider, CartContext (cart state, backed by SQLite)
+    ├── Context/           ThemeProvider, CartContext (cart + applied promo), FavoritesContext
     ├── assets/            images
     ├── components/        NotificationModal, OrderStatusStepper
     │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard
     ├── constants/         designSystem (colors, spacing, radius), imageRegistry
     ├── database/          client (SQLite connection), schema (versioned migrations + seed),
-    │   │                  sql (promise helpers), dbs (app-start hook, admin_users helpers)
-    │   └── repositories/  restaurantRepo, menuRepo, cartRepo, userRepo, orderRepo
+    │   │                  seedData (demo restaurants, dishes), sql (promise helpers),
+    │   │                  dbs (app-start hook, admin_users helpers)
+    │   └── repositories/  restaurantRepo, menuRepo, cartRepo, userRepo, orderRepo,
+    │                      favoritesRepo, promoRepo
     ├── navigation/        AppNavigator, TabNavigator, HomeStack, rootNavigation
     ├── screens/           Auth, Cart, Checkout, Details, Home (with HomeHeader), Loader,
     │                      Menu, Onboarding, Orders (history), Profile, Search
     ├── services/          notificationService (FCM), passwordHash, onboarding flag
-    └── utils/             pricing (totals, promos), orderStatus (delivery schedule), validation
+    └── utils/             pricing (totals, promo rules), search, orderStatus (delivery schedule), validation
 ```
 
 ## Navigation

@@ -15,6 +15,7 @@ jest.mock('react-native-quick-crypto', () => {
 });
 
 const {sqliteAvailable} = require('../jest/sqliteStorageAdapter');
+const {MENU_BY_RESTAURANT, MENU_SEED, RESTAURANT_SEED} = require('../src/database/seedData');
 const describeSqlite = sqliteAvailable ? describe : describe.skip;
 
 beforeAll(() => jest.spyOn(console, 'log').mockImplementation(() => {}));
@@ -43,7 +44,7 @@ const load = () => {
 
 const count = (raw, table) => raw.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
 
-// Seeded menu: Moonland Special 210, Burger Deluxe 170, Veggie Supreme 150, Margherita 180.
+// Westway's first four seeded dishes: Moonland Special 210, Burger Deluxe 170, Veggie Supreme 150, Margherita 180.
 const fillCart = async m => {
   await m.schema.initDatabase();
   const menu = await m.menu.listByRestaurant(1);
@@ -60,11 +61,11 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(6);
+    expect(version).toBe(7);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
-    expect(count(m.raw, 'menu_items')).toBe(4);
+    expect(count(m.raw, 'menu_items')).toBe(MENU_SEED.length);
     expect(count(m.raw, 'promos')).toBe(3);
     const admin = m.raw.prepare("SELECT password, password_hash FROM users WHERE role = 'admin'").get();
     expect(admin.password).toBeNull();
@@ -89,7 +90,7 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(6);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(7);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
     const cartRow = m.raw.prepare('SELECT * FROM cart').get();
@@ -445,5 +446,89 @@ describeSqlite('promoRepo on real SQLite', () => {
     expect(await m.promos.findByCode('')).toBeNull();
     expect(await m.promos.findByCode(null)).toBeNull();
     expect(await m.promos.findByCode('constructor')).toBeNull();
+  });
+});
+
+describeSqlite('full menu seeds on real SQLite', () => {
+  const namesOf = (m, restaurantName) =>
+    m.raw
+      .prepare(
+        `SELECT m.name FROM menu_items m JOIN restaurants r ON r.id = m.restaurant_id
+         WHERE r.name = ? ORDER BY m.id`,
+      )
+      .all(restaurantName)
+      .map(row => row.name);
+
+  it('a fresh install gets every dish for every seeded restaurant, once', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    RESTAURANT_SEED.forEach(([, name]) => {
+      expect(namesOf(m, name)).toEqual(MENU_BY_RESTAURANT[name].map(dish => dish[0]));
+    });
+    // Westway keeps ids 1..4 for its original dishes.
+    expect(m.raw.prepare('SELECT name FROM menu_items WHERE id <= 4 ORDER BY id').all().map(r => r.name)).toEqual([
+      'Moonland Special', 'Burger Deluxe', 'Veggie Supreme', 'Margherita Pizza',
+    ]);
+  });
+
+  // The schema as it was at version 6: seeded restaurants, Westway with only its 4 original dishes.
+  const oldInstall = (m, extraSql = '') => {
+    m.raw.exec(`
+      CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'user');
+      CREATE TABLE admin_users (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT);
+      CREATE TABLE restaurants (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, rating REAL, time TEXT, offer TEXT, category TEXT, image_path TEXT);
+      CREATE TABLE menu_items (id INTEGER PRIMARY KEY AUTOINCREMENT, restaurant_id INTEGER, name TEXT, price REAL, type TEXT, image_key TEXT);
+      CREATE TABLE cart (id INTEGER PRIMARY KEY AUTOINCREMENT, menu_item_id INTEGER UNIQUE, name TEXT, price REAL, image_key TEXT, quantity INTEGER);
+      INSERT INTO restaurants (id, name, rating, time, category) VALUES (10, 'Westway', 4.6, '15 min', 'nearest');
+      INSERT INTO restaurants (id, name, rating, time, category) VALUES (11, 'Moonland', 4.6, '15 min', 'popular');
+      INSERT INTO restaurants (id, name, rating, time, category) VALUES (12, 'My Own Place', 4.0, '30 min', 'nearest');
+      INSERT INTO menu_items (restaurant_id, name, price, type, image_key) VALUES (10, 'Burger Deluxe', 999, 'Best Seller', 'food2');
+      INSERT INTO menu_items (restaurant_id, name, price, type, image_key) VALUES (10, 'Margherita Pizza', 180, 'Best Seller', 'food3');
+      INSERT INTO menu_items (restaurant_id, name, price, type, image_key) VALUES (12, 'House Special', 75, NULL, 'food1');
+      ${extraSql}
+    `);
+  };
+
+  it('an existing install gets the missing dishes, matched by restaurant NAME not id', async () => {
+    const m = load();
+    oldInstall(m);
+
+    await m.schema.initDatabase();
+
+    const westway = m.raw.prepare("SELECT * FROM menu_items WHERE restaurant_id = 10 ORDER BY id").all();
+    expect(westway.map(d => d.name)).toEqual([
+      'Burger Deluxe', 'Margherita Pizza', // kept, in place
+      'Moonland Special', 'Veggie Supreme', 'Peri Peri Wings', 'Loaded Fries', 'Chocolate Brownie',
+    ]);
+    // Moonland is matched by name even though its id (11) differs from the seed's (7).
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM menu_items WHERE restaurant_id = 11').get().n).toBe(
+      MENU_BY_RESTAURANT.Moonland.length,
+    );
+  });
+
+  it('never overwrites an admin\'s edits and never touches admin-created restaurants', async () => {
+    const m = load();
+    oldInstall(m);
+
+    await m.schema.initDatabase();
+
+    expect(m.raw.prepare("SELECT price FROM menu_items WHERE name = 'Burger Deluxe'").get().price).toBe(999);
+    expect(m.raw.prepare('SELECT name FROM menu_items WHERE restaurant_id = 12').all().map(r => r.name)).toEqual([
+      'House Special',
+    ]);
+    // Restaurants the install does not have are not created.
+    expect(m.raw.prepare("SELECT COUNT(*) AS n FROM restaurants WHERE name = 'Fortune'").get().n).toBe(0);
+  });
+
+  it('creates no duplicate dish names within a restaurant', async () => {
+    const m = load();
+    oldInstall(m);
+    await m.schema.initDatabase();
+
+    const duplicates = m.raw
+      .prepare('SELECT restaurant_id, name, COUNT(*) AS n FROM menu_items GROUP BY restaurant_id, name HAVING n > 1')
+      .all();
+    expect(duplicates).toEqual([]);
   });
 });
