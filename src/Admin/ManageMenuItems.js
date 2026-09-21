@@ -9,6 +9,9 @@ import TextField from "../components/ui/TextField";
 import AppButton from "../components/ui/AppButton";
 import { BackButton } from "../components/ui/ScreenHeader";
 import SectionHeader from "../components/ui/SectionHeader";
+import FilterChip from "../components/ui/FilterChip";
+import AppText from "../components/ui/AppText";
+import { MENU_CATEGORIES } from "../database/seedData";
 import { useTheme } from "../Context/ThemeProvider";
 import {
   layout,
@@ -28,6 +31,10 @@ export default function ManageMenuItem({ navigation, route }) {
     editingItem?.price != null ? String(editingItem.price) : ""
   );
   const [imageKey, setImageKey] = useState(editingItem?.image_key || "");
+  const [description, setDescription] = useState(editingItem?.description || "");
+  const [category, setCategory] = useState(editingItem?.category || "Other");
+  const [isVeg, setIsVeg] = useState(Boolean(editingItem?.is_veg));
+  const [spiceLevel, setSpiceLevel] = useState(Number(editingItem?.spice_level) || 0);
 
   const handleSave = () => {
     if (!name.trim() || !price.trim()) {
@@ -49,6 +56,13 @@ export default function ManageMenuItem({ navigation, route }) {
     const onError = (error) =>
       Alert.alert("Error", error?.message || "Database error");
 
+    const details = {
+      description: description.trim(),
+      category,
+      isVeg,
+      spiceLevel,
+    };
+
     // Editing keeps the dish's existing `type`; the old code overwrote it with null.
     const saved = editingItem
       ? menuRepo.update(editingItem.id, {
@@ -56,6 +70,7 @@ export default function ManageMenuItem({ navigation, route }) {
           price: priceValue,
           type: editingItem.type,
           imageKey: keyOrUrl,
+          ...details,
         })
       : menuRepo.insert({
           restaurantId,
@@ -63,6 +78,7 @@ export default function ManageMenuItem({ navigation, route }) {
           price: priceValue,
           type: null,
           imageKey: keyOrUrl,
+          ...details,
         });
     saved.then(onSuccess, onError);
   };
@@ -105,6 +121,51 @@ export default function ManageMenuItem({ navigation, route }) {
             multiline
           />
 
+          <TextField
+            label="Description"
+            value={description}
+            onChangeText={setDescription}
+            placeholder="One or two lines shown on the menu"
+            maxLength={80}
+            multiline
+          />
+
+          <AppText variant="label" style={styles.groupLabel}>
+            Category
+          </AppText>
+          <View style={styles.chips}>
+            {MENU_CATEGORIES.map((option) => (
+              <FilterChip
+                key={option}
+                label={option}
+                active={category === option}
+                onPress={() => setCategory(option)}
+              />
+            ))}
+          </View>
+
+          <AppText variant="label" style={styles.groupLabel}>
+            Diet
+          </AppText>
+          <View style={styles.chips}>
+            <FilterChip label="Vegetarian" active={isVeg} onPress={() => setIsVeg(true)} />
+            <FilterChip label="Non-vegetarian" active={!isVeg} onPress={() => setIsVeg(false)} />
+          </View>
+
+          <AppText variant="label" style={styles.groupLabel}>
+            Spice level
+          </AppText>
+          <View style={styles.chips}>
+            {["Mild", "Medium", "Hot", "Extra hot"].map((label, level) => (
+              <FilterChip
+                key={label}
+                label={label}
+                active={spiceLevel === level}
+                onPress={() => setSpiceLevel(level)}
+              />
+            ))}
+          </View>
+
           <AppButton
             label={editingItem ? "Update item" : "Add item"}
             onPress={handleSave}
@@ -131,6 +192,14 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     padding: spacing.xl,
+  },
+  groupLabel: {
+    marginBottom: spacing.sm,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: spacing.lg,
   },
   saveButton: {
     marginTop: spacing.xxl,

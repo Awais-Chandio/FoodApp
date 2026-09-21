@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -14,12 +15,14 @@ import Toast from "react-native-toast-message";
 import * as menuRepo from "../../database/repositories/menuRepo";
 import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
+import useAsyncData from "../../hooks/useAsyncData";
 import EmptyState from "../../components/ui/EmptyState";
 import FilterChip from "../../components/ui/FilterChip";
 import MenuItemCard from "../../components/ui/MenuItemCard";
 import QtyStepper from "../../components/ui/QtyStepper";
 import ScreenHeader from "../../components/ui/ScreenHeader";
-import SectionHeader from "../../components/ui/SectionHeader";
+import SkeletonCard from "../../components/ui/SkeletonCard";
+import { DietMark, SpiceLevel } from "../../components/ui/DishTags";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
@@ -30,12 +33,23 @@ import {
   typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
+import {
+  activeCategoryAt,
+  buildMenuRows,
+  HEADER_HEIGHT,
+  makeGetItemLayout,
+  ROW_HEIGHT,
+} from "../../utils/menuLayout";
 
-const filters = [
+const priceFilters = [
   { id: "all", label: "All items" },
   { id: "budget", label: "Under Rs. 200" },
   { id: "premium", label: "Premium" },
 ];
+
+// After tapping a tab, ignore scroll events for this long so the tab that was
+// tapped stays highlighted while the list animates to its section.
+const TAP_LOCK_MS = 700;
 
 export default function MenuScreen() {
   const navigation = useNavigation();
@@ -46,33 +60,84 @@ export default function MenuScreen() {
   const restaurant = route?.params?.restaurant || { id: 1, name: "Westway" };
 
   const { count: totalItems, subtotal: totalPrice, getQty, add, updateQty } = useCart();
-  const [menuItems, setMenuItems] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("all");
+  const {
+    data: menuItems,
+    loading,
+    error,
+    reload,
+  } = useAsyncData(() => menuRepo.listByRestaurant(restaurant.id), [restaurant.id]);
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [vegOnly, setVegOnly] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const listRef = useRef(null);
+  const tapLockUntil = useRef(0);
+  const firstFocus = useRef(true);
 
-  const loadData = useCallback(async () => {
-    try {
-      setMenuItems(await menuRepo.listByRestaurant(restaurant.id));
-    } catch (error) {
-      console.log("menu load error", error);
-    }
-  }, [restaurant.id]);
-
+  // Refresh quietly when coming back to the screen (an admin may have edited dishes).
   useFocusEffect(
     useCallback(() => {
-      loadData();
-    }, [loadData])
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      reload({ quiet: true });
+    }, [reload])
   );
 
   const filteredItems = useMemo(() => {
-    switch (activeFilter) {
-      case "budget":
-        return menuItems.filter((item) => Number(item.price || 0) <= 200);
-      case "premium":
-        return menuItems.filter((item) => Number(item.price || 0) > 200);
-      default:
-        return menuItems;
+    const items = menuItems || [];
+    return items.filter((item) => {
+      if (vegOnly && !item.is_veg) {
+        return false;
+      }
+      const price = Number(item.price || 0);
+      if (priceFilter === "budget") {
+        return price <= 200;
+      }
+      if (priceFilter === "premium") {
+        return price > 200;
+      }
+      return true;
+    });
+  }, [priceFilter, vegOnly, menuItems]);
+
+  const { rows, rowOffsets, tabs } = useMemo(() => buildMenuRows(filteredItems), [filteredItems]);
+  const getItemLayout = useMemo(
+    () => makeGetItemLayout(rows, rowOffsets, headerHeight),
+    [rows, rowOffsets, headerHeight]
+  );
+  const currentCategory =
+    activeCategory && tabs.some((tab) => tab.category === activeCategory)
+      ? activeCategory
+      : tabs[0]?.category ?? null;
+
+  // Keep the tab strip scrolled to the active tab.
+  const tabScrollRef = useRef(null);
+  const tabXs = useRef({});
+  useEffect(() => {
+    const x = tabXs.current[currentCategory];
+    if (x != null) {
+      tabScrollRef.current?.scrollTo({ x: Math.max(x - spacing.xl, 0), animated: true });
     }
-  }, [activeFilter, menuItems]);
+  }, [currentCategory]);
+
+  const handleScroll = (event) => {
+    if (Date.now() < tapLockUntil.current) {
+      return;
+    }
+    const y = event.nativeEvent.contentOffset.y - headerHeight;
+    const next = activeCategoryAt(tabs, y);
+    if (next && next !== activeCategory) {
+      setActiveCategory(next);
+    }
+  };
+
+  const jumpToCategory = (tab) => {
+    setActiveCategory(tab.category);
+    tapLockUntil.current = Date.now() + TAP_LOCK_MS;
+    listRef.current?.scrollToOffset({ offset: headerHeight + tab.offset, animated: true });
+  };
 
   const increaseQty = async (item) => {
     const existing = getQty(item.id) > 0;
@@ -84,7 +149,7 @@ export default function MenuScreen() {
         text1: existing ? "Quantity updated" : "Added to cart",
         text2: `${item.name} is ready for checkout.`,
       });
-    } catch (error) {
+    } catch (addError) {
       Toast.show({ type: "error", text1: "Could not update your cart" });
     }
   };
@@ -97,7 +162,7 @@ export default function MenuScreen() {
 
     try {
       await updateQty(item.id, quantity - 1);
-    } catch (error) {
+    } catch (updateError) {
       Toast.show({ type: "error", text1: "Could not update your cart" });
     }
   };
@@ -125,16 +190,16 @@ export default function MenuScreen() {
         onPress: async () => {
           try {
             await menuRepo.remove(id);
-            setMenuItems((current) => current.filter((item) => item.id !== id));
-          } catch (error) {
-            console.log("delete menu item error", error);
+            reload({ quiet: true });
+          } catch (deleteError) {
+            console.log("delete menu item error", deleteError);
           }
         },
       },
     ]);
   };
 
-  const renderMenuItem = ({ item }) => {
+  const renderDish = (item) => {
     const quantity = getQty(item.id);
     const adminButtons = isAdmin ? (
       <View style={styles.adminColumn}>
@@ -159,22 +224,28 @@ export default function MenuScreen() {
       <MenuItemCard
         image={resolveFoodImage(item.image_key || item.name)}
         title={item.name}
-        subtitle="Freshly prepared and balanced for quick delivery"
-        price={`Rs. ${item.price}`}
-        footer={
-          quantity > 0 ? (
-            <QtyStepper
-              value={quantity}
-              onIncrease={() => increaseQty(item)}
-              onDecrease={() => decreaseQty(item)}
-              style={styles.stepper}
-            />
-          ) : null
+        titleLines={1}
+        titleAccessory={
+          <View style={styles.tags}>
+            <DietMark isVeg={Boolean(item.is_veg)} />
+            <SpiceLevel level={item.spice_level} />
+          </View>
         }
+        subtitle={item.description}
+        price={`Rs. ${item.price}`}
+        imageSize={96}
+        style={styles.dishCard}
         trailing={
           <>
             {adminButtons}
-            {quantity > 0 ? null : (
+            {quantity > 0 ? (
+              <QtyStepper
+                vertical
+                value={quantity}
+                onIncrease={() => increaseQty(item)}
+                onDecrease={() => decreaseQty(item)}
+              />
+            ) : (
               <TouchableOpacity
                 onPress={() => increaseQty(item)}
                 accessibilityRole="button"
@@ -196,113 +267,146 @@ export default function MenuScreen() {
     );
   };
 
+  const renderRow = ({ item: row }) =>
+    row.type === "header" ? (
+      <View style={styles.sectionHeader}>
+        <AppText variant="h3">{row.category}</AppText>
+        <AppText variant="label" muted>
+          {row.count} {row.count === 1 ? "dish" : "dishes"}
+        </AppText>
+      </View>
+    ) : (
+      renderDish(row.item)
+    );
+
+  const addDish = () => navigation.navigate("ManageMenuItems", { restaurantId: restaurant.id });
+  const hasMenu = (menuItems || []).length > 0;
+
+  const renderEmpty = () => {
+    if (loading) {
+      return (
+        <View>
+          {[1, 2, 3, 4].map((key) => (
+            <SkeletonCard key={key} width={null} height={ROW_HEIGHT - spacing.lg} style={styles.skeleton} />
+          ))}
+        </View>
+      );
+    }
+    if (error) {
+      return (
+        <EmptyState
+          title="Could not load the menu"
+          message="Check your connection and try again."
+          icon="warning"
+          actionLabel="Try again"
+          onActionPress={() => reload()}
+        />
+      );
+    }
+    if (hasMenu) {
+      return (
+        <EmptyState
+          title="No dishes match"
+          message="Try another price filter or turn off Veg only."
+          icon="search"
+          actionLabel="Clear filters"
+          onActionPress={() => {
+            setPriceFilter("all");
+            setVegOnly(false);
+          }}
+        />
+      );
+    }
+    return (
+      <EmptyState
+        title="No menu items yet"
+        message={
+          isAdmin
+            ? "Add a few dishes to start taking orders from this restaurant."
+            : "This restaurant will show dishes here once the menu is available."
+        }
+        icon="profile"
+        actionLabel={isAdmin ? "Add item" : undefined}
+        onActionPress={isAdmin ? addDish : undefined}
+      />
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.top}>
+        <ScreenHeader
+          title={restaurant.name}
+          subtitle="Curated menu"
+          centered
+          onBack={() => navigation.goBack()}
+          style={styles.screenHeader}
+          right={
+            isAdmin ? (
+              <TouchableOpacity
+                style={[styles.headerAction, { backgroundColor: colors.primaryStrong }]}
+                onPress={addDish}
+              >
+                <AppText variant="label" color="onPrimary">
+                  Add
+                </AppText>
+              </TouchableOpacity>
+            ) : null
+          }
+        />
+
+        {tabs.length > 1 ? (
+          <View style={[styles.tabBar, { borderBottomColor: colors.borderSoft }]}>
+            <ScrollView
+              ref={tabScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabs}
+            >
+              {tabs.map((tab) => (
+                <View
+                  key={tab.category}
+                  onLayout={(event) => {
+                    tabXs.current[tab.category] = event.nativeEvent.layout.x;
+                  }}
+                >
+                  <FilterChip
+                    label={tab.category}
+                    active={tab.category === currentCategory}
+                    onPress={() => jumpToCategory(tab)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+      </View>
+
       <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderMenuItem}
+        ref={listRef}
+        data={rows}
+        keyExtractor={(row) => row.key}
+        renderItem={renderRow}
+        getItemLayout={getItemLayout}
+        onScroll={handleScroll}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <>
-            <ScreenHeader
-              title={restaurant.name}
-              subtitle="Curated menu"
-              centered
-              onBack={() => navigation.goBack()}
-              right={
-                isAdmin ? (
-                  <TouchableOpacity
-                    style={[styles.headerAction, { backgroundColor: colors.primaryStrong }]}
-                    onPress={() =>
-                      navigation.navigate("ManageMenuItems", {
-                        restaurantId: restaurant.id,
-                      })
-                    }
-                  >
-                    <AppText variant="label" color="onPrimary">
-                      Add
-                    </AppText>
-                  </TouchableOpacity>
-                ) : null
-              }
-            />
-
-            <View
-              style={[
-                styles.heroCard,
-                createShadow(colors.shadow, 12),
-                { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-              ]}
-            >
-              <SectionHeader
-                title="Menu highlights"
-                subtitle="Clearer cards, better spacing, and quicker cart controls."
-              />
-              <View style={styles.quickStatsRow}>
-                <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
-                    {menuItems.length}
-                  </AppText>
-                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
-                    Items
-                  </AppText>
-                </View>
-                <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
-                    {totalItems}
-                  </AppText>
-                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
-                    In cart
-                  </AppText>
-                </View>
-                <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
-                    Rs. {totalPrice}
-                  </AppText>
-                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
-                    Running total
-                  </AppText>
-                </View>
-              </View>
-            </View>
-
-            <SectionHeader
-              title="Browse items"
-              subtitle="Use the quick filters to scan the menu faster."
-            />
+          <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
             <View style={styles.filterRow}>
-              {filters.map((filter) => (
+              {priceFilters.map((filter) => (
                 <FilterChip
                   key={filter.id}
                   label={filter.label}
-                  active={activeFilter === filter.id}
-                  onPress={() => setActiveFilter(filter.id)}
+                  active={priceFilter === filter.id}
+                  onPress={() => setPriceFilter(filter.id)}
                 />
               ))}
+              <FilterChip label="Veg only" active={vegOnly} onPress={() => setVegOnly((v) => !v)} />
             </View>
-          </>
+          </View>
         }
-        ListEmptyComponent={
-          <EmptyState
-            title="No menu items yet"
-            message={
-              isAdmin
-                ? "Add a few dishes to start taking orders from this restaurant."
-                : "This restaurant will show dishes here once the menu is available."
-            }
-            icon="profile"
-            actionLabel={isAdmin ? "Add item" : undefined}
-            onActionPress={
-              isAdmin
-                ? () =>
-                    navigation.navigate("ManageMenuItems", {
-                      restaurantId: restaurant.id,
-                    })
-                : undefined
-            }
-          />
-        }
+        ListEmptyComponent={renderEmpty()}
         ListFooterComponent={<View style={styles.listFooter} />}
         showsVerticalScrollIndicator={false}
       />
@@ -352,9 +456,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  top: {
+    paddingTop: spacing.xxxl,
+  },
+  screenHeader: {
+    paddingHorizontal: layout.pagePadding,
+    marginBottom: spacing.md,
+  },
+  tabBar: {
+    borderBottomWidth: 1,
+    paddingBottom: spacing.sm,
+  },
+  tabs: {
+    paddingHorizontal: layout.pagePadding,
+  },
   listContent: {
     paddingHorizontal: layout.pagePadding,
-    paddingTop: spacing.xxxl,
+    paddingTop: spacing.md,
     paddingBottom: 168,
   },
   headerAction: {
@@ -365,49 +483,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing.md,
   },
-  heroCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    marginBottom: layout.sectionGap,
-  },
-  quickStatsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: spacing.md,
-  },
-  quickStat: {
-    flex: 1,
-    minWidth: 96,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    alignItems: "center",
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  quickStatValue: {
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  quickStatLabel: {
-    marginTop: spacing.xs,
-    ...typeScale.caption,
-  },
   filterRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: -spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  sectionHeader: {
+    height: HEADER_HEIGHT,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingBottom: spacing.sm,
+  },
+  dishCard: {
+    height: ROW_HEIGHT - spacing.lg,
     marginBottom: spacing.lg,
+  },
+  skeleton: {
+    width: "100%",
+    marginBottom: spacing.lg,
+  },
+  tags: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs + 2,
   },
   adminColumn: {
     justifyContent: "space-between",
     marginRight: spacing.sm,
     height: 84,
-  },
-  stepper: {
-    marginTop: spacing.md,
-    alignSelf: "flex-start",
   },
   adminButton: {
     width: 36,

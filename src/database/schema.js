@@ -1,6 +1,11 @@
 import { runStatements } from "./client";
 import { hashPassword } from "../services/passwordHash";
-import { menuBackfillStatements, MENU_SEED, RESTAURANT_SEED } from "./seedData";
+import {
+  menuBackfillStatements,
+  menuDetailsBackfillStatements,
+  MENU_SEED,
+  RESTAURANT_SEED,
+} from "./seedData";
 
 // Each migration runs once, in order, inside its own transaction together with
 // the PRAGMA user_version bump. Never edit a released migration: add a new one.
@@ -130,6 +135,18 @@ const MIGRATIONS = [
     version: 7,
     statements: menuBackfillStatements(),
   },
+  {
+    // Dish details for the Menu screen. Dishes added later by an admin default
+    // to category "Other", not veg, no spice. The seeded dishes are filled in.
+    version: 8,
+    statements: [
+      "ALTER TABLE menu_items ADD COLUMN description TEXT",
+      "ALTER TABLE menu_items ADD COLUMN category TEXT NOT NULL DEFAULT 'Other'",
+      "ALTER TABLE menu_items ADD COLUMN is_veg INTEGER NOT NULL DEFAULT 0",
+      "ALTER TABLE menu_items ADD COLUMN spice_level INTEGER NOT NULL DEFAULT 0",
+      ...menuDetailsBackfillStatements(),
+    ],
+  },
 ];
 
 // The version a fully migrated database ends at.
@@ -185,7 +202,7 @@ const seed = async () => {
   if (menuItems.rows[0].count === 0) {
     MENU_SEED.forEach((row) =>
       statements.push([
-        "INSERT INTO menu_items (restaurant_id, name, price, type, image_key) VALUES (?,?,?,?,?)",
+        "INSERT INTO menu_items (restaurant_id, name, price, type, image_key, description, category, is_veg, spice_level) VALUES (?,?,?,?,?,?,?,?,?)",
         row,
       ])
     );

@@ -18,6 +18,9 @@ export default function MenuItemCard({
   footer,
   onPress,
   imageSize = 88,
+  titleAccessory,
+  titleLines = 2,
+  subtitleLines = 2,
   style,
   accessibilityLabel,
 }) {
@@ -40,11 +43,14 @@ export default function MenuItemCard({
         style={[styles.image, { width: imageSize, height: imageSize }]}
       />
       <View style={styles.content}>
-        <AppText variant="body" style={styles.title} numberOfLines={2}>
-          {title}
-        </AppText>
+        <View style={styles.titleLine}>
+          <AppText variant="body" style={[styles.title, styles.titleText]} numberOfLines={titleLines}>
+            {title}
+          </AppText>
+          {titleAccessory}
+        </View>
         {subtitle ? (
-          <AppText variant="label" muted style={styles.subtitle} numberOfLines={2}>
+          <AppText variant="label" muted style={styles.subtitle} numberOfLines={subtitleLines}>
             {subtitle}
           </AppText>
         ) : null}
@@ -75,6 +81,14 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     marginLeft: spacing.md,
+    marginRight: spacing.sm,
+  },
+  titleLine: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  titleText: {
+    flexShrink: 1,
     marginRight: spacing.sm,
   },
   title: {

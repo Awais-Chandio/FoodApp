@@ -61,7 +61,7 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(7);
+    expect(version).toBe(8);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
@@ -90,7 +90,7 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(7);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(8);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
     const cartRow = m.raw.prepare('SELECT * FROM cart').get();
@@ -519,6 +519,39 @@ describeSqlite('full menu seeds on real SQLite', () => {
     ]);
     // Restaurants the install does not have are not created.
     expect(m.raw.prepare("SELECT COUNT(*) AS n FROM restaurants WHERE name = 'Fortune'").get().n).toBe(0);
+  });
+
+  it('a fresh install stores description, category, veg and spice for every dish', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const dish = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Peri Peri Wings'").get();
+    expect(dish).toMatchObject({category: 'Starters', is_veg: 0, spice_level: 3});
+    expect(dish.description).toMatch(/wings/i);
+    expect(m.raw.prepare("SELECT COUNT(*) AS n FROM menu_items WHERE description IS NULL OR category = 'Other'").get().n).toBe(0);
+  });
+
+  it('an existing install gets the details back-filled, and admin dishes default to Other', async () => {
+    const m = load();
+    oldInstall(m);
+    await m.schema.initDatabase();
+
+    expect(m.raw.prepare("SELECT category, is_veg, spice_level FROM menu_items WHERE name = 'Margherita Pizza'").get()).toEqual({
+      category: 'Mains', is_veg: 1, spice_level: 0,
+    });
+    // the admin-created restaurant's dish was never seeded: defaults apply
+    expect(m.raw.prepare("SELECT description, category, is_veg, spice_level FROM menu_items WHERE name = 'House Special'").get()).toEqual({
+      description: null, category: 'Other', is_veg: 0, spice_level: 0,
+    });
+  });
+
+  it('menuRepo.insert stores the details and clamps the spice level', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    await m.menu.insert({restaurantId: 1, name: 'Test Curry', price: 99, imageKey: 'food1', description: ' Hot  ', category: 'Mains', isVeg: true, spiceLevel: 9});
+    await m.menu.insert({restaurantId: 1, name: 'Plain', price: 50});
+    const rows = m.raw.prepare("SELECT * FROM menu_items WHERE name IN ('Test Curry','Plain') ORDER BY id").all();
+    expect(rows[0]).toMatchObject({description: 'Hot', category: 'Mains', is_veg: 1, spice_level: 3});
+    expect(rows[1]).toMatchObject({description: null, category: 'Other', is_veg: 0, spice_level: 0});
   });
 
   it('creates no duplicate dish names within a restaurant', async () => {
