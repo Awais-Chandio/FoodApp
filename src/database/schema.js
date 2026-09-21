@@ -91,7 +91,24 @@ const MIGRATIONS = [
       "CREATE INDEX idx_order_items_order ON order_items (order_id)",
     ],
   },
+  {
+    // Favorite restaurants, one row per (user, restaurant). The primary key
+    // makes a repeated insert a no-op instead of a duplicate. No foreign keys:
+    // restaurantRepo.remove clears a restaurant's favorites explicitly.
+    version: 5,
+    statements: [
+      `CREATE TABLE favorites (
+        user_id INTEGER NOT NULL,
+        restaurant_id INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, restaurant_id)
+      )`,
+    ],
+  },
 ];
+
+// The version a fully migrated database ends at.
+export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 const RESTAURANT_SEED = [
   [1, "Westway", 4.6, "15 min", "50% OFF", "nearest", null],

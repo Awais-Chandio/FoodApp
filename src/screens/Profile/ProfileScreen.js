@@ -1,6 +1,8 @@
 import React from "react";
 import {
   ActivityIndicator,
+  FlatList,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,9 +14,11 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import AppButton from "../../components/ui/AppButton";
+import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import { useCart } from "../../Context/CartContext";
+import { useFavorites } from "../../Context/FavoritesContext";
 import { navigationRef } from "../../navigation/rootNavigation";
 import {
   createShadow,
@@ -22,6 +26,7 @@ import {
   radius,
   spacing,
 } from "../../constants/designSystem";
+import { resolveRestaurantImage } from "../../constants/imageRegistry";
 import { useAuth } from "../Auth/AuthContext";
 
 const profileOptions = [
@@ -32,7 +37,8 @@ const profileOptions = [
 
 export default function ProfileScreen({ route }) {
   const navigation = useNavigation();
-  const { role, user, logout } = useAuth();
+  const { role, user, logout, isLoggedIn } = useAuth();
+  const { favorites } = useFavorites();
   const { theme, toggleTheme, colors } = useTheme();
   const { clear: clearCart } = useCart();
   const adminName = route?.params?.name || "Admin";
@@ -56,6 +62,12 @@ export default function ProfileScreen({ route }) {
       </View>
     );
   }
+
+  const openRestaurant = (restaurant) =>
+    navigation.navigate("Tab", {
+      screen: "HomeStack",
+      params: { screen: "Details", params: { restaurant } },
+    });
 
   const displayName = role === "admin" ? adminName : user?.email || "Guest user";
 
@@ -188,6 +200,66 @@ export default function ProfileScreen({ route }) {
           </>
         ) : (
           <>
+            {isLoggedIn ? (
+              <>
+                <SectionHeader
+                  title="Favorites"
+                  subtitle="Restaurants you saved with the heart."
+                />
+                {favorites.length ? (
+                  <FlatList
+                    data={favorites}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(restaurant) => String(restaurant.id)}
+                    contentContainerStyle={styles.favoritesList}
+                    renderItem={({ item: restaurant }) => (
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        style={[
+                          styles.favoriteCard,
+                          createShadow(colors.shadow, 10),
+                          {
+                            backgroundColor: colors.surface,
+                            borderColor: colors.borderSoft,
+                          },
+                        ]}
+                        onPress={() => openRestaurant(restaurant)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${restaurant.name}`}
+                      >
+                        <Image
+                          source={resolveRestaurantImage(restaurant)}
+                          style={styles.favoriteImage}
+                        />
+                        <View style={styles.favoriteBody}>
+                          <Text
+                            style={[styles.favoriteName, { color: colors.text }]}
+                            numberOfLines={1}
+                          >
+                            {restaurant.name}
+                          </Text>
+                          <View style={styles.favoriteMetaRow}>
+                            <AntDesign name="star" size={12} color={colors.warning} />
+                            <Text
+                              style={[styles.favoriteMeta, { color: colors.textSecondary }]}
+                            >
+                              {restaurant.rating || "4.5"} • {restaurant.time || "20 min"}
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                  />
+                ) : (
+                  <EmptyState
+                    title="No favorites yet"
+                    message="Tap the heart on any restaurant to save it here."
+                    icon="heart"
+                  />
+                )}
+              </>
+            ) : null}
             <SectionHeader
               title="Preferences"
               subtitle="Lightweight settings that keep the current app flow intact."
@@ -316,6 +388,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  favoritesList: {
+    paddingBottom: spacing.xs,
+    paddingRight: spacing.xs,
+    marginBottom: layout.sectionGap,
+  },
+  favoriteCard: {
+    width: 168,
+    marginRight: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+  },
+  favoriteImage: {
+    width: "100%",
+    height: 96,
+  },
+  favoriteBody: {
+    padding: spacing.md,
+  },
+  favoriteName: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  favoriteMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.xs,
+  },
+  favoriteMeta: {
+    marginLeft: spacing.xs,
+    fontSize: 12,
   },
   actionCard: {
     borderWidth: 1,

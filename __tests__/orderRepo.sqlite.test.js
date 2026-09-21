@@ -59,7 +59,7 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(4);
+    expect(version).toBe(5);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
@@ -87,7 +87,7 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(4);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(5);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
     const cartRow = m.raw.prepare('SELECT * FROM cart').get();
