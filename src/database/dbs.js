@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import db from "./client";
 import { initDatabase } from "./schema";
+import { upgradeLegacyPasswords } from "./repositories/userRepo";
 
 // Schema, migrations and seed data live in ./schema. Restaurant, menu, cart and
 // user queries live in ./repositories. This file keeps the app-start hook and
@@ -8,9 +9,11 @@ import { initDatabase } from "./schema";
 
 export const useCreateTables = () => {
   useEffect(() => {
-    initDatabase().catch(() => {
-      // already logged inside initDatabase
-    });
+    // Hash any plaintext passwords left from before hashing existed. Runs in
+    // the background: login also upgrades a row on the fly, so it never waits.
+    initDatabase()
+      .then(() => upgradeLegacyPasswords())
+      .catch((error) => console.log("password upgrade error", error));
   }, []);
 };
 

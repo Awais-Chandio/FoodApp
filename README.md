@@ -12,8 +12,8 @@ is Firebase Cloud Messaging for push notifications.
 
 **Customer**
 - Splash, three onboarding screens (skippable), and guest browsing.
-- Email/password register and login, checked against the local database.
-  The session is restored from AsyncStorage.
+- Email/password register and login, checked against the local database
+  (hashed passwords). The session is restored from AsyncStorage.
 - Home: restaurant lists ("Nearby favorites", "Popular right now") with
   filters (deals, quick bites, top rated), skeleton and empty states.
 - Restaurant details, menu with price filters, and an add/remove cart
@@ -39,8 +39,10 @@ is Firebase Cloud Messaging for push notifications.
 - No backend: data is per device and orders are never placed or stored.
 - The order tracking screen is static.
 - Favorites (hearts) are in-memory only and are lost on reload.
-- Passwords are stored in plain text in SQLite, and the stored session
-  includes the password. Do not use real credentials.
+- Sign-in is checked on the device. Passwords are stored as salted PBKDF2
+  hashes in SQLite and the saved session holds only id, email and role, which
+  protects a copied database file. It is not server-side authentication, so do
+  not use real credentials.
 - Only restaurant 1 has seeded menu items; other restaurants show an empty
   menu until an admin adds dishes.
 - Push notifications are configured for Android. iOS has no
@@ -57,6 +59,7 @@ is Firebase Cloud Messaging for push notifications.
 | State | React Context (`AuthContext`, `ThemeProvider`, `CartContext`) |
 | Local data | `react-native-sqlite-storage`, `@react-native-async-storage/async-storage` |
 | Push | `@react-native-firebase/app` + `messaging` |
+| Password hashing | `react-native-quick-crypto` (PBKDF2-SHA256), with its peers `react-native-nitro-modules` and `react-native-quick-base64`. Requires the New Architecture. |
 | UI | `react-native-linear-gradient`, AntDesign icons (`@react-native-vector-icons/ant-design`), `react-native-toast-message`, `@react-native-picker/picker`, `@react-native-community/datetimepicker` |
 | Animation | React Native `Animated`. `react-native-reanimated` is installed but not used yet. |
 

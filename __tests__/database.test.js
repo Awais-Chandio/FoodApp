@@ -14,6 +14,11 @@ jest.mock('../src/database/schema', () => ({
   initDatabase: jest.fn(() => Promise.resolve()),
 }));
 
+// The seed hashes the demo admin password; the native crypto is not available in Jest.
+jest.mock('../src/services/passwordHash', () => ({
+  hashPassword: jest.fn(() => Promise.resolve('hashed-password')),
+}));
+
 const {runStatements} = require('../src/database/client');
 const {initDatabase} = require('../src/database/schema');
 const restaurantRepo = require('../src/database/repositories/restaurantRepo');
@@ -185,6 +190,7 @@ describe('schema migrations', () => {
       .mockResolvedValueOnce([result([{user_version: 0}])]) // read version
       .mockResolvedValueOnce([]) // v1
       .mockResolvedValueOnce([]) // v2
+      .mockResolvedValueOnce([]) // v3
       .mockResolvedValueOnce([
         result([{count: 0}]),
         result([{count: 0}]),
@@ -196,15 +202,22 @@ describe('schema migrations', () => {
 
     expect(versionOf(run.mock.calls[1][0])).toBe('PRAGMA user_version = 1');
     expect(versionOf(run.mock.calls[2][0])).toBe('PRAGMA user_version = 2');
+    expect(versionOf(run.mock.calls[3][0])).toBe('PRAGMA user_version = 3');
     expect(run.mock.calls[2][0][0][0]).toMatch(/ALTER TABLE cart ADD COLUMN restaurant_id/);
-    // 1 admin + 6 restaurants + 4 menu items
-    expect(run.mock.calls[4][0]).toHaveLength(11);
+    expect(run.mock.calls[3][0][0][0]).toMatch(/ALTER TABLE users ADD COLUMN password_hash/);
+
+    const inserts = run.mock.calls[5][0];
+    expect(inserts).toHaveLength(11); // 1 admin + 6 restaurants + 4 menu items
+    // The seeded admin gets a hash and no plaintext password.
+    const adminInsert = inserts.find(([sql]) => /INTO users/.test(sql));
+    expect(adminInsert[0]).toMatch(/VALUES \(\?, NULL, \?, \?\)/);
+    expect(adminInsert[1]).toEqual(['admin@foodapp.com', 'hashed-password', 'admin']);
   });
 
   it('skips migrations that already ran and never reseeds existing data', async () => {
     const {initDatabase: init, run} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 2}])])
+      .mockResolvedValueOnce([result([{user_version: 3}])])
       .mockResolvedValueOnce([
         result([{count: 6}]),
         result([{count: 4}]),
@@ -216,12 +229,11 @@ describe('schema migrations', () => {
     expect(run).toHaveBeenCalledTimes(2); // version read + seed counts only
   });
 
-  it('upgrades a pre-versioning install (user_version 0) without reseeding', async () => {
+  it('upgrades an install that only has v2: adds password_hash and nothing else', async () => {
     const {initDatabase: init, run} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 0}])])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([result([{user_version: 2}])])
+      .mockResolvedValueOnce([]) // v3
       .mockResolvedValueOnce([
         result([{count: 6}]),
         result([{count: 4}]),
@@ -230,13 +242,33 @@ describe('schema migrations', () => {
 
     await init();
 
-    expect(run).toHaveBeenCalledTimes(4); // no seed insert batch
+    expect(run).toHaveBeenCalledTimes(3);
+    expect(versionOf(run.mock.calls[1][0])).toBe('PRAGMA user_version = 3');
+    expect(run.mock.calls[1][0][0][0]).toMatch(/ALTER TABLE users ADD COLUMN password_hash/);
+  });
+
+  it('upgrades a pre-versioning install (user_version 0) without reseeding', async () => {
+    const {initDatabase: init, run} = load();
+    run
+      .mockResolvedValueOnce([result([{user_version: 0}])])
+      .mockResolvedValueOnce([]) // v1
+      .mockResolvedValueOnce([]) // v2
+      .mockResolvedValueOnce([]) // v3
+      .mockResolvedValueOnce([
+        result([{count: 6}]),
+        result([{count: 4}]),
+        result([{count: 1}]),
+      ]);
+
+    await init();
+
+    expect(run).toHaveBeenCalledTimes(5); // no seed insert batch
   });
 
   it('runs initialisation only once for concurrent callers', async () => {
     const {initDatabase: init, run} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 2}])])
+      .mockResolvedValueOnce([result([{user_version: 3}])])
       .mockResolvedValueOnce([
         result([{count: 1}]),
         result([{count: 1}]),

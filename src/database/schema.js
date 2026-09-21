@@ -1,4 +1,5 @@
 import { runStatements } from "./client";
+import { hashPassword } from "../services/passwordHash";
 
 // Each migration runs once, in order, inside its own transaction together with
 // the PRAGMA user_version bump. Never edit a released migration: add a new one.
@@ -51,6 +52,13 @@ const MIGRATIONS = [
     version: 2,
     statements: ["ALTER TABLE cart ADD COLUMN restaurant_id INTEGER"],
   },
+  {
+    // Passwords are stored as salted PBKDF2 hashes in password_hash. The old
+    // plaintext `password` column stays only so existing accounts can be
+    // upgraded; it is emptied as each account is converted.
+    version: 3,
+    statements: ["ALTER TABLE users ADD COLUMN password_hash TEXT"],
+  },
 ];
 
 const RESTAURANT_SEED = [
@@ -97,9 +105,10 @@ const seed = async () => {
   const statements = [];
 
   if (admin.rows[0].count === 0) {
+    const passwordHash = await hashPassword(ADMIN_PASSWORD);
     statements.push([
-      "INSERT INTO users (email, password, role) VALUES (?, ?, ?)",
-      [ADMIN_EMAIL, ADMIN_PASSWORD, "admin"],
+      "INSERT INTO users (email, password, password_hash, role) VALUES (?, NULL, ?, ?)",
+      [ADMIN_EMAIL, passwordHash, "admin"],
     ]);
   }
 
