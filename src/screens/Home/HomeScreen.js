@@ -13,10 +13,11 @@ import {
 import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import HomeHeader from "./HomeHeader";
 import EmptyState from "../../components/ui/EmptyState";
+import FilterChip from "../../components/ui/FilterChip";
+import RestaurantCard from "../../components/ui/RestaurantCard";
 import SectionHeader from "../../components/ui/SectionHeader";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -28,10 +29,7 @@ import {
   spacing,
   typeScale,
 } from "../../constants/designSystem";
-import {
-  categoryAssetMap,
-  resolveRestaurantImage,
-} from "../../constants/imageRegistry";
+import { categoryAssetMap } from "../../constants/imageRegistry";
 import * as restaurantRepo from "../../database/repositories/restaurantRepo";
 import { useFavorites } from "../../Context/FavoritesContext";
 import { useAuth } from "../Auth/AuthContext";
@@ -165,114 +163,23 @@ export default function HomeScreen() {
     ]);
   };
 
-  const renderRestaurantCard = ({ item }) => {
-    const favorite = isFavorite(item.id);
-
-    return (
-      <TouchableOpacity
-        activeOpacity={0.92}
-        style={[
-          styles.restaurantCard,
-          createShadow(colors.shadow, 14),
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.borderSoft,
-            width: cardWidth,
-          },
-        ]}
-        onPress={() => navigation.navigate("Details", { restaurant: item })}
-      >
-        <View style={styles.imageWrap}>
-          <Image source={resolveRestaurantImage(item)} style={styles.restaurantImage} />
-          <LinearGradient
-            colors={["transparent", colors.scrim]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.imageFade}
-          />
-          <TouchableOpacity
-            style={[styles.favoriteButton, { backgroundColor: colors.imageChip }]}
-            onPress={() => toggleFavorite(item.id)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={favorite ? "Remove from favorites" : "Save to favorites"}
-          >
-            <AntDesign
-              name={favorite ? "heart" : "hearto"}
-              size={16}
-              color={favorite ? colors.danger : colors.textSecondary}
-            />
-          </TouchableOpacity>
-          {item.offer ? (
-            <View style={[styles.offerTag, { backgroundColor: colors.secondarySoft }]}>
-              <AppText style={[styles.offerText, { color: colors.primaryDeep }]}>
-                {item.offer}
-              </AppText>
-            </View>
-          ) : null}
-
-          <View style={styles.imageMeta}>
-            <View style={[styles.ratingPill, { backgroundColor: colors.imageChip }]}>
-              <AntDesign name="star" size={12} color={colors.warning} />
-              <AppText style={[styles.ratingText, { color: colors.text }]}>
-                {item.rating || "4.5"}
-              </AppText>
-            </View>
-            <AppText style={[styles.imageMetaText, { color: colors.onImage }]}>{item.time || "20 min"} delivery</AppText>
-          </View>
-        </View>
-
-        <View style={styles.cardBody}>
-          <AppText style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-            {item.name}
-          </AppText>
-          <AppText style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {(item.menu_items || []).length || 0} menu items • Freshly prepared
-          </AppText>
-
-          <LinearGradient
-            colors={colors.surfaceGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cardFooter}
-          >
-            <View>
-              <AppText style={[styles.footerLabel, { color: colors.primaryStrong }]}>
-                View menu
-              </AppText>
-              <AppText style={[styles.footerMeta, { color: colors.textSecondary }]}>
-                Fast checkout and smart recommendations
-              </AppText>
-            </View>
-            <View style={[styles.footerArrow, { backgroundColor: colors.badge }]}>
-              <AntDesign name="arrow-right" size={15} color={colors.primaryStrong} />
-            </View>
-          </LinearGradient>
-        </View>
-
-        {isAdmin ? (
-          <View style={styles.adminRow}>
-            <TouchableOpacity
-              style={[styles.adminAction, { backgroundColor: colors.badge }]}
-              onPress={() => navigation.navigate("ManageItems", { restaurant: item })}
-            >
-              <AntDesign name="edit" size={15} color={colors.text} />
-              <AppText style={[styles.adminActionText, { color: colors.text }]}>Edit</AppText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.adminAction, { backgroundColor: colors.surfaceMuted }]}
-              onPress={() => confirmDelete(item)}
-            >
-              <AntDesign name="delete" size={15} color={colors.danger} />
-              <AppText style={[styles.adminDangerText, { color: colors.danger }]}>
-                Delete
-              </AppText>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-      </TouchableOpacity>
-    );
-  };
+  const renderRestaurantCard = ({ item }) => (
+    <RestaurantCard
+      restaurant={item}
+      width={cardWidth}
+      favorite={isFavorite(item.id)}
+      onToggleFavorite={() => toggleFavorite(item.id)}
+      onPress={() => navigation.navigate("Details", { restaurant: item })}
+      admin={
+        isAdmin
+          ? {
+              onEdit: () => navigation.navigate("ManageItems", { restaurant: item }),
+              onDelete: () => confirmDelete(item),
+            }
+          : null
+      }
+    />
+  );
 
   const renderLoadingRow = () => (
     <View style={styles.loadingRow}>
@@ -404,32 +311,14 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filtersRow}
           >
-            {homeFilters.map((filter) => {
-              const isActive = activeFilter === filter.id;
-              return (
-                <TouchableOpacity
-                  key={filter.id}
-                  activeOpacity={0.86}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: isActive ? colors.primaryStrong : colors.surface,
-                      borderColor: isActive ? colors.primaryStrong : colors.border,
-                    },
-                  ]}
-                  onPress={() => setActiveFilter(filter.id)}
-                >
-                  <AppText
-                    style={[
-                      styles.filterLabel,
-                      { color: isActive ? colors.onPrimary : colors.text },
-                    ]}
-                  >
-                    {filter.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
+            {homeFilters.map((filter) => (
+              <FilterChip
+                key={filter.id}
+                label={filter.label}
+                active={activeFilter === filter.id}
+                onPress={() => setActiveFilter(filter.id)}
+              />
+            ))}
           </ScrollView>
 
           {renderHorizontalSection(
@@ -492,17 +381,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     paddingRight: spacing.xs,
   },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    marginRight: spacing.sm,
-  },
-  filterLabel: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
   section: {
     marginBottom: layout.sectionGap,
   },
@@ -512,132 +390,5 @@ const styles = StyleSheet.create({
   horizontalList: {
     paddingBottom: spacing.xs,
     paddingRight: spacing.xs,
-  },
-  restaurantCard: {
-    marginRight: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  imageWrap: {
-    position: "relative",
-  },
-  restaurantImage: {
-    width: "100%",
-    height: 190,
-  },
-  imageFade: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  favoriteButton: {
-    position: "absolute",
-    top: spacing.md,
-    right: spacing.md,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  offerTag: {
-    position: "absolute",
-    left: spacing.md,
-    top: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  offerText: {
-    ...typeScale.caption,
-    fontFamily: fontFamily.bold,
-  },
-  imageMeta: {
-    position: "absolute",
-    left: spacing.md,
-    right: spacing.md,
-    bottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  imageMetaText: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
-  ratingPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.sm - 1,
-  },
-  ratingText: {
-    marginLeft: 4,
-    ...typeScale.caption,
-    fontFamily: fontFamily.bold,
-  },
-  cardBody: {
-    padding: spacing.lg,
-  },
-  cardTitle: {
-    ...typeScale.h3,
-    fontFamily: fontFamily.bold,
-  },
-  metaText: {
-    marginTop: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.regular,
-  },
-  cardFooter: {
-    marginTop: spacing.lg,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  footerLabel: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  footerMeta: {
-    marginTop: spacing.xs,
-    ...typeScale.caption,
-    maxWidth: 170,
-  },
-  footerArrow: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  adminRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  adminAction: {
-    flex: 1,
-    marginRight: spacing.sm,
-    minHeight: 44,
-    borderRadius: radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  adminActionText: {
-    marginLeft: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
-  adminDangerText: {
-    marginLeft: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
   },
 });

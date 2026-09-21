@@ -5,15 +5,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import { useNavigation } from "@react-navigation/native";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
+import TextField from "../../components/ui/TextField";
 import AppButton from "../../components/ui/AppButton";
+import ScreenHeader from "../../components/ui/ScreenHeader";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -124,16 +123,7 @@ export default function CheckoutScreen() {
   };
 
   const header = (
-    <View style={styles.header}>
-      <TouchableOpacity
-        style={[styles.headerButton, { backgroundColor: colors.surface }]}
-        onPress={() => navigation.goBack()}
-        accessibilityLabel="Go back"
-      >
-        <AntDesign name="arrow-left" size={20} color={colors.text} />
-      </TouchableOpacity>
-      <AppText style={[styles.headerTitle, { color: colors.text }]}>Checkout</AppText>
-    </View>
+    <ScreenHeader title="Checkout" onBack={() => navigation.goBack()} />
   );
 
   if (!items.length) {
@@ -168,32 +158,17 @@ export default function CheckoutScreen() {
         {header}
 
         <SectionHeader title="Delivery address" subtitle="Where should we bring your order?" />
-        <TextInput
+        <TextField
           value={address}
           onChangeText={setAddress}
           onBlur={() => setShowAddressError(true)}
           placeholder="House number, street, area, city"
-          placeholderTextColor={colors.textSecondary}
           multiline
           maxLength={ADDRESS_MAX_LENGTH}
-          textAlignVertical="top"
           accessibilityLabel="Delivery address"
-          style={[
-            styles.addressInput,
-            {
-              backgroundColor: colors.input,
-              color: colors.text,
-              borderColor: showAddressError && addressError ? colors.danger : colors.border,
-            },
-          ]}
+          error={showAddressError && addressError ? addressError : undefined}
+          helper={`${address.trim().length}/${ADDRESS_MAX_LENGTH}`}
         />
-        {showAddressError && addressError ? (
-          <AppText style={[styles.errorText, { color: colors.danger }]}>{addressError}</AppText>
-        ) : (
-          <AppText style={[styles.helperText, { color: colors.textSecondary }]}>
-            {address.trim().length}/{ADDRESS_MAX_LENGTH}
-          </AppText>
-        )}
 
         <SectionHeader title="Payment" subtitle="Choose how you would like to pay." />
         {PAYMENT_METHODS.map((method) => {
@@ -297,39 +272,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.huge,
     paddingBottom: spacing.huge + spacing.xl,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    marginLeft: spacing.md,
-    ...typeScale.h1,
-  },
-  addressInput: {
-    minHeight: 96,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    ...typeScale.body,
-  },
   helperText: {
     marginTop: spacing.xs,
     ...typeScale.caption,
-  },
-  errorText: {
-    marginTop: spacing.xs,
-    ...typeScale.caption,
-    fontFamily: fontFamily.bold,
   },
   paymentCard: {
     flexDirection: "row",

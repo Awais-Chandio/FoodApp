@@ -6,14 +6,13 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
+import TextField from "../../components/ui/TextField";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
@@ -31,8 +30,6 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = () => {
@@ -80,40 +77,6 @@ export default function RegisterScreen({ navigation }) {
       })
       .finally(() => setSubmitting(false));
   };
-
-  const renderPasswordField = ({
-    value,
-    onChangeText,
-    placeholder,
-    visible,
-    onToggle,
-  }) => (
-    <View
-      style={[
-        styles.passwordWrap,
-        {
-          backgroundColor: colors.background,
-          borderColor: colors.border,
-        },
-      ]}
-    >
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
-        secureTextEntry={!visible}
-        style={[styles.passwordInput, { color: colors.text }]}
-      />
-      <TouchableOpacity onPress={onToggle}>
-        <AntDesign
-          name={visible ? "eye" : "eye-invisible"}
-          size={20}
-          color={colors.textSecondary}
-        />
-      </TouchableOpacity>
-    </View>
-  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -164,43 +127,30 @@ export default function RegisterScreen({ navigation }) {
               Register once and keep the existing checkout and ordering flow smooth.
             </AppText>
 
-            <AppText style={[styles.label, { color: colors.text }]}>Email</AppText>
-            <TextInput
+            <TextField
+              label="Email"
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email"
-              placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
               keyboardType="email-address"
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  borderColor: colors.border,
-                },
-              ]}
             />
 
-            <AppText style={[styles.label, { color: colors.text }]}>Password</AppText>
-            {renderPasswordField({
-              value: password,
-              onChangeText: setPassword,
-              placeholder: "Create a password",
-              visible: showPassword,
-              onToggle: () => setShowPassword((current) => !current),
-            })}
+            <TextField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Create a password"
+              secure
+            />
 
-            <AppText style={[styles.label, styles.secondaryLabel, { color: colors.text }]}>
-              Confirm password
-            </AppText>
-            {renderPasswordField({
-              value: confirmPassword,
-              onChangeText: setConfirmPassword,
-              placeholder: "Re-enter your password",
-              visible: showConfirmPassword,
-              onToggle: () => setShowConfirmPassword((current) => !current),
-            })}
+            <TextField
+              label="Confirm password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Re-enter your password"
+              secure
+            />
 
             <AppButton
               label={submitting ? "Creating account..." : "Register"}
@@ -290,34 +240,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     textAlign: "center",
     marginBottom: spacing.xxl,
-  },
-  label: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-    marginBottom: spacing.sm,
-  },
-  secondaryLabel: {
-    marginTop: spacing.lg,
-  },
-  input: {
-    minHeight: 56,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    ...typeScale.body,
-  },
-  passwordWrap: {
-    minHeight: 56,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  passwordInput: {
-    flex: 1,
-    ...typeScale.body,
-    paddingVertical: spacing.md,
   },
   cta: {
     marginTop: spacing.xxl,

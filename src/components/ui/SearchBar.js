@@ -11,6 +11,7 @@ import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   fontFamily,
+  MAX_FONT_SCALE,
   radius,
   spacing,
   typeScale,
@@ -57,6 +58,7 @@ export default function SearchBar({
         editable={editable}
         onSubmitEditing={onSubmitEditing}
         returnKeyType="search"
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
       />
       {value ? (
         <TouchableOpacity style={styles.trailingButton} onPress={onClear} hitSlop={8}>
@@ -90,7 +92,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginLeft: spacing.md,
-    ...typeScale.body,
+    // No lineHeight: it misplaces the text inside a TextInput on iOS.
+    fontSize: typeScale.body.fontSize,
     fontFamily: fontFamily.semibold,
     paddingVertical: spacing.md + 1,
   },

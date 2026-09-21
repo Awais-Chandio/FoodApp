@@ -6,14 +6,13 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
+import TextField from "../../components/ui/TextField";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
@@ -32,7 +31,6 @@ export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async () => {
@@ -133,50 +131,22 @@ export default function LoginScreen({ navigation }) {
               Sign in to continue your orders and checkout flow.
             </AppText>
 
-            <AppText style={[styles.label, { color: colors.text }]}>Email</AppText>
-            <TextInput
+            <TextField
+              label="Email"
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email"
-              placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  borderColor: colors.border,
-                },
-              ]}
             />
 
-            <AppText style={[styles.label, { color: colors.text }]}>Password</AppText>
-            <View
-              style={[
-                styles.passwordWrap,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry={!showPassword}
-                style={[styles.passwordInput, { color: colors.text }]}
-              />
-              <TouchableOpacity onPress={() => setShowPassword((current) => !current)}>
-                <AntDesign
-                  name={showPassword ? "eye" : "eye-invisible"}
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
+            <TextField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter your password"
+              secure
+            />
 
             <AppButton
               label={submitting ? "Signing in..." : "Sign in"}
@@ -266,32 +236,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     textAlign: "center",
     marginBottom: spacing.xxl,
-  },
-  label: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-    marginBottom: spacing.sm,
-  },
-  input: {
-    minHeight: 56,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    ...typeScale.body,
-    marginBottom: spacing.lg,
-  },
-  passwordWrap: {
-    minHeight: 56,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  passwordInput: {
-    flex: 1,
-    ...typeScale.body,
-    paddingVertical: spacing.md,
   },
   cta: {
     marginTop: spacing.xl,

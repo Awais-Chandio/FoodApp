@@ -5,12 +5,11 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
+import { BackButton } from "../../components/ui/ScreenHeader";
 import LinearGradient from "react-native-linear-gradient";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import EmptyState from "../../components/ui/EmptyState";
 import OrderStatusStepper from "../../components/OrderStatusStepper";
@@ -180,13 +179,7 @@ export default function TrackOrderScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.heroOverlay}
           />
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={goBack}
-            accessibilityLabel="Go back"
-          >
-            <AntDesign name="arrow-left" size={20} color={colors.text} />
-          </TouchableOpacity>
+          <BackButton onPress={goBack} style={styles.backButton} />
 
           <View style={styles.heroContent}>
             <AppText style={[styles.heroLabel, { color: colors.onPrimary }]}>

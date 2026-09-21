@@ -11,6 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import EmptyState from "../../components/ui/EmptyState";
+import { BackButton } from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
@@ -113,12 +114,7 @@ const ManageUsers = () => {
         ListHeaderComponent={
           <>
             <View style={styles.topRow}>
-              <TouchableOpacity
-                style={[styles.iconButton, { backgroundColor: colors.surface }]}
-                onPress={() => navigation.goBack()}
-              >
-                <AntDesign name="arrow-left" size={20} color={colors.text} />
-              </TouchableOpacity>
+              <BackButton onPress={() => navigation.goBack()} />
               <TouchableOpacity
                 style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
                 onPress={() => navigation.navigate("Users")}
@@ -162,13 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.lg,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
   },
   addButton: {
     minHeight: 44,

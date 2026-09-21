@@ -3,21 +3,17 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
-import AppText from "../components/ui/AppText";
-import AntDesign from "@react-native-vector-icons/ant-design";
+import TextField from "../components/ui/TextField";
 import AppButton from "../components/ui/AppButton";
+import { BackButton } from "../components/ui/ScreenHeader";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
 import {
-  fontFamily,
   layout,
   radius,
   spacing,
-  typeScale,
 } from "../constants/designSystem";
 import * as menuRepo from "../database/repositories/menuRepo";
 
@@ -78,12 +74,7 @@ export default function ManageMenuItem({ navigation, route }) {
         contentContainerStyle={styles.content}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.goBack()}
-          >
-            <AntDesign name="arrow-left" size={20} color={colors.text} />
-          </TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
         </View>
 
         <SectionHeader
@@ -92,50 +83,24 @@ export default function ManageMenuItem({ navigation, route }) {
         />
 
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <AppText style={[styles.label, { color: colors.text }]}>Name *</AppText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Name *"
             value={name}
             onChangeText={setName}
           />
 
-          <AppText style={[styles.label, { color: colors.text }]}>Price (Rs.) *</AppText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Price (Rs.) *"
             value={price}
             onChangeText={setPrice}
             keyboardType="numeric"
           />
 
-          <AppText style={[styles.label, { color: colors.text }]}>Image key or URL</AppText>
-          <TextInput
-            style={[
-              styles.input,
-              styles.textArea,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Image key or URL"
             value={imageKey}
             onChangeText={setImageKey}
             placeholder="food2 or https://example.com/pic.jpg"
-            placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
             multiline
           />
@@ -163,34 +128,9 @@ const styles = StyleSheet.create({
   headerRow: {
     marginBottom: spacing.lg,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   card: {
     borderRadius: radius.lg,
     padding: spacing.xl,
-  },
-  label: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
-  },
-  input: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    ...typeScale.body,
-  },
-  textArea: {
-    minHeight: 84,
-    textAlignVertical: "top",
-    paddingTop: spacing.md,
   },
   saveButton: {
     marginTop: spacing.xxl,

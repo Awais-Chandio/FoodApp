@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
-  Image,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -16,6 +15,10 @@ import * as menuRepo from "../../database/repositories/menuRepo";
 import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
 import EmptyState from "../../components/ui/EmptyState";
+import FilterChip from "../../components/ui/FilterChip";
+import MenuItemCard from "../../components/ui/MenuItemCard";
+import QtyStepper from "../../components/ui/QtyStepper";
+import ScreenHeader from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
@@ -133,71 +136,63 @@ export default function MenuScreen() {
 
   const renderMenuItem = ({ item }) => {
     const quantity = getQty(item.id);
+    const adminButtons = isAdmin ? (
+      <View style={styles.adminColumn}>
+        <TouchableOpacity
+          style={[styles.adminButton, { backgroundColor: colors.badge }]}
+          onPress={() => editItem(item)}
+          accessibilityLabel={`Edit ${item.name}`}
+        >
+          <AntDesign name="edit" size={16} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.adminButton, { backgroundColor: colors.surfaceMuted }]}
+          onPress={() => deleteItem(item.id)}
+          accessibilityLabel={`Delete ${item.name}`}
+        >
+          <AntDesign name="delete" size={16} color={colors.danger} />
+        </TouchableOpacity>
+      </View>
+    ) : null;
 
     return (
-      <View
-        style={[
-          styles.itemCard,
-          createShadow(colors.shadow, 10),
-          { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-        ]}
-      >
-        <Image
-          source={resolveFoodImage(item.image_key || item.name)}
-          style={styles.itemImage}
-        />
-        <View style={styles.itemContent}>
-          <AppText style={[styles.itemName, { color: colors.text }]}>{item.name}</AppText>
-          <AppText style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
-            Freshly prepared and balanced for quick delivery
-          </AppText>
-          <AppText style={[styles.itemPrice, { color: colors.primaryStrong }]}>
-            Rs. {item.price}
-          </AppText>
-        </View>
-
-        {isAdmin ? (
-          <View style={styles.adminColumn}>
-            <TouchableOpacity
-              style={[styles.adminButton, { backgroundColor: colors.badge }]}
-              onPress={() => editItem(item)}
-            >
-              <AntDesign name="edit" size={16} color={colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.adminButton, { backgroundColor: colors.surfaceMuted }]}
-              onPress={() => deleteItem(item.id)}
-            >
-              <AntDesign name="delete" size={16} color={colors.danger} />
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {quantity > 0 ? (
-          <View style={[styles.qtyStepper, { backgroundColor: colors.badge }]}>
-            <TouchableOpacity onPress={() => decreaseQty(item)} hitSlop={8}>
-              <AntDesign name="minus" size={16} color={colors.primaryStrong} />
-            </TouchableOpacity>
-            <AppText style={[styles.qtyValue, { color: colors.text }]}>{quantity}</AppText>
-            <TouchableOpacity onPress={() => increaseQty(item)} hitSlop={8}>
-              <AntDesign name="plus" size={16} color={colors.primaryStrong} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            onPress={() => increaseQty(item)}
-          >
-            <LinearGradient
-              colors={colors.buttonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.addButton}
-            >
-              <AntDesign name="plus" size={16} color={colors.onPrimary} />
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-      </View>
+      <MenuItemCard
+        image={resolveFoodImage(item.image_key || item.name)}
+        title={item.name}
+        subtitle="Freshly prepared and balanced for quick delivery"
+        price={`Rs. ${item.price}`}
+        footer={
+          quantity > 0 ? (
+            <QtyStepper
+              value={quantity}
+              onIncrease={() => increaseQty(item)}
+              onDecrease={() => decreaseQty(item)}
+              style={styles.stepper}
+            />
+          ) : null
+        }
+        trailing={
+          <>
+            {adminButtons}
+            {quantity > 0 ? null : (
+              <TouchableOpacity
+                onPress={() => increaseQty(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${item.name} to cart`}
+              >
+                <LinearGradient
+                  colors={colors.buttonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.addButton}
+                >
+                  <AntDesign name="plus" size={16} color={colors.onPrimary} />
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </>
+        }
+      />
     );
   };
 
@@ -210,41 +205,28 @@ export default function MenuScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
-            <View style={styles.headerRow}>
-              <TouchableOpacity
-                style={[styles.headerIcon, { backgroundColor: colors.surface }]}
-                onPress={() => navigation.goBack()}
-              >
-                <AntDesign name="arrow-left" size={20} color={colors.text} />
-              </TouchableOpacity>
-
-              <View style={styles.headerCenter}>
-                <AppText style={[styles.restaurantName, { color: colors.text }]}>
-                  {restaurant.name}
-                </AppText>
-                <AppText style={[styles.headerMeta, { color: colors.textSecondary }]}>
-                  Curated menu
-                </AppText>
-              </View>
-
-              {isAdmin ? (
-                <TouchableOpacity
-                  style={[
-                    styles.headerAction,
-                    { backgroundColor: colors.primaryStrong },
-                  ]}
-                  onPress={() =>
-                    navigation.navigate("ManageMenuItems", {
-                      restaurantId: restaurant.id,
-                    })
-                  }
-                >
-                  <AppText style={[styles.headerActionText, { color: colors.onPrimary }]}>Add</AppText>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.headerPlaceholder} />
-              )}
-            </View>
+            <ScreenHeader
+              title={restaurant.name}
+              subtitle="Curated menu"
+              centered
+              onBack={() => navigation.goBack()}
+              right={
+                isAdmin ? (
+                  <TouchableOpacity
+                    style={[styles.headerAction, { backgroundColor: colors.primaryStrong }]}
+                    onPress={() =>
+                      navigation.navigate("ManageMenuItems", {
+                        restaurantId: restaurant.id,
+                      })
+                    }
+                  >
+                    <AppText variant="label" color="onPrimary">
+                      Add
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null
+              }
+            />
 
             <View
               style={[
@@ -290,31 +272,14 @@ export default function MenuScreen() {
               subtitle="Use the quick filters to scan the menu faster."
             />
             <View style={styles.filterRow}>
-              {filters.map((filter) => {
-                const isActive = activeFilter === filter.id;
-                return (
-                  <TouchableOpacity
-                    key={filter.id}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: isActive ? colors.primaryStrong : colors.surface,
-                        borderColor: isActive ? colors.primaryStrong : colors.border,
-                      },
-                    ]}
-                    onPress={() => setActiveFilter(filter.id)}
-                  >
-                    <AppText
-                      style={[
-                        styles.filterLabel,
-                        { color: isActive ? colors.onPrimary : colors.text },
-                      ]}
-                    >
-                      {filter.label}
-                    </AppText>
-                  </TouchableOpacity>
-                );
-              })}
+              {filters.map((filter) => (
+                <FilterChip
+                  key={filter.id}
+                  label={filter.label}
+                  active={activeFilter === filter.id}
+                  onPress={() => setActiveFilter(filter.id)}
+                />
+              ))}
             </View>
           </>
         }
@@ -392,32 +357,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxxl,
     paddingBottom: 168,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.xl,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-  },
-  restaurantName: {
-    ...typeScale.h2,
-  },
-  headerMeta: {
-    marginTop: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.regular,
-  },
   headerAction: {
     minWidth: 58,
     height: 44,
@@ -425,13 +364,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.md,
-  },
-  headerActionText: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
-  headerPlaceholder: {
-    width: 58,
   },
   heroCard: {
     borderWidth: 1,
@@ -468,53 +400,14 @@ const styles = StyleSheet.create({
     marginTop: -spacing.xs,
     marginBottom: spacing.lg,
   },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    marginRight: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  filterLabel: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
-  itemCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  itemImage: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.md,
-  },
-  itemContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  itemName: {
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  itemSubtitle: {
-    marginTop: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.regular,
-  },
-  itemPrice: {
-    marginTop: spacing.sm,
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
   adminColumn: {
     justifyContent: "space-between",
     marginRight: spacing.sm,
     height: 84,
+  },
+  stepper: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
   adminButton: {
     width: 36,
@@ -529,20 +422,6 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-  },
-  qtyStepper: {
-    height: 42,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  qtyValue: {
-    minWidth: 24,
-    textAlign: "center",
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-    marginHorizontal: spacing.sm,
   },
   cartCard: {
     position: "absolute",

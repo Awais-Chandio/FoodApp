@@ -2,7 +2,6 @@ import React from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -15,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import AppButton from "../../components/ui/AppButton";
 import EmptyState from "../../components/ui/EmptyState";
+import RestaurantCard from "../../components/ui/RestaurantCard";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import { useCart } from "../../Context/CartContext";
@@ -28,7 +28,6 @@ import {
   spacing,
   typeScale,
 } from "../../constants/designSystem";
-import { resolveRestaurantImage } from "../../constants/imageRegistry";
 import { useAuth } from "../Auth/AuthContext";
 
 const profileOptions = [
@@ -216,41 +215,11 @@ export default function ProfileScreen({ route }) {
                     keyExtractor={(restaurant) => String(restaurant.id)}
                     contentContainerStyle={styles.favoritesList}
                     renderItem={({ item: restaurant }) => (
-                      <TouchableOpacity
-                        activeOpacity={0.9}
-                        style={[
-                          styles.favoriteCard,
-                          createShadow(colors.shadow, 10),
-                          {
-                            backgroundColor: colors.surface,
-                            borderColor: colors.borderSoft,
-                          },
-                        ]}
+                      <RestaurantCard
+                        restaurant={restaurant}
+                        variant="compact"
                         onPress={() => openRestaurant(restaurant)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${restaurant.name}`}
-                      >
-                        <Image
-                          source={resolveRestaurantImage(restaurant)}
-                          style={styles.favoriteImage}
-                        />
-                        <View style={styles.favoriteBody}>
-                          <AppText
-                            style={[styles.favoriteName, { color: colors.text }]}
-                            numberOfLines={1}
-                          >
-                            {restaurant.name}
-                          </AppText>
-                          <View style={styles.favoriteMetaRow}>
-                            <AntDesign name="star" size={12} color={colors.warning} />
-                            <AppText
-                              style={[styles.favoriteMeta, { color: colors.textSecondary }]}
-                            >
-                              {restaurant.rating || "4.5"} • {restaurant.time || "20 min"}
-                            </AppText>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
+                      />
                     )}
                   />
                 ) : (
@@ -384,33 +353,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
     paddingRight: spacing.xs,
     marginBottom: layout.sectionGap,
-  },
-  favoriteCard: {
-    width: 168,
-    marginRight: spacing.md,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    overflow: "hidden",
-  },
-  favoriteImage: {
-    width: "100%",
-    height: 96,
-  },
-  favoriteBody: {
-    padding: spacing.md,
-  },
-  favoriteName: {
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  favoriteMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  favoriteMeta: {
-    marginLeft: spacing.xs,
-    ...typeScale.caption,
   },
   actionCard: {
     borderWidth: 1,

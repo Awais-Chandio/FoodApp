@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import {
   FlatList,
-  Image,
   RefreshControl,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
@@ -16,6 +14,10 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import { useCart } from "../../Context/CartContext";
 import EmptyState from "../../components/ui/EmptyState";
+import MenuItemCard from "../../components/ui/MenuItemCard";
+import QtyStepper from "../../components/ui/QtyStepper";
+import ScreenHeader from "../../components/ui/ScreenHeader";
+import TextField from "../../components/ui/TextField";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../Auth/AuthContext";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -116,50 +118,30 @@ export default function AddToCartScreen() {
   };
 
   const renderCartItem = ({ item }) => (
-    <View
-      style={[
-        styles.itemRow,
-        createShadow(colors.shadow, 10),
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.borderSoft,
-        },
-      ]}
-    >
-      <Image
-        source={resolveFoodImage(item.image_path || item.image_key || item.name)}
-        style={styles.itemImage}
-      />
-
-      <View style={styles.itemContent}>
-        <AppText style={[styles.itemName, { color: colors.text }]}>{item.name}</AppText>
-        <AppText style={[styles.itemMeta, { color: colors.textSecondary }]}>
-          Prepared fresh for checkout
-        </AppText>
-        <AppText style={[styles.itemPrice, { color: colors.primaryStrong }]}>
-          Rs. {item.price}
-        </AppText>
-
-        <View style={[styles.qtyRow, { backgroundColor: colors.badge }]}>
-          <TouchableOpacity onPress={() => decreaseQty(item.menu_item_id)} hitSlop={8}>
-            <AntDesign name="minus" size={16} color={colors.primaryStrong} />
-          </TouchableOpacity>
-          <AppText style={[styles.qtyValue, { color: colors.text }]}>
-            {item.quantity || 1}
-          </AppText>
-          <TouchableOpacity onPress={() => increaseQty(item.menu_item_id)} hitSlop={8}>
-            <AntDesign name="plus" size={16} color={colors.primaryStrong} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={[styles.removeButton, { backgroundColor: colors.surfaceMuted }]}
-        onPress={() => removeItem(item.menu_item_id)}
-      >
-        <AntDesign name="delete" size={16} color={colors.danger} />
-      </TouchableOpacity>
-    </View>
+    <MenuItemCard
+      image={resolveFoodImage(item.image_path || item.image_key || item.name)}
+      title={item.name}
+      subtitle="Prepared fresh for checkout"
+      price={`Rs. ${item.price}`}
+      footer={
+        <QtyStepper
+          value={item.quantity || 1}
+          onDecrease={() => decreaseQty(item.menu_item_id)}
+          onIncrease={() => increaseQty(item.menu_item_id)}
+          style={styles.stepper}
+        />
+      }
+      trailing={
+        <TouchableOpacity
+          style={[styles.removeButton, { backgroundColor: colors.surfaceMuted }]}
+          onPress={() => removeItem(item.menu_item_id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${item.name}`}
+        >
+          <AntDesign name="delete" size={16} color={colors.danger} />
+        </TouchableOpacity>
+      }
+    />
   );
 
   return (
@@ -179,22 +161,15 @@ export default function AddToCartScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={[styles.headerButton, { backgroundColor: colors.surface }]}
-                onPress={() => navigation.goBack()}
-              >
-                <AntDesign name="arrow-left" size={20} color={colors.text} />
-              </TouchableOpacity>
-              <View style={styles.headerContent}>
-                <AppText style={[styles.headerTitle, { color: colors.text }]}>Your cart</AppText>
-                <AppText style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-                  {cartItems.length
-                    ? `${cartItems.length} selected dishes ready for checkout`
-                    : "Add dishes to start building your order"}
-                </AppText>
-              </View>
-            </View>
+            <ScreenHeader
+              title="Your cart"
+              subtitle={
+                cartItems.length
+                  ? `${cartItems.length} selected dishes ready for checkout`
+                  : "Add dishes to start building your order"
+              }
+              onBack={() => navigation.goBack()}
+            />
 
             {cartItems.length ? (
               <>
@@ -264,23 +239,15 @@ export default function AddToCartScreen() {
                   </View>
                 ) : (
                   <View style={[styles.promoRow, isCompact ? styles.promoRowStack : null]}>
-                    <TextInput
+                    <TextField
                       value={promoInput}
                       onChangeText={setPromoInput}
                       placeholder="Try SAVE10, FOOD5 or WELCOME20"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[
-                        styles.promoInput,
-                        isCompact ? styles.promoInputStack : null,
-                        {
-                          backgroundColor: colors.surface,
-                          color: colors.text,
-                          borderColor: colors.border,
-                        },
-                      ]}
                       autoCapitalize="characters"
                       autoCorrect={false}
                       onSubmitEditing={applyPromoCode}
+                      accessibilityLabel="Promo code"
+                      containerStyle={[styles.promoField, isCompact ? styles.promoFieldStack : null]}
                     />
                     <TouchableOpacity
                       style={[
@@ -391,30 +358,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxxl,
     paddingBottom: spacing.xxl,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xxl,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitle: {
-    ...typeScale.h1,
-  },
-  headerSubtitle: {
-    marginTop: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.regular,
-  },
   summaryStrip: {
     borderWidth: 1,
     borderRadius: radius.lg,
@@ -452,18 +395,18 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "stretch",
   },
-  promoInput: {
+  promoField: {
     flex: 1,
-    minHeight: 56,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
+    marginBottom: 0,
     marginRight: spacing.sm,
-    ...typeScale.body,
   },
-  promoInputStack: {
+  promoFieldStack: {
     marginRight: 0,
     marginBottom: spacing.md,
+  },
+  stepper: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
   applyButton: {
     minHeight: 56,
@@ -507,53 +450,6 @@ const styles = StyleSheet.create({
   },
   removePromoText: {
     ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
-  itemRow: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  itemImage: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.md,
-  },
-  itemContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  itemName: {
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  itemMeta: {
-    marginTop: spacing.xs,
-    ...typeScale.label,
-    fontFamily: fontFamily.regular,
-  },
-  itemPrice: {
-    marginTop: spacing.sm,
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  qtyRow: {
-    marginTop: spacing.md,
-    alignSelf: "flex-start",
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    height: 38,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  qtyValue: {
-    minWidth: 24,
-    textAlign: "center",
-    marginHorizontal: spacing.sm,
-    ...typeScale.body,
     fontFamily: fontFamily.bold,
   },
   removeButton: {

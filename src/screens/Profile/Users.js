@@ -3,15 +3,15 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import AntDesign from "@react-native-vector-icons/ant-design";
+import TextField from "../../components/ui/TextField";
 import AppButton from "../../components/ui/AppButton";
+import { BackButton } from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
@@ -164,12 +164,7 @@ const Users = ({ navigation, route }) => {
         contentContainerStyle={styles.content}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.goBack()}
-          >
-            <AntDesign name="arrow-left" size={20} color={colors.text} />
-          </TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
         </View>
 
         <SectionHeader
@@ -187,17 +182,8 @@ const Users = ({ navigation, route }) => {
                 </AppText>
 
                 {(field.type === "text" || field.type === "number") && (
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: colors.background,
-                        color: colors.text,
-                        borderColor: colors.border,
-                      },
-                    ]}
+                  <TextField
                     placeholder={field.placeholder}
-                    placeholderTextColor={colors.textSecondary}
                     keyboardType={field.type === "number" ? "numeric" : "default"}
                     value={formData[field.id]?.toString()}
                     onChangeText={(value) =>
@@ -326,23 +312,13 @@ const Users = ({ navigation, route }) => {
                 )}
 
                 {field.type === "textarea" && (
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.textArea,
-                      {
-                        backgroundColor: colors.background,
-                        color: colors.text,
-                        borderColor: colors.border,
-                      },
-                    ]}
+                  <TextField
                     multiline
                     value={formData[field.id]}
                     onChangeText={(value) =>
                       setFormData({ ...formData, [field.id]: value })
                     }
                     placeholder="Write here..."
-                    placeholderTextColor={colors.textSecondary}
                     maxLength={field.max_length}
                   />
                 )}
@@ -374,13 +350,6 @@ const styles = StyleSheet.create({
   headerRow: {
     marginBottom: spacing.lg,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   card: {
     borderRadius: radius.lg,
     padding: spacing.xl,
@@ -408,11 +377,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     overflow: "hidden",
-  },
-  textArea: {
-    minHeight: 104,
-    textAlignVertical: "top",
-    paddingTop: spacing.md,
   },
   choiceRow: {
     borderWidth: 1,

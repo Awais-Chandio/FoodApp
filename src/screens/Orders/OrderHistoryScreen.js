@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import AppButton from "../../components/ui/AppButton";
+import ScreenHeader from "../../components/ui/ScreenHeader";
 import EmptyState from "../../components/ui/EmptyState";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -132,16 +132,7 @@ export default function OrderHistoryScreen() {
   const openTracking = (order) => navigation.navigate("TrackOrder", { orderId: order.id });
 
   const header = (
-    <View style={styles.header}>
-      <TouchableOpacity
-        style={[styles.headerButton, { backgroundColor: colors.surface }]}
-        onPress={() => navigation.goBack()}
-        accessibilityLabel="Go back"
-      >
-        <AntDesign name="arrow-left" size={20} color={colors.text} />
-      </TouchableOpacity>
-      <AppText style={[styles.headerTitle, { color: colors.text }]}>Order history</AppText>
-    </View>
+    <ScreenHeader title="Order history" onBack={() => navigation.goBack()} />
   );
 
   const renderOrder = ({ item: order }) => {
@@ -273,22 +264,6 @@ const styles = StyleSheet.create({
     padding: layout.pagePadding,
     paddingTop: spacing.huge,
     paddingBottom: spacing.huge + spacing.xl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    marginLeft: spacing.md,
-    ...typeScale.h1,
   },
   skeleton: {
     marginBottom: layout.cardGap,

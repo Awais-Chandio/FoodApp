@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  Image,
   ImageBackground,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,9 @@ import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/nativ
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppButton from "../../components/ui/AppButton";
 import EmptyState from "../../components/ui/EmptyState";
+import FilterChip from "../../components/ui/FilterChip";
+import MenuItemCard from "../../components/ui/MenuItemCard";
+import { BackButton } from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -117,9 +119,7 @@ export default function DetailScreen() {
             style={styles.heroOverlay}
           />
 
-          <TouchableOpacity style={[styles.topButton, { backgroundColor: colors.imageChip }]} onPress={() => navigation.goBack()}>
-            <AntDesign name="arrow-left" size={20} color={colors.text} />
-          </TouchableOpacity>
+          <BackButton floating style={styles.topButton} onPress={() => navigation.goBack()} />
 
           <TouchableOpacity
             style={[styles.favoriteButton, { backgroundColor: colors.imageChip }]}
@@ -130,7 +130,7 @@ export default function DetailScreen() {
             <AntDesign
               name={favorite ? "heart" : "hearto"}
               size={18}
-              color={favorite ? colors.danger : colors.textSecondary}
+              color={favorite ? colors.danger : colors.imageChipText}
             />
           </TouchableOpacity>
 
@@ -231,31 +231,14 @@ export default function DetailScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}
           >
-            {previewFilters.map((filter) => {
-              const isActive = activeFilter === filter.id;
-              return (
-                <TouchableOpacity
-                  key={filter.id}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: isActive ? colors.primaryStrong : colors.surface,
-                      borderColor: isActive ? colors.primaryStrong : colors.border,
-                    },
-                  ]}
-                  onPress={() => setActiveFilter(filter.id)}
-                >
-                  <AppText
-                    style={[
-                      styles.filterLabel,
-                      { color: isActive ? colors.onPrimary : colors.text },
-                    ]}
-                  >
-                    {filter.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
+            {previewFilters.map((filter) => (
+              <FilterChip
+                key={filter.id}
+                label={filter.label}
+                active={activeFilter === filter.id}
+                onPress={() => setActiveFilter(filter.id)}
+              />
+            ))}
           </ScrollView>
 
           {menuLoading ? (
@@ -278,42 +261,30 @@ export default function DetailScreen() {
             />
           ) : filteredPreviewItems.length ? (
             filteredPreviewItems.map((item) => (
-              <View
+              <MenuItemCard
                 key={String(item.id)}
-                style={[
-                  styles.itemCard,
-                  createShadow(colors.shadow, 10),
-                  { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-                ]}
-              >
-                <Image
-                  source={resolveFoodImage(item.image_path || item.image_key || item.name)}
-                  style={styles.itemImage}
-                />
-                <View style={styles.itemContent}>
-                  <AppText style={[styles.itemName, { color: colors.text }]}>
-                    {item.name}
-                  </AppText>
-                  <AppText style={[styles.itemMeta, { color: colors.textSecondary }]}>
-                    Chef recommended
-                  </AppText>
-                  <AppText style={[styles.itemPrice, { color: colors.primaryStrong }]}>
-                    Rs. {item.price || 0}
-                  </AppText>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("MenuScreen", { restaurant })}
-                >
-                  <LinearGradient
-                    colors={colors.buttonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.inlineAdd}
+                image={resolveFoodImage(item.image_path || item.image_key || item.name)}
+                title={item.name}
+                subtitle="Chef recommended"
+                price={`Rs. ${item.price || 0}`}
+                imageSize={92}
+                trailing={
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("MenuScreen", { restaurant })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Order ${item.name} from the menu`}
                   >
-                    <AntDesign name="plus" size={16} color={colors.onPrimary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
+                    <LinearGradient
+                      colors={colors.buttonGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.inlineAdd}
+                    >
+                      <AntDesign name="plus" size={16} color={colors.onPrimary} />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                }
+              />
             ))
           ) : (
             <EmptyState
@@ -350,11 +321,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xl,
   },
   topButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
     marginTop: spacing.xxxl,
     marginLeft: spacing.xl,
   },
@@ -473,51 +439,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     paddingRight: spacing.xs,
   },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    marginRight: spacing.sm,
-  },
-  filterLabel: {
-    ...typeScale.label,
-    fontFamily: fontFamily.bold,
-  },
   itemSkeleton: {
     width: "100%",
     marginBottom: spacing.lg,
-  },
-  itemCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  itemImage: {
-    width: 92,
-    height: 92,
-    borderRadius: radius.md,
-  },
-  itemContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  itemName: {
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  itemMeta: {
-    ...typeScale.label,
-    fontFamily: fontFamily.regular,
-    marginTop: spacing.xs,
-  },
-  itemPrice: {
-    marginTop: spacing.sm,
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
   },
   inlineAdd: {
     width: 42,
