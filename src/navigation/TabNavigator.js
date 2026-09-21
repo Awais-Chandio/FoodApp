@@ -5,7 +5,7 @@ import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 
 import HomeStack from "../navigation/HomeStack";
-import SearchScreen from "../components/SearchScreen";
+import SearchScreen from "../screens/Search/SearchScreen";
 import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import { useTheme } from "../Context/ThemeProvider";

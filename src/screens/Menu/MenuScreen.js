@@ -12,18 +12,18 @@ import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import db from "../database/dbs";
-import { useAuth } from "../screens/Auth/AuthContext";
-import EmptyState from "./ui/EmptyState";
-import SectionHeader from "./ui/SectionHeader";
-import { useTheme } from "../Context/ThemeProvider";
+import db from "../../database/dbs";
+import { useAuth } from "../Auth/AuthContext";
+import EmptyState from "../../components/ui/EmptyState";
+import SectionHeader from "../../components/ui/SectionHeader";
+import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   layout,
   radius,
   spacing,
-} from "../constants/designSystem";
-import { resolveFoodImage } from "../constants/imageRegistry";
+} from "../../constants/designSystem";
+import { resolveFoodImage } from "../../constants/imageRegistry";
 
 const filters = [
   { id: "all", label: "All items" },

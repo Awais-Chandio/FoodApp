@@ -12,17 +12,17 @@ import {
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
-import AppButton from "./ui/AppButton";
-import EmptyState from "./ui/EmptyState";
-import SectionHeader from "./ui/SectionHeader";
-import { useTheme } from "../Context/ThemeProvider";
+import AppButton from "../../components/ui/AppButton";
+import EmptyState from "../../components/ui/EmptyState";
+import SectionHeader from "../../components/ui/SectionHeader";
+import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   layout,
   radius,
   spacing,
-} from "../constants/designSystem";
-import { resolveFoodImage, resolveRestaurantImage } from "../constants/imageRegistry";
+} from "../../constants/designSystem";
+import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
 
 const previewFilters = [
   { id: "all", label: "All" },

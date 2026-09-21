@@ -15,7 +15,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import HomeHeader from "../../components/HomeHeader";
+import HomeHeader from "./HomeHeader";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import SkeletonCard from "../../components/ui/SkeletonCard";

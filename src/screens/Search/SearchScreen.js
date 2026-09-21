@@ -12,19 +12,19 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
-import HomeHeader from "./HomeHeader";
-import EmptyState from "./ui/EmptyState";
-import SectionHeader from "./ui/SectionHeader";
-import SkeletonCard from "./ui/SkeletonCard";
-import { useTheme } from "../Context/ThemeProvider";
+import HomeHeader from "../Home/HomeHeader";
+import EmptyState from "../../components/ui/EmptyState";
+import SectionHeader from "../../components/ui/SectionHeader";
+import SkeletonCard from "../../components/ui/SkeletonCard";
+import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   layout,
   radius,
   spacing,
-} from "../constants/designSystem";
-import { resolveRestaurantImage } from "../constants/imageRegistry";
-import { fetchRestaurants } from "../database/dbs";
+} from "../../constants/designSystem";
+import { resolveRestaurantImage } from "../../constants/imageRegistry";
+import { fetchRestaurants } from "../../database/dbs";
 
 const STORAGE_KEY = "recent_searches";
 

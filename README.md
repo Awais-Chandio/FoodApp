@@ -100,13 +100,13 @@ FoodApp/
     ├── Admin/             ManageItems (restaurant form), ManageMenuItems (dish form)
     ├── Context/           ThemeProvider
     ├── assets/            images
-    ├── components/        DetailScreen, MenuScreen, SearchScreen, HomeHeader,
-    │   │                  NotificationModal
+    ├── components/        NotificationModal
     │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard
     ├── constants/         designSystem (colors, spacing, radius), imageRegistry
     ├── database/          dbs.js: SQLite schema, seed data and queries
     ├── navigation/        AppNavigator, TabNavigator, HomeStack, rootNavigation
-    ├── screens/           Auth, Cart, Home, Loader, Onboarding, Profile
+    ├── screens/           Auth, Cart, Details, Home (with HomeHeader), Loader, Menu,
+    │                      Onboarding, Profile, Search
     └── services/          notificationService (FCM)
 ```
 
