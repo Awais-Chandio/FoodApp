@@ -41,7 +41,11 @@ is Firebase Cloud Messaging for push notifications.
   database and shown with an animated stepper.
 - Order history (Profile → Order history) with a Reorder button that replaces
   the cart with a past order at today's prices.
-- Light, dark and system theme.
+- Light, dark and system theme ("Ember" palette, Plus Jakarta Sans). Colors
+  come only from `src/constants/designSystem.js` (an ESLint rule rejects hex and
+  rgba literals elsewhere), and a Jest test checks the contrast of every
+  text/background pair in both modes. Text uses `AppText` (type scale, 1.3x
+  font-scaling cap).
 - Push notifications (FCM): foreground modal, and routing when a
   notification is opened.
 
@@ -116,6 +120,7 @@ FoodApp/
 ├── App.js                 providers, NavigationContainer, push-notification routing
 ├── index.js               app entry + FCM background handler
 ├── android/  ios/         native projects
+├── assets/fonts/          Plus Jakarta Sans (Regular, SemiBold, Bold; OFL), linked with react-native-asset
 ├── __tests__/             Jest tests (one suite runs the real SQL on node:sqlite, Node 22+)
 ├── jest/                  test helper: SQLite adapter for those tests
 ├── .github/workflows/     CI: signed release APK on push to main
@@ -124,7 +129,9 @@ FoodApp/
     ├── Context/           ThemeProvider, CartContext (cart + applied promo), FavoritesContext
     ├── assets/            images
     ├── components/        NotificationModal, OrderStatusStepper
-    │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard
+    │   └── ui/            AppText, AppButton, AppToast, FilterChip, QtyStepper, MenuItemCard,
+    │                      RestaurantCard, TextField, ScreenHeader, EmptyState, SearchBar,
+    │                      SectionHeader, SkeletonCard
     ├── constants/         designSystem (colors, spacing, radius), imageRegistry
     ├── database/          client (SQLite connection), schema (versioned migrations + seed),
     │   │                  seedData (demo restaurants, dishes), sql (promise helpers),
