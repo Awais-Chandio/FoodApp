@@ -28,7 +28,7 @@ export const ONBOARDING_SLIDES = [
     image: appImages.onboardingDelivery,
     title: "Track delivery with clearer progress",
     subtitle:
-      "Move from discovery to ordering to delivery with the same polished orange visual language.",
+      "Move from discovery to ordering to delivery with the same polished Citrus visual language.",
   },
 ];
 

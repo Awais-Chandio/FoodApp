@@ -18,6 +18,7 @@ import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   fontFamily,
+  layout,
   radius,
   spacing,
   typeScale,
@@ -102,7 +103,7 @@ export default function RegisterScreen({ navigation }) {
               </View>
               <AppText style={[styles.heroTitle, { color: colors.onPrimary }]}>Create your food profile</AppText>
               <AppText style={[styles.heroText, { color: colors.onPrimary }]}>
-                Same orange design system, smoother onboarding, and a cleaner order flow.
+                One Citrus design system, smoother onboarding, and a cleaner order flow.
               </AppText>
             </View>
           </ImageBackground>
@@ -110,7 +111,7 @@ export default function RegisterScreen({ navigation }) {
           <View
             style={[
               styles.card,
-              createShadow(colors.shadow, 18),
+              createShadow(colors.shadow, layout.cardElevation),
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.borderSoft,
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
     marginTop: -24,
     marginHorizontal: spacing.xl,
     borderWidth: 1,
-    borderRadius: radius.xl,
+    borderRadius: layout.cardRadius,
     padding: spacing.xxl,
   },
   logo: {

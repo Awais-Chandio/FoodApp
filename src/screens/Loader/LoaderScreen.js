@@ -60,7 +60,7 @@ export default function LoaderScreen({ navigation }) {
       </LinearGradient>
       <AppText style={[styles.title, { color: colors.text }]}>FoodApp</AppText>
       <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Bold food visuals, smoother checkout, and one consistent orange design language.
+        Bold food visuals, smoother checkout, and one consistent Citrus design language.
       </AppText>
       <ActivityIndicator size="small" color={colors.primaryStrong} style={styles.loader} />
     </LinearGradient>

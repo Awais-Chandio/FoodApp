@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   dishCard: {
     marginHorizontal: layout.pagePadding,
-    padding: spacing.md,
+    padding: layout.cardPadding,
     marginBottom: spacing.md,
   },
 });

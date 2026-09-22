@@ -18,6 +18,7 @@ import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   fontFamily,
+  layout,
   radius,
   spacing,
   typeScale,
@@ -106,7 +107,7 @@ export default function LoginScreen({ navigation }) {
               </View>
               <AppText style={[styles.heroTitle, { color: colors.onPrimary }]}>Fast checkout starts here</AppText>
               <AppText style={[styles.heroText, { color: colors.onPrimary }]}>
-                Sign in and continue with the same premium orange flow across the app.
+                Sign in and continue with the same polished Citrus flow across the app.
               </AppText>
             </View>
           </ImageBackground>
@@ -114,7 +115,7 @@ export default function LoginScreen({ navigation }) {
           <View
             style={[
               styles.card,
-              createShadow(colors.shadow, 18),
+              createShadow(colors.shadow, layout.cardElevation),
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.borderSoft,
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     marginTop: -28,
     marginHorizontal: spacing.xl,
     borderWidth: 1,
-    borderRadius: radius.xl,
+    borderRadius: layout.cardRadius,
     padding: spacing.xxl,
   },
   logo: {

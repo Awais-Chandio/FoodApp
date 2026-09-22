@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StatusBar, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useCreateTables } from "./src/database/dbs";
 import { AuthProvider } from "./src/screens/Auth/AuthContext";
 import AppToast from "./src/components/ui/AppToast";
-import { ThemeProvider } from "./src/Context/ThemeProvider";
+import { ThemeProvider, useTheme } from "./src/Context/ThemeProvider";
 import { CartProvider } from "./src/Context/CartContext";
 import { FavoritesProvider } from "./src/Context/FavoritesContext";
 import notificationService from "./src/services/notificationService";
@@ -102,6 +102,7 @@ const resolveNotificationRoute = (notification) => {
 };
 
 const AppContent = () => {
+  const { colors, theme } = useTheme();
   useCreateTables();
   const pendingNotificationRef = useRef(null);
   const initialNotificationTimerRef = useRef(null);
@@ -162,30 +163,36 @@ const AppContent = () => {
   }, [handleNotification]);
 
   return (
-    <AuthProvider>
-      <FavoritesProvider>
-        <CartProvider>
-          <NavigationContainer
-            ref={navigationRef}
-            onReady={() => {
-              if (pendingNotificationRef.current) {
-                navigateForNotification(pendingNotificationRef.current);
-                pendingNotificationRef.current = null;
-              }
-            }}
-          >
-            <AppNavigator />
-            <AppToast />
-            <NotificationModal
-              visible={!!activeNotification}
-              notification={activeNotification}
-              onClose={() => setActiveNotification(null)}
-              onPrimaryPress={handlePrimaryNotificationPress}
-            />
-          </NavigationContainer>
-        </CartProvider>
-      </FavoritesProvider>
-    </AuthProvider>
+    <>
+      <StatusBar
+        barStyle={theme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={colors.background}
+      />
+      <AuthProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <NavigationContainer
+              ref={navigationRef}
+              onReady={() => {
+                if (pendingNotificationRef.current) {
+                  navigateForNotification(pendingNotificationRef.current);
+                  pendingNotificationRef.current = null;
+                }
+              }}
+            >
+              <AppNavigator />
+              <AppToast />
+              <NotificationModal
+                visible={!!activeNotification}
+                notification={activeNotification}
+                onClose={() => setActiveNotification(null)}
+                onPrimaryPress={handlePrimaryNotificationPress}
+              />
+            </NavigationContainer>
+          </CartProvider>
+        </FavoritesProvider>
+      </AuthProvider>
+    </>
   );
 };
 

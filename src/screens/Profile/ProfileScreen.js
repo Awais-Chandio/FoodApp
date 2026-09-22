@@ -31,8 +31,8 @@ import {
 import { useAuth } from "../Auth/AuthContext";
 
 const profileOptions = [
-  { id: "theme", label: "Switch appearance", icon: "bulb" },
-  { id: "orders", label: "Order history", icon: "profile" },
+  { id: "theme", label: "Switch appearance", icon: "bg-colors" },
+  { id: "orders", label: "Order history", icon: "carry-out" },
   { id: "support", label: "Help and support", icon: "customer-service" },
 ];
 
@@ -87,7 +87,7 @@ export default function ProfileScreen({ route }) {
         <View
           style={[
             styles.heroCard,
-            createShadow(colors.shadow, 14),
+            createShadow(colors.shadow, layout.cardElevation),
             { borderColor: colors.borderSoft },
           ]}
         >
@@ -116,7 +116,7 @@ export default function ProfileScreen({ route }) {
 
             <View style={styles.heroActions}>
               <TouchableOpacity style={[styles.themeButton, { backgroundColor: colors.glassOnPrimary, borderColor: colors.glassOnPrimaryBorder }]} onPress={toggleTheme}>
-                <AntDesign name="bulb" size={16} color={colors.onPrimary} />
+                <AntDesign name="bg-colors" size={16} color={colors.onPrimary} />
                 <AppText style={[styles.themeButtonText, { color: colors.onPrimary }]}>
                   {theme === "light" ? "Dark mode" : "Light mode"}
                 </AppText>
@@ -134,7 +134,7 @@ export default function ProfileScreen({ route }) {
             <TouchableOpacity
               style={[
                 styles.actionCard,
-                createShadow(colors.shadow, 10),
+                createShadow(colors.shadow, layout.cardElevation),
                 { backgroundColor: colors.surface, borderColor: colors.borderSoft },
               ]}
               onPress={() =>
@@ -144,7 +144,7 @@ export default function ProfileScreen({ route }) {
                 })
               }
             >
-              <AntDesign name="appstore" size={20} color={colors.primaryStrong} />
+              <AntDesign name="unordered-list" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
                 <AppText style={[styles.actionTitle, { color: colors.text }]}>Manage menu</AppText>
                 <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
@@ -157,7 +157,7 @@ export default function ProfileScreen({ route }) {
             <TouchableOpacity
               style={[
                 styles.actionCard,
-                createShadow(colors.shadow, 10),
+                createShadow(colors.shadow, layout.cardElevation),
                 { backgroundColor: colors.surface, borderColor: colors.borderSoft },
               ]}
               onPress={() =>
@@ -182,7 +182,7 @@ export default function ProfileScreen({ route }) {
             <TouchableOpacity
               style={[
                 styles.actionCard,
-                createShadow(colors.shadow, 10),
+                createShadow(colors.shadow, layout.cardElevation),
                 { backgroundColor: colors.surface, borderColor: colors.borderSoft },
               ]}
               onPress={() => navigation.navigate("ManageUsers")}
@@ -240,7 +240,7 @@ export default function ProfileScreen({ route }) {
                 key={option.id}
                 style={[
                   styles.actionCard,
-                  createShadow(colors.shadow, 10),
+                  createShadow(colors.shadow, layout.cardElevation),
                   { backgroundColor: colors.surface, borderColor: colors.borderSoft },
                 ]}
                 onPress={optionActions[option.id]}
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: layout.cardRadius,
     overflow: "hidden",
     marginBottom: layout.sectionGap,
   },
@@ -356,8 +356,8 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.lg,
