@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   StyleSheet,
   TouchableOpacity,
@@ -9,13 +8,12 @@ import {
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import Toast from "react-native-toast-message";
 import AppButton from "../../components/ui/AppButton";
 import ScreenHeader from "../../components/ui/ScreenHeader";
 import EmptyState from "../../components/ui/EmptyState";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
-import { useCart } from "../../Context/CartContext";
+import useReorder from "../../hooks/useReorder";
 import { useAuth } from "../Auth/AuthContext";
 import {
   createShadow,
@@ -51,12 +49,11 @@ export default function OrderHistoryScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const { user, isLoggedIn } = useAuth();
-  const { count: cartCount, replaceAll } = useCart();
+  const { reorder: handleReorder, reorderingId } = useReorder();
   const { width } = useWindowDimensions();
 
   const [orders, setOrders] = useState([]);
   const [loadState, setLoadState] = useState("loading"); // loading | ready | error
-  const [reorderingId, setReorderingId] = useState(null);
 
   const loadOrders = useCallback(async () => {
     if (!user?.id) {
@@ -79,55 +76,6 @@ export default function OrderHistoryScreen() {
       loadOrders();
     }, [loadOrders])
   );
-
-  const performReorder = async (order) => {
-    setReorderingId(order.id);
-    try {
-      const { lines, unavailable } = await orderRepo.getReorderLines(order.id, user.id);
-
-      if (!lines.length) {
-        Toast.show({
-          type: "error",
-          text1: "Can't reorder",
-          text2: "None of these dishes are on the menu anymore.",
-        });
-        return;
-      }
-
-      await replaceAll(lines);
-      Toast.show({
-        type: "success",
-        text1: "Cart updated",
-        text2: unavailable
-          ? `${unavailable} ${unavailable === 1 ? "dish is" : "dishes are"} no longer available.`
-          : "Your previous order is back in the cart.",
-      });
-      navigation.navigate("Tab", { screen: "AddToCartScreen" });
-    } catch (error) {
-      console.log("reorder error", error);
-      Toast.show({ type: "error", text1: "Could not reorder", text2: "Please try again." });
-    } finally {
-      setReorderingId(null);
-    }
-  };
-
-  const handleReorder = (order) => {
-    if (cartCount === 0) {
-      performReorder(order);
-      return;
-    }
-
-    Alert.alert(
-      "Replace your cart?",
-      `Your cart has ${cartCount} ${cartCount === 1 ? "item" : "items"}. Reordering will replace ${
-        cartCount === 1 ? "it" : "them"
-      }.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Replace", style: "destructive", onPress: () => performReorder(order) },
-      ]
-    );
-  };
 
   const openTracking = (order) => navigation.navigate("TrackOrder", { orderId: order.id });
 

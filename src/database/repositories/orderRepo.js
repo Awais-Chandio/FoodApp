@@ -170,6 +170,22 @@ export const listOrders = async (userId) => {
   return groupItems(orders, items);
 };
 
+/** A user's newest `limit` orders with their items (two queries). */
+export const listRecentOrders = async (userId, limit = 5) => {
+  const [orders, items] = await queryMany([
+    ["SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ?", [userId, limit]],
+    [
+      `SELECT * FROM order_items
+       WHERE order_id IN (
+         SELECT id FROM orders WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ?
+       )
+       ORDER BY id`,
+      [userId, limit],
+    ],
+  ]);
+  return groupItems(orders, items);
+};
+
 /** The address of the user's most recent order, or "" if they have none. */
 export const getLastAddress = async (userId) => {
   const [row] = await query(

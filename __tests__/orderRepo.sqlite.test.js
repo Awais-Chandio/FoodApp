@@ -61,7 +61,7 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(7);
+    expect(version).toBe(8);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
@@ -90,7 +90,7 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(7);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(8);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
     const cartRow = m.raw.prepare('SELECT * FROM cart').get();
@@ -521,6 +521,39 @@ describeSqlite('full menu seeds on real SQLite', () => {
     expect(m.raw.prepare("SELECT COUNT(*) AS n FROM restaurants WHERE name = 'Fortune'").get().n).toBe(0);
   });
 
+  it('a fresh install stores description, category, veg and spice for every dish', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const dish = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Peri Peri Wings'").get();
+    expect(dish).toMatchObject({category: 'Starters', is_veg: 0, spice_level: 3});
+    expect(dish.description).toMatch(/wings/i);
+    expect(m.raw.prepare("SELECT COUNT(*) AS n FROM menu_items WHERE description IS NULL OR category = 'Other'").get().n).toBe(0);
+  });
+
+  it('an existing install gets the details back-filled, and admin dishes default to Other', async () => {
+    const m = load();
+    oldInstall(m);
+    await m.schema.initDatabase();
+
+    expect(m.raw.prepare("SELECT category, is_veg, spice_level FROM menu_items WHERE name = 'Margherita Pizza'").get()).toEqual({
+      category: 'Mains', is_veg: 1, spice_level: 0,
+    });
+    // the admin-created restaurant's dish was never seeded: defaults apply
+    expect(m.raw.prepare("SELECT description, category, is_veg, spice_level FROM menu_items WHERE name = 'House Special'").get()).toEqual({
+      description: null, category: 'Other', is_veg: 0, spice_level: 0,
+    });
+  });
+
+  it('menuRepo.insert stores the details and clamps the spice level', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    await m.menu.insert({restaurantId: 1, name: 'Test Curry', price: 99, imageKey: 'food1', description: ' Hot  ', category: 'Mains', isVeg: true, spiceLevel: 9});
+    await m.menu.insert({restaurantId: 1, name: 'Plain', price: 50});
+    const rows = m.raw.prepare("SELECT * FROM menu_items WHERE name IN ('Test Curry','Plain') ORDER BY id").all();
+    expect(rows[0]).toMatchObject({description: 'Hot', category: 'Mains', is_veg: 1, spice_level: 3});
+    expect(rows[1]).toMatchObject({description: null, category: 'Other', is_veg: 0, spice_level: 0});
+  });
+
   it('creates no duplicate dish names within a restaurant', async () => {
     const m = load();
     oldInstall(m);
@@ -530,5 +563,33 @@ describeSqlite('full menu seeds on real SQLite', () => {
       .prepare('SELECT restaurant_id, name, COUNT(*) AS n FROM menu_items GROUP BY restaurant_id, name HAVING n > 1')
       .all();
     expect(duplicates).toEqual([]);
+  });
+});
+
+describeSqlite('Home data on real SQLite', () => {
+  it('promoRepo.listActive returns only usable promos, best discount first', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const now = Date.UTC(2026, 8, 21);
+    expect((await m.promos.listActive(now)).map(p => p.code)).toEqual(['WELCOME20', 'SAVE10', 'FOOD5']);
+    // after WELCOME20 expires it is gone; the never-expiring ones stay
+    expect((await m.promos.listActive(Date.UTC(2027, 0, 2))).map(p => p.code)).toEqual(['SAVE10', 'FOOD5']);
+  });
+
+  it('orderRepo.listRecentOrders returns the newest N orders with their items only', async () => {
+    const m = load();
+    await fillCart(m);
+    const first = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await fillCart(m);
+    const second = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await fillCart(m);
+    const third = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    m.raw.prepare('UPDATE orders SET created_at = id * 1000');
+
+    const recent = await m.orders.listRecentOrders(USER, 2);
+    expect(recent.map(o => o.id)).toEqual([third.id, second.id]);
+    recent.forEach(o => expect(o.items.length).toBe(2));
+    expect(recent.map(o => o.id)).not.toContain(first.id);
+    expect(await m.orders.listRecentOrders(999, 2)).toEqual([]);
   });
 });

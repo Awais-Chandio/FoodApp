@@ -4,6 +4,24 @@
 
 export const DELIVERY_FEE = 120;
 
+// Delivery is free once the subtotal BEFORE any discount reaches this amount.
+export const FREE_DELIVERY_THRESHOLD = 800;
+
+/**
+ * Progress towards free delivery for a cart subtotal.
+ * @returns {{ unlocked: boolean, remaining: number, fraction: number }}
+ *   fraction is 0..1 for a progress bar; an empty cart has nothing to unlock.
+ */
+export const freeDeliveryProgress = (subtotal) => {
+  const value = Math.max(Number(subtotal) || 0, 0);
+  const unlocked = value >= FREE_DELIVERY_THRESHOLD;
+  return {
+    unlocked,
+    remaining: unlocked ? 0 : FREE_DELIVERY_THRESHOLD - value,
+    fraction: Math.min(value / FREE_DELIVERY_THRESHOLD, 1),
+  };
+};
+
 export const PROMO_MESSAGES = {
   EMPTY: "Enter a promo code first.",
   NOT_FOUND: "We couldn't find that code.",
@@ -68,7 +86,8 @@ export const computeTotals = ({ subtotal, itemCount, promo = null, now = Date.no
   const check = promo ? validatePromo(promo, subtotal, now) : null;
   const promoApplied = check && check.ok ? promo.code : null;
   const discount = check && check.ok ? check.discount : 0;
-  const deliveryFee = itemCount > 0 ? DELIVERY_FEE : 0;
+  const deliveryFee =
+    itemCount > 0 && subtotal < FREE_DELIVERY_THRESHOLD ? DELIVERY_FEE : 0;
   const total = Math.max(subtotal + deliveryFee - discount, 0);
 
   return { subtotal, deliveryFee, discount, total, promoCode: promoApplied };

@@ -1,5 +1,7 @@
 import {
   MENU_BY_RESTAURANT,
+  MENU_CATEGORIES,
+  menuDetailsBackfillStatements,
   MENU_SEED,
   menuBackfillStatements,
   RESTAURANT_SEED,
@@ -58,6 +60,41 @@ describe('seed data integrity', () => {
     expect(statements).toHaveLength(MENU_SEED.length);
     statements.forEach(([sql, params]) => {
       expect(sql).toMatch(/NOT EXISTS/);
+      expect(sql.match(/\?/g)).toHaveLength(6);
+      expect(params).toHaveLength(6);
+    });
+  });
+
+  it('gives every dish a short description, a known category, a veg flag and spice 0-3', () => {
+    Object.values(MENU_BY_RESTAURANT)
+      .flat()
+      .forEach(([name, , , , description, category, isVeg, spice]) => {
+        expect(typeof description).toBe('string');
+        expect(description.length).toBeGreaterThan(10);
+        expect(description.length).toBeLessThanOrEqual(80); // fits two lines in a fixed-height row
+        expect(MENU_CATEGORIES).toContain(category);
+        expect([0, 1]).toContain(isVeg);
+        expect([0, 1, 2, 3]).toContain(spice);
+        expect(name).toBeTruthy();
+      });
+  });
+
+  it('every restaurant menu spans at least two categories, and Other comes last', () => {
+    Object.values(MENU_BY_RESTAURANT).forEach(dishes => {
+      expect(new Set(dishes.map(d => d[5])).size).toBeGreaterThanOrEqual(2);
+    });
+    expect(MENU_CATEGORIES[MENU_CATEGORIES.length - 1]).toBe('Other');
+  });
+
+  it('flattened rows carry the details after the original five columns', () => {
+    expect(MENU_SEED[0]).toHaveLength(9);
+    expect(MENU_SEED[0].slice(0, 5)).toEqual([1, 'Moonland Special', 210, 'Best Seller', 'Moonland']);
+  });
+
+  it('builds one details back-fill per dish, with 6 bound parameters', () => {
+    const statements = menuDetailsBackfillStatements();
+    expect(statements).toHaveLength(MENU_SEED.length);
+    statements.forEach(([sql, params]) => {
       expect(sql.match(/\?/g)).toHaveLength(6);
       expect(params).toHaveLength(6);
     });

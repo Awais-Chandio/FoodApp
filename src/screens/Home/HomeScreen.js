@@ -2,19 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
-import AppText from "../../components/ui/AppText";
-import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import HomeHeader from "./HomeHeader";
+import OfferCarousel from "../../components/OfferCarousel";
+import OrderAgainRow from "../../components/OrderAgainRow";
 import EmptyState from "../../components/ui/EmptyState";
 import FilterChip from "../../components/ui/FilterChip";
 import RestaurantCard from "../../components/ui/RestaurantCard";
@@ -22,50 +20,23 @@ import SectionHeader from "../../components/ui/SectionHeader";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
-  createShadow,
-  fontFamily,
   layout,
-  radius,
   spacing,
-  typeScale,
 } from "../../constants/designSystem";
-import { categoryAssetMap } from "../../constants/imageRegistry";
 import * as restaurantRepo from "../../database/repositories/restaurantRepo";
+import * as promoRepo from "../../database/repositories/promoRepo";
+import * as orderRepo from "../../database/repositories/orderRepo";
+import { useCart } from "../../Context/CartContext";
+import useReorder from "../../hooks/useReorder";
+import { buildOffers } from "../../utils/offers";
 import { useFavorites } from "../../Context/FavoritesContext";
 import { useAuth } from "../Auth/AuthContext";
 
 const homeFilters = [
-  { id: "all", label: "All" },
-  { id: "offers", label: "Hot deals" },
-  { id: "fast", label: "Quick bites" },
-  { id: "top", label: "Top rated" },
-];
-
-const discoveryCategories = [
-  {
-    id: "all",
-    label: "All meals",
-    subtitle: "Full storefront",
-    image: categoryAssetMap.all,
-  },
-  {
-    id: "offers",
-    label: "Deals",
-    subtitle: "Save on dinner",
-    image: categoryAssetMap.pizza,
-  },
-  {
-    id: "fast",
-    label: "Fast delivery",
-    subtitle: "In a rush",
-    image: categoryAssetMap.beverages,
-  },
-  {
-    id: "top",
-    label: "Top picks",
-    subtitle: "Loved nearby",
-    image: categoryAssetMap.asian,
-  },
+  { id: "all", label: "All", icon: "appstore" },
+  { id: "offers", label: "Hot deals", icon: "tag" },
+  { id: "fast", label: "Quick bites", icon: "thunderbolt" },
+  { id: "top", label: "Top rated", icon: "star" },
 ];
 
 const getDeliveryMinutes = (value = "") => {
@@ -76,7 +47,9 @@ const getDeliveryMinutes = (value = "") => {
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
-  const { role } = useAuth();
+  const { role, user, isLoggedIn } = useAuth();
+  const { applyPromo } = useCart();
+  const { reorder, reorderingId } = useReorder();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { width } = useWindowDimensions();
   const isAdmin = role === "admin";
@@ -85,9 +58,11 @@ export default function HomeScreen() {
   const [popular, setPopular] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [promos, setPromos] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(true);
+  const [recentOrders, setRecentOrders] = useState([]);
 
   const cardWidth = Math.min(Math.max(width * 0.76, 248), 296);
-  const categoryWidth = Math.min(Math.max(width * 0.36, 134), 168);
 
   const loadRestaurants = useCallback(async () => {
     setLoading(true);
@@ -112,11 +87,57 @@ export default function HomeScreen() {
     loadRestaurants();
   }, [loadRestaurants]);
 
+  // Promos and the signed-in user's recent orders refresh whenever Home is focused.
+  const loadExtras = useCallback(async () => {
+    try {
+      setPromos(await promoRepo.listActive());
+    } catch (error) {
+      console.log("promo load error", error);
+    } finally {
+      setOffersLoading(false);
+    }
+
+    if (!isLoggedIn || !user?.id) {
+      setRecentOrders([]);
+      return;
+    }
+    try {
+      setRecentOrders(await orderRepo.listRecentOrders(user.id, 5));
+    } catch (error) {
+      console.log("recent orders load error", error);
+    }
+  }, [isLoggedIn, user?.id]);
+
   useFocusEffect(
     useCallback(() => {
       loadRestaurants();
-    }, [loadRestaurants])
+      loadExtras();
+    }, [loadRestaurants, loadExtras])
   );
+
+  const offers = useMemo(
+    () => buildOffers({ promos, restaurants: [...nearest, ...popular] }),
+    [promos, nearest, popular]
+  );
+
+  // A restaurant banner opens the restaurant; a promo banner tries to apply the
+  // code and explains why when it cannot (empty cart, below the minimum, ...).
+  const handleOfferPress = async (offer) => {
+    if (offer.kind === "restaurant") {
+      navigation.navigate("Details", { restaurant: offer.restaurant });
+      return;
+    }
+    const result = await applyPromo(offer.code);
+    if (result.ok) {
+      Toast.show({
+        type: "success",
+        text1: "Promo applied",
+        text2: `${offer.code} takes ${result.promo.percent}% off your cart.`,
+      });
+    } else {
+      Toast.show({ type: "error", text1: result.message });
+    }
+  };
 
   const applyFilter = useCallback(
     (items) => {
@@ -243,63 +264,19 @@ export default function HomeScreen() {
         />
 
         <View style={styles.content}>
-          <SectionHeader
-            title="Taste categories"
-            subtitle="Explore by mood, speed, and what feels worth ordering."
+          <OfferCarousel
+            offers={offers}
+            loading={offersLoading}
+            onOfferPress={handleOfferPress}
           />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesRow}
-          >
-            {discoveryCategories.map((item, index) => {
-              const isActive = activeFilter === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  activeOpacity={0.9}
-                  onPress={() => setActiveFilter(item.id)}
-                  style={[
-                    styles.categoryCard,
-                    createShadow(colors.shadow, isActive ? 16 : 10),
-                    { width: categoryWidth, borderColor: colors.borderSoft },
-                  ]}
-                >
-                  <LinearGradient
-                    colors={
-                      isActive
-                        ? colors.heroGradientAlt
-                        : index % 2 === 0
-                          ? colors.surfaceGradient
-                          : [colors.secondarySoft, colors.surface]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.categoryGradient}
-                  >
-                    <Image source={item.image} style={styles.categoryImage} />
-                    <AppText
-                      style={[
-                        styles.categoryLabel,
-                        { color: isActive ? colors.onPrimary : colors.text },
-                      ]}
-                    >
-                      {item.label}
-                    </AppText>
-                    <AppText
-                      style={[
-                        styles.categoryMeta,
-                        { color: isActive ? colors.onPrimary : colors.textSecondary },
-                      ]}
-                    >
-                      {item.subtitle}
-                    </AppText>
-                  </LinearGradient>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          {isLoggedIn && recentOrders.length ? (
+            <OrderAgainRow
+              orders={recentOrders}
+              onReorder={reorder}
+              reorderingId={reorderingId}
+            />
+          ) : null}
 
           <SectionHeader
             title="Smart filters"
@@ -315,6 +292,7 @@ export default function HomeScreen() {
               <FilterChip
                 key={filter.id}
                 label={filter.label}
+                icon={filter.icon}
                 active={activeFilter === filter.id}
                 onPress={() => setActiveFilter(filter.id)}
               />
@@ -348,34 +326,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.pagePadding,
     paddingTop: spacing.xl + spacing.sm,
     paddingBottom: spacing.huge,
-  },
-  categoriesRow: {
-    paddingBottom: spacing.xl,
-    paddingRight: spacing.xs,
-  },
-  categoryCard: {
-    marginRight: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  categoryGradient: {
-    padding: spacing.lg,
-    minHeight: 168,
-    justifyContent: "space-between",
-  },
-  categoryImage: {
-    width: 54,
-    height: 54,
-    resizeMode: "contain",
-  },
-  categoryLabel: {
-    ...typeScale.body,
-    fontFamily: fontFamily.bold,
-  },
-  categoryMeta: {
-    ...typeScale.caption,
-    marginTop: spacing.xs,
   },
   filtersRow: {
     paddingBottom: spacing.xl,

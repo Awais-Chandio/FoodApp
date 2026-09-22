@@ -25,7 +25,7 @@ describe('resolveInitialRoute', () => {
     // isLoggedIn, hasSeenOnboarding, expected
     [true, false, 'Tab'], // restored session skips onboarding
     [true, true, 'Tab'],
-    [false, false, 'Onboarding1'], // first launch
+    [false, false, 'Onboarding'], // first launch
     [false, true, 'Tab'], // returning logged-out user browses as a guest
   ])('isLoggedIn=%s hasSeenOnboarding=%s -> %s', (isLoggedIn, seen, expected) => {
     expect(resolveInitialRoute({isLoggedIn, hasSeenOnboarding: seen})).toBe(expected);

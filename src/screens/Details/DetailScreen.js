@@ -265,7 +265,7 @@ export default function DetailScreen() {
                 key={String(item.id)}
                 image={resolveFoodImage(item.image_path || item.image_key || item.name)}
                 title={item.name}
-                subtitle="Chef recommended"
+                subtitle={item.description || "Chef recommended"}
                 price={`Rs. ${item.price || 0}`}
                 imageSize={92}
                 trailing={
