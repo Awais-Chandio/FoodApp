@@ -13,7 +13,7 @@ import AppButton from "../components/ui/AppButton";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
 import { layout, radius, spacing } from "../constants/designSystem";
-import { insertMenuItem, updateMenuItem } from "../database/dbs";
+import * as menuRepo from "../database/repositories/menuRepo";
 
 export default function ManageMenuItem({ navigation, route }) {
   const editingItem = route.params?.menuItem ?? null;
@@ -47,27 +47,22 @@ export default function ManageMenuItem({ navigation, route }) {
     const onError = (error) =>
       Alert.alert("Error", error?.message || "Database error");
 
-    if (editingItem) {
-      updateMenuItem(
-        editingItem.id,
-        name.trim(),
-        priceValue,
-        null,
-        keyOrUrl,
-        onSuccess,
-        onError
-      );
-    } else {
-      insertMenuItem(
-        restaurantId,
-        name.trim(),
-        priceValue,
-        null,
-        keyOrUrl,
-        onSuccess,
-        onError
-      );
-    }
+    // Editing keeps the dish's existing `type`; the old code overwrote it with null.
+    const saved = editingItem
+      ? menuRepo.update(editingItem.id, {
+          name: name.trim(),
+          price: priceValue,
+          type: editingItem.type,
+          imageKey: keyOrUrl,
+        })
+      : menuRepo.insert({
+          restaurantId,
+          name: name.trim(),
+          price: priceValue,
+          type: null,
+          imageKey: keyOrUrl,
+        });
+    saved.then(onSuccess, onError);
   };
 
   return (

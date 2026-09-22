@@ -18,7 +18,7 @@ import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
 import { createShadow, radius, spacing } from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
-import { loginUser } from "../../database/dbs";
+import * as userRepo from "../../database/repositories/userRepo";
 import { useAuth } from "./AuthContext";
 
 export default function LoginScreen({ navigation }) {
@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Toast.show({
         type: "error",
@@ -40,42 +40,42 @@ export default function LoginScreen({ navigation }) {
     }
 
     setSubmitting(true);
-    loginUser(
-      email.trim(),
-      password,
-      async (user) => {
-        setSubmitting(false);
-        if (!user) {
-          Toast.show({
-            type: "error",
-            text1: "Login failed",
-            text2: "Invalid email or password.",
-          });
-          return;
-        }
-
-        await login(user);
-        Toast.show({
-          type: "success",
-          text1: user.role === "admin" ? "Welcome back, admin" : "Login successful",
-        });
-
-        if (user.role === "admin") {
-          navigation.navigate("Tab");
-        } else {
-          navigation.navigate("Tab", { screen: "AddToCartScreen" });
-        }
-      },
-      (error) => {
-        setSubmitting(false);
-        console.log("Login error:", error);
+    try {
+      const user = await userRepo.login(email.trim(), password);
+      if (!user) {
         Toast.show({
           type: "error",
           text1: "Login failed",
           text2: "Invalid email or password.",
         });
+        return;
       }
-    );
+
+      await login(user);
+      Toast.show({
+        type: "success",
+        text1: user.role === "admin" ? "Welcome back, admin" : "Login successful",
+      });
+
+      // reset (not navigate) so Back cannot return to the Login screen.
+      navigation.reset({
+        index: 0,
+        routes: [
+          user.role === "admin"
+            ? { name: "Tab" }
+            : { name: "Tab", params: { screen: "AddToCartScreen" } },
+        ],
+      });
+    } catch (error) {
+      console.log("Login error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Login failed",
+        text2: "Invalid email or password.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

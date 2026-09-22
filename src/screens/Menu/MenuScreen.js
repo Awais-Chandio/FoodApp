@@ -12,18 +12,19 @@ import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import db from "../database/dbs";
-import { useAuth } from "../screens/Auth/AuthContext";
-import EmptyState from "./ui/EmptyState";
-import SectionHeader from "./ui/SectionHeader";
-import { useTheme } from "../Context/ThemeProvider";
+import * as menuRepo from "../../database/repositories/menuRepo";
+import { useCart } from "../../Context/CartContext";
+import { useAuth } from "../Auth/AuthContext";
+import EmptyState from "../../components/ui/EmptyState";
+import SectionHeader from "../../components/ui/SectionHeader";
+import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   layout,
   radius,
   spacing,
-} from "../constants/designSystem";
-import { resolveFoodImage } from "../constants/imageRegistry";
+} from "../../constants/designSystem";
+import { resolveFoodImage } from "../../constants/imageRegistry";
 
 const filters = [
   { id: "all", label: "All items" },
@@ -39,32 +40,16 @@ export default function MenuScreen() {
   const isAdmin = role === "admin";
   const restaurant = route?.params?.restaurant || { id: 1, name: "Westway" };
 
+  const { count: totalItems, subtotal: totalPrice, getQty, add, updateQty } = useCart();
   const [menuItems, setMenuItems] = useState([]);
-  const [cart, setCart] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const loadData = useCallback(() => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "SELECT * FROM menu_items WHERE restaurant_id=?",
-        [restaurant.id],
-        (_t, result) => {
-          const items = [];
-          for (let i = 0; i < result.rows.length; i += 1) {
-            items.push(result.rows.item(i));
-          }
-          setMenuItems(items);
-        }
-      );
-
-      tx.executeSql("SELECT * FROM cart", [], (_t, result) => {
-        const items = [];
-        for (let i = 0; i < result.rows.length; i += 1) {
-          items.push(result.rows.item(i));
-        }
-        setCart(items);
-      });
-    });
+  const loadData = useCallback(async () => {
+    try {
+      setMenuItems(await menuRepo.listByRestaurant(restaurant.id));
+    } catch (error) {
+      console.log("menu load error", error);
+    }
   }, [restaurant.id]);
 
   useFocusEffect(
@@ -84,59 +69,32 @@ export default function MenuScreen() {
     }
   }, [activeFilter, menuItems]);
 
-  const getCartRow = (id) => cart.find((item) => item.menu_item_id === id);
-  const getQuantity = (id) => getCartRow(id)?.quantity || 0;
+  const increaseQty = async (item) => {
+    const existing = getQty(item.id) > 0;
 
-  const increaseQty = (item) => {
-    const existing = getCartRow(item.id);
-
-    db.transaction(
-      (tx) => {
-        if (existing) {
-          tx.executeSql(
-            "UPDATE cart SET quantity = quantity + 1 WHERE menu_item_id=?",
-            [item.id]
-          );
-        } else {
-          tx.executeSql(
-            `INSERT INTO cart (menu_item_id, name, price, image_key, quantity)
-             VALUES (?, ?, ?, ?, 1)`,
-            [item.id, item.name, item.price, item.image_key || null]
-          );
-        }
-      },
-      (error) => console.log("increase cart error", error),
-      () => {
-        loadData();
-        Toast.show({
-          type: "success",
-          text1: existing ? "Quantity updated" : "Added to cart",
-          text2: `${item.name} is ready for checkout.`,
-        });
-      }
-    );
+    try {
+      await add(item);
+      Toast.show({
+        type: "success",
+        text1: existing ? "Quantity updated" : "Added to cart",
+        text2: `${item.name} is ready for checkout.`,
+      });
+    } catch (error) {
+      Toast.show({ type: "error", text1: "Could not update your cart" });
+    }
   };
 
-  const decreaseQty = (item) => {
-    const existing = getCartRow(item.id);
-    if (!existing) {
+  const decreaseQty = async (item) => {
+    const quantity = getQty(item.id);
+    if (!quantity) {
       return;
     }
 
-    db.transaction(
-      (tx) => {
-        if ((existing.quantity || 0) <= 1) {
-          tx.executeSql("DELETE FROM cart WHERE menu_item_id=?", [item.id]);
-        } else {
-          tx.executeSql(
-            "UPDATE cart SET quantity = quantity - 1 WHERE menu_item_id=?",
-            [item.id]
-          );
-        }
-      },
-      (error) => console.log("decrease cart error", error),
-      () => loadData()
-    );
+    try {
+      await updateQty(item.id, quantity - 1);
+    } catch (error) {
+      Toast.show({ type: "error", text1: "Could not update your cart" });
+    }
   };
 
   const editItem = (item) => {
@@ -159,25 +117,20 @@ export default function MenuScreen() {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          db.transaction((tx) => {
-            tx.executeSql("DELETE FROM menu_items WHERE id=?", [id], () => {
-              setMenuItems((current) => current.filter((item) => item.id !== id));
-            });
-          });
+        onPress: async () => {
+          try {
+            await menuRepo.remove(id);
+            setMenuItems((current) => current.filter((item) => item.id !== id));
+          } catch (error) {
+            console.log("delete menu item error", error);
+          }
         },
       },
     ]);
   };
 
-  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const totalPrice = cart.reduce(
-    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
-    0
-  );
-
   const renderMenuItem = ({ item }) => {
-    const quantity = getQuantity(item.id);
+    const quantity = getQty(item.id);
 
     return (
       <View

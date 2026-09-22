@@ -26,6 +26,14 @@ jest.mock('../src/database/dbs', () => ({
   useCreateTables: jest.fn(),
 }));
 
+jest.mock('../src/database/repositories/cartRepo', () => ({
+  list: jest.fn(() => Promise.resolve([])),
+  addItem: jest.fn(() => Promise.resolve()),
+  setQuantity: jest.fn(() => Promise.resolve()),
+  remove: jest.fn(() => Promise.resolve()),
+  clear: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../src/services/notificationService', () => ({
   initialize: jest.fn(),
   cleanup: jest.fn(),

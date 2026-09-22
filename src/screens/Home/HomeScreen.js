@@ -15,7 +15,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
-import HomeHeader from "../../components/HomeHeader";
+import HomeHeader from "./HomeHeader";
 import EmptyState from "../../components/ui/EmptyState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import SkeletonCard from "../../components/ui/SkeletonCard";
@@ -30,7 +30,7 @@ import {
   categoryAssetMap,
   resolveRestaurantImage,
 } from "../../constants/imageRegistry";
-import { deleteRestaurant, fetchRestaurants } from "../../database/dbs";
+import * as restaurantRepo from "../../database/repositories/restaurantRepo";
 import { useAuth } from "../Auth/AuthContext";
 
 const homeFilters = [
@@ -92,11 +92,11 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const { nearest: nearestRestaurants, popular: popularRestaurants } =
-        await fetchRestaurants();
+        await restaurantRepo.listWithMenus();
       setNearest(nearestRestaurants);
       setPopular(popularRestaurants);
     } catch (error) {
-      console.log("fetchRestaurants error:", error);
+      console.log("listWithMenus error:", error);
       Toast.show({
         type: "error",
         text1: "Could not load restaurants",
@@ -154,8 +154,7 @@ export default function HomeScreen() {
           if (!isAdmin) {
             return;
           }
-          deleteRestaurant(
-            item.id,
+          restaurantRepo.remove(item.id).then(
             () => {
               Toast.show({
                 type: "success",

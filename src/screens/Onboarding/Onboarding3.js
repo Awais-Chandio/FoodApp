@@ -5,6 +5,7 @@ import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
 import { createShadow, radius, spacing } from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
+import { finishOnboarding } from "../../services/onboarding";
 
 export default function Onboarding3({ navigation }) {
   const { colors } = useTheme();
@@ -46,13 +47,13 @@ export default function Onboarding3({ navigation }) {
       <View style={styles.footer}>
         <AppButton
           label="Start exploring"
-          onPress={() => navigation.replace("Tab")}
+          onPress={() => finishOnboarding(navigation)}
           style={styles.primaryButton}
         />
         <AppButton
           label="Skip"
           variant="secondary"
-          onPress={() => navigation.replace("Tab")}
+          onPress={() => finishOnboarding(navigation)}
         />
       </View>
     </LinearGradient>

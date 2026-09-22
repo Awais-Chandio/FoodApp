@@ -13,7 +13,7 @@ import AppButton from "../components/ui/AppButton";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
 import { layout, radius, spacing } from "../constants/designSystem";
-import { insertRestaurant, updateRestaurant } from "../database/dbs";
+import * as restaurantRepo from "../database/repositories/restaurantRepo";
 
 export default function ManageItems({ navigation, route }) {
   const editingItem = route.params?.restaurant || null;
@@ -52,30 +52,19 @@ export default function ManageItems({ navigation, route }) {
     const onError = (error) =>
       Alert.alert("Error", error?.message || "Database operation failed");
 
-    if (editingItem) {
-      updateRestaurant(
-        editingItem.id,
-        name.trim(),
-        ratingValue,
-        time.trim(),
-        offer.trim(),
-        category.trim(),
-        keyOrUrl,
-        onSuccess,
-        onError
-      );
-    } else {
-      insertRestaurant(
-        name.trim(),
-        ratingValue,
-        time.trim(),
-        offer.trim(),
-        category.trim(),
-        keyOrUrl,
-        onSuccess,
-        onError
-      );
-    }
+    const fields = {
+      name: name.trim(),
+      rating: ratingValue,
+      time: time.trim(),
+      offer: offer.trim(),
+      category: category.trim(),
+      imagePath: keyOrUrl,
+    };
+
+    const saved = editingItem
+      ? restaurantRepo.update(editingItem.id, fields)
+      : restaurantRepo.insert(fields);
+    saved.then(onSuccess, onError);
   };
 
   return (

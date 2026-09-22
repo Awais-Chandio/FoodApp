@@ -3,17 +3,35 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { useTheme } from "../../Context/ThemeProvider";
 import { createShadow, spacing } from "../../constants/designSystem";
+import { hasSeenOnboarding } from "../../services/onboarding";
+import { resolveInitialRoute } from "../../navigation/initialRoute";
+import { useAuth } from "../Auth/AuthContext";
 
 export default function LoaderScreen({ navigation }) {
   const { colors } = useTheme();
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace("Onboarding1");
-    }, 1800);
+    let cancelled = false;
+    const splash = new Promise((resolve) => setTimeout(resolve, 1800));
 
-    return () => clearTimeout(timer);
-  }, [navigation]);
+    // AuthProvider only renders after the stored session has loaded, so
+    // isLoggedIn is already accurate when this screen mounts.
+    Promise.all([splash, hasSeenOnboarding()]).then(([, seen]) => {
+      if (cancelled) {
+        return;
+      }
+      const routeName = resolveInitialRoute({
+        isLoggedIn,
+        hasSeenOnboarding: seen,
+      });
+      navigation.reset({ index: 0, routes: [{ name: routeName }] });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigation, isLoggedIn]);
 
   return (
     <LinearGradient

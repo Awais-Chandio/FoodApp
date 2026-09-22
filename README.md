@@ -12,16 +12,17 @@ is Firebase Cloud Messaging for push notifications.
 
 **Customer**
 - Splash, three onboarding screens (skippable), and guest browsing.
-- Email/password register and login, checked against the local database.
-  The session is restored from AsyncStorage.
+- Email/password register and login, checked against the local database
+  (hashed passwords). The session is restored from AsyncStorage.
 - Home: restaurant lists ("Nearby favorites", "Popular right now") with
   filters (deals, quick bites, top rated), skeleton and empty states.
 - Restaurant details, menu with price filters, and an add/remove cart
   stepper.
 - Search across restaurants (name, offer, delivery time) with recent
   searches.
-- Cart with quantity controls, a flat delivery fee, and the promo codes
-  `SAVE10` (10%) and `FOOD5` (5%). Checkout requires login.
+- Cart with quantity controls, a count badge on the Cart tab, a flat delivery
+  fee, and the promo codes `SAVE10` (10%) and `FOOD5` (5%). Checkout requires
+  login. The cart is cleared on logout.
 - Order tracking screen (static demo content, not tied to a real order).
 - Light, dark and system theme.
 - Push notifications (FCM): foreground modal, and routing when a
@@ -38,8 +39,10 @@ is Firebase Cloud Messaging for push notifications.
 - No backend: data is per device and orders are never placed or stored.
 - The order tracking screen is static.
 - Favorites (hearts) are in-memory only and are lost on reload.
-- Passwords are stored in plain text in SQLite, and the stored session
-  includes the password. Do not use real credentials.
+- Sign-in is checked on the device. Passwords are stored as salted PBKDF2
+  hashes in SQLite and the saved session holds only id, email and role, which
+  protects a copied database file. It is not server-side authentication, so do
+  not use real credentials.
 - Only restaurant 1 has seeded menu items; other restaurants show an empty
   menu until an admin adds dishes.
 - Push notifications are configured for Android. iOS has no
@@ -53,9 +56,10 @@ is Firebase Cloud Messaging for push notifications.
 | Framework | React Native 0.81.1 (CLI), React 19.1, New Architecture and Hermes enabled |
 | Language | JavaScript (TypeScript only for the Jest test) |
 | Navigation | React Navigation 7: stack, native-stack, bottom-tabs |
-| State | React Context (`AuthContext`, `ThemeProvider`) |
+| State | React Context (`AuthContext`, `ThemeProvider`, `CartContext`) |
 | Local data | `react-native-sqlite-storage`, `@react-native-async-storage/async-storage` |
 | Push | `@react-native-firebase/app` + `messaging` |
+| Password hashing | `react-native-quick-crypto` (PBKDF2-SHA256), with its peers `react-native-nitro-modules` and `react-native-quick-base64`. Requires the New Architecture. |
 | UI | `react-native-linear-gradient`, AntDesign icons (`@react-native-vector-icons/ant-design`), `react-native-toast-message`, `@react-native-picker/picker`, `@react-native-community/datetimepicker` |
 | Animation | React Native `Animated`. `react-native-reanimated` is installed but not used yet. |
 
@@ -98,23 +102,33 @@ FoodApp/
 ├── .github/workflows/     CI: signed release APK on push to main
 └── src/
     ├── Admin/             ManageItems (restaurant form), ManageMenuItems (dish form)
-    ├── Context/           ThemeProvider
+    ├── Context/           ThemeProvider, CartContext (cart state, backed by SQLite)
     ├── assets/            images
-    ├── components/        DetailScreen, MenuScreen, SearchScreen, HomeHeader,
-    │   │                  NotificationModal
+    ├── components/        NotificationModal
     │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard
     ├── constants/         designSystem (colors, spacing, radius), imageRegistry
-    ├── database/          dbs.js: SQLite schema, seed data and queries
+    ├── database/          client (SQLite connection), schema (versioned migrations + seed),
+    │   │                  sql (promise helpers), dbs (app-start hook, admin_users helpers)
+    │   └── repositories/  restaurantRepo, menuRepo, cartRepo, userRepo
     ├── navigation/        AppNavigator, TabNavigator, HomeStack, rootNavigation
-    ├── screens/           Auth, Cart, Home, Loader, Onboarding, Profile
+    ├── screens/           Auth, Cart, Details, Home (with HomeHeader), Loader, Menu,
+    │                      Onboarding, Profile, Search
     └── services/          notificationService (FCM)
 ```
 
 ## Navigation
 
-`Loader` → `Onboarding1-3` → `Tab` (Home, Search, Cart, Profile). Inside the
-Home tab: `HomeScreen` → `Details` → `MenuScreen`. Login, Register,
-TrackOrder and the admin screens live on the root stack.
+`Loader` decides where to go: a restored session goes straight to `Tab`, a
+first launch shows `Onboarding1-3` once (flag `has_seen_onboarding` in
+AsyncStorage), and everyone else lands on `Tab` as a guest. `Tab` holds Home,
+Search, Cart and Profile. Inside the Home tab: `HomeScreen` → `Details` →
+`MenuScreen`. Login, Register and TrackOrder live on the root stack.
+
+Login and logout use `navigation.reset`, so Back never returns to a stale
+screen. The admin routes (`ManageMenuItems`, `ManageUsers`, `Users`, and
+`ManageItems` in the Home stack) are only registered when the signed-in user
+has the `admin` role. This is a UI guard: with a local database it cannot stop
+someone who controls the device.
 
 ## Release builds
 

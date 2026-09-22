@@ -8,10 +8,10 @@ import {
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
-import { useTheme } from "../Context/ThemeProvider";
-import { createShadow, radius, spacing, typography } from "../constants/designSystem";
-import { appImages } from "../constants/imageRegistry";
-import SearchBar from "./ui/SearchBar";
+import { useTheme } from "../../Context/ThemeProvider";
+import { createShadow, radius, spacing, typography } from "../../constants/designSystem";
+import { appImages } from "../../constants/imageRegistry";
+import SearchBar from "../../components/ui/SearchBar";
 
 const headerHighlights = [
   { id: "rating", icon: "star", label: "4.8 rating" },
