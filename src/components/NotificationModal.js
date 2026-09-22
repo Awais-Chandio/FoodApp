@@ -72,7 +72,7 @@ export default function NotificationModal({
         <View
           style={[
             styles.card,
-            createShadow(colors.shadow, 20),
+            createShadow(colors.shadow, layout.cardElevation),
             {
               backgroundColor: colors.surface,
               borderColor: colors.borderSoft,
@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 380,
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   iconShell: {
     width: 58,

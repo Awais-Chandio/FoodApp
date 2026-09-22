@@ -34,7 +34,7 @@ export default function OrderAgainRow({ orders, onReorder, reorderingId }) {
             <View
               style={[
                 styles.card,
-                createShadow(colors.shadow, 10),
+                createShadow(colors.shadow, layout.cardElevation),
                 { backgroundColor: colors.surface, borderColor: colors.borderSoft },
               ]}
             >
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
     width: 228,
     marginRight: spacing.md,
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   summary: {
     minHeight: 60,

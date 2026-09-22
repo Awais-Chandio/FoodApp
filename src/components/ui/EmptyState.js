@@ -9,7 +9,7 @@ import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
   fontFamily,
-  radius,
+  layout,
   spacing,
   typeScale,
 } from "../../constants/designSystem";
@@ -39,7 +39,7 @@ export default function EmptyState({
     <View
       style={[
         styles.card,
-        createShadow(colors.shadow, 8),
+        createShadow(colors.shadow, layout.cardElevation),
         {
           backgroundColor: colors.surface,
           borderColor: colors.borderSoft,
@@ -68,8 +68,8 @@ export default function EmptyState({
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.sm,
-    padding: spacing.xxl,
-    borderRadius: radius.lg,
+    padding: layout.cardPadding,
+    borderRadius: layout.cardRadius,
     borderWidth: 1,
     alignItems: "center",
   },

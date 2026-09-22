@@ -15,6 +15,7 @@ import { BackButton } from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
+  createShadow,
   fontFamily,
   layout,
   radius,
@@ -172,7 +173,13 @@ const Users = ({ navigation, route }) => {
           subtitle="Structured admin form with the same underlying saved schema."
         />
 
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View
+          style={[
+            styles.card,
+            createShadow(colors.shadow, layout.cardElevation),
+            { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+          ]}
+        >
           {formSchema.fields
             .filter((field) => field.type !== "button")
             .map((field) => (
@@ -351,8 +358,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderWidth: 1,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   fieldBlock: {
     marginBottom: spacing.md,

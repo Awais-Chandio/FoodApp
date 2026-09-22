@@ -11,8 +11,8 @@ import { BackButton } from "../components/ui/ScreenHeader";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
 import {
+  createShadow,
   layout,
-  radius,
   spacing,
 } from "../constants/designSystem";
 import * as restaurantRepo from "../database/repositories/restaurantRepo";
@@ -84,7 +84,13 @@ export default function ManageItems({ navigation, route }) {
           subtitle="Keep restaurant setup clean without changing database behavior."
         />
 
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View
+          style={[
+            styles.card,
+            createShadow(colors.shadow, layout.cardElevation),
+            { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+          ]}
+        >
           <TextField
             label="Name *"
             value={name}
@@ -152,8 +158,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderWidth: 1,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   saveButton: {
     marginTop: spacing.xxl,

@@ -14,8 +14,8 @@ import AppText from "../components/ui/AppText";
 import { MENU_CATEGORIES } from "../database/seedData";
 import { useTheme } from "../Context/ThemeProvider";
 import {
+  createShadow,
   layout,
-  radius,
   spacing,
 } from "../constants/designSystem";
 import * as menuRepo from "../database/repositories/menuRepo";
@@ -98,7 +98,13 @@ export default function ManageMenuItem({ navigation, route }) {
           subtitle="Quick item changes without altering the current menu data flow."
         />
 
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View
+          style={[
+            styles.card,
+            createShadow(colors.shadow, layout.cardElevation),
+            { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+          ]}
+        >
           <TextField
             label="Name *"
             value={name}
@@ -190,8 +196,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   card: {
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderWidth: 1,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   groupLabel: {
     marginBottom: spacing.sm,

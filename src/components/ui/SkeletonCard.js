@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useTheme } from "../../Context/ThemeProvider";
-import { radius, spacing } from "../../constants/designSystem";
+import { layout, radius, spacing } from "../../constants/designSystem";
 
 export default function SkeletonCard({ width = 220, height = 180, style }) {
   const { colors } = useTheme();
@@ -54,8 +54,8 @@ export default function SkeletonCard({ width = 220, height = 180, style }) {
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     marginRight: spacing.md,
   },
   image: {
