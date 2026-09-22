@@ -1,8 +1,18 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  StyleSheet,
+  View,
+} from "react-native";
+import AppText from "./AppText";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import AppButton from "./AppButton";
 
 const iconAliases = {
@@ -39,10 +49,10 @@ export default function EmptyState({
       <View style={[styles.iconWrap, { backgroundColor: colors.badge }]}>
         <AntDesign name={resolvedIcon} size={24} color={colors.primaryStrong} />
       </View>
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.message, { color: colors.textSecondary }]}>
+      <AppText style={[styles.title, { color: colors.text }]}>{title}</AppText>
+      <AppText style={[styles.message, { color: colors.textSecondary }]}>
         {message}
-      </Text>
+      </AppText>
       {actionLabel && onActionPress ? (
         <AppButton
           label={actionLabel}
@@ -72,13 +82,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 19,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
     marginBottom: spacing.sm,
   },
   message: {
-    fontSize: 14,
-    lineHeight: 22,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     textAlign: "center",
   },
   button: {

@@ -1,30 +1,34 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Image,
   RefreshControl,
   ScrollView,
   SectionList,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import HomeHeader from "../Home/HomeHeader";
 import EmptyState from "../../components/ui/EmptyState";
+import FilterChip from "../../components/ui/FilterChip";
+import MenuItemCard from "../../components/ui/MenuItemCard";
+import RestaurantCard from "../../components/ui/RestaurantCard";
 import SectionHeader from "../../components/ui/SectionHeader";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
-  createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
-import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
+import {
+  resolveFoodImage,
+} from "../../constants/imageRegistry";
 import * as restaurantRepo from "../../database/repositories/restaurantRepo";
 import { searchAll } from "../../utils/search";
 
@@ -130,88 +134,35 @@ export default function SearchScreen({ navigation }) {
   };
 
   const renderDish = (dish) => (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      style={[
-        styles.dishCard,
-        createShadow(colors.shadow, 10),
-        { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-      ]}
+    <MenuItemCard
+      image={resolveFoodImage(dish.image_path || dish.image_key || dish.name)}
+      title={dish.name}
+      subtitle={dish.restaurant.name}
+      price={`Rs. ${dish.price || 0}`}
+      imageSize={64}
+      style={styles.dishCard}
       onPress={() => openDishMenu(dish)}
-      accessibilityRole="button"
       accessibilityLabel={`${dish.name} from ${dish.restaurant.name}. Open menu`}
-    >
-      <Image
-        source={resolveFoodImage(dish.image_path || dish.image_key || dish.name)}
-        style={styles.dishImage}
-      />
-      <View style={styles.dishContent}>
-        <Text style={[styles.dishName, { color: colors.text }]} numberOfLines={1}>
-          {dish.name}
-        </Text>
-        <Text style={[styles.dishRestaurant, { color: colors.textSecondary }]} numberOfLines={1}>
-          {dish.restaurant.name}
-        </Text>
-        <Text style={[styles.dishPrice, { color: colors.primaryStrong }]}>
-          Rs. {dish.price || 0}
-        </Text>
-      </View>
-      <AntDesign name="arrow-right" size={16} color={colors.textSecondary} />
-    </TouchableOpacity>
+      trailing={<AntDesign name="arrow-right" size={16} color={colors.textSecondary} />}
+    />
   );
 
   const renderSearchResult = ({ item, section }) =>
     section.key === "dishes" ? renderDish(item) : renderRestaurant(item);
 
   const renderRestaurant = (item) => (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      style={[
-        styles.resultCard,
-        createShadow(colors.shadow, 12),
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.borderSoft,
-        },
-      ]}
+    <RestaurantCard
+      restaurant={item}
+      variant="row"
+      style={styles.resultCard}
       onPress={() => openRestaurant(item)}
-    >
-      <Image source={resolveRestaurantImage(item)} style={styles.resultImage} />
-      <View style={styles.resultContent}>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.resultTitle, { color: colors.text }]} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("HomeStack", {
-                screen: "MenuScreen",
-                params: { restaurant: item },
-              })
-            }
-          >
-            <LinearGradient
-              colors={colors.buttonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.menuButton}
-            >
-              <Text style={styles.menuButtonText}>Menu</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-        <Text style={[styles.resultMeta, { color: colors.textSecondary }]}>
-          ⭐ {item.rating || "4.6"} • {item.time || "20 min"}
-        </Text>
-        {item.offer ? (
-          <View style={[styles.dealPill, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[styles.dealText, { color: colors.accent }]}>
-              {item.offer}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </TouchableOpacity>
+      onMenuPress={() =>
+        navigation.navigate("HomeStack", {
+          screen: "MenuScreen",
+          params: { restaurant: item },
+        })
+      }
+    />
   );
 
   const trimmedQuery = query.trim();
@@ -238,32 +189,14 @@ export default function SearchScreen({ navigation }) {
           contentContainerStyle={styles.filterRow}
           keyboardShouldPersistTaps="handled"
         >
-          {filters.map((filter) => {
-            const isActive = activeFilter === filter.id;
-            return (
-              <TouchableOpacity
-                key={filter.id}
-                activeOpacity={0.8}
-                style={[
-                  styles.filterChip,
-                  {
-                    backgroundColor: isActive ? colors.primaryStrong : colors.surface,
-                    borderColor: isActive ? colors.primaryStrong : colors.border,
-                  },
-                ]}
-                onPress={() => setActiveFilter(filter.id)}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    { color: isActive ? colors.white : colors.text },
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {filters.map((filter) => (
+            <FilterChip
+              key={filter.id}
+              label={filter.label}
+              active={activeFilter === filter.id}
+              onPress={() => setActiveFilter(filter.id)}
+            />
+          ))}
         </ScrollView>
 
         {recentSearches.length ? (
@@ -284,7 +217,7 @@ export default function SearchScreen({ navigation }) {
                   onPress={() => setQuery(item)}
                 >
                   <AntDesign name="clock-circle" size={13} color={colors.textSecondary} />
-                  <Text style={[styles.recentText, { color: colors.text }]}>{item}</Text>
+                  <AppText style={[styles.recentText, { color: colors.text }]}>{item}</AppText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -304,9 +237,9 @@ export default function SearchScreen({ navigation }) {
         renderItem={renderSearchResult}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <AppText style={[styles.sectionTitle, { color: colors.text }]}>
               {section.title} ({section.data.length})
-            </Text>
+            </AppText>
           </View>
         )}
         stickySectionHeadersEnabled={false}
@@ -367,17 +300,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     paddingRight: spacing.xs,
   },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    marginRight: spacing.sm,
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
   recentRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -395,8 +317,7 @@ const styles = StyleSheet.create({
   },
   recentText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "600",
+    ...typeScale.label,
   },
   searchSkeleton: {
     width: "100%",
@@ -407,93 +328,15 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   resultCard: {
     marginHorizontal: layout.pagePadding,
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    overflow: "hidden",
-    marginBottom: spacing.lg,
   },
   dishCard: {
     marginHorizontal: layout.pagePadding,
-    borderWidth: 1,
-    borderRadius: radius.lg,
     padding: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: spacing.md,
-  },
-  dishImage: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.md,
-  },
-  dishContent: {
-    flex: 1,
-    marginHorizontal: spacing.md,
-  },
-  dishName: {
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  dishRestaurant: {
-    marginTop: spacing.xs,
-    fontSize: 13,
-  },
-  dishPrice: {
-    marginTop: spacing.xs,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  resultImage: {
-    width: "100%",
-    height: 182,
-  },
-  resultContent: {
-    padding: spacing.xl,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-  },
-  resultTitle: {
-    flex: 1,
-    marginRight: spacing.sm,
-    fontSize: 18,
-    fontWeight: "800",
-    minWidth: 160,
-  },
-  menuButton: {
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 1,
-    marginTop: spacing.xs,
-  },
-  menuButtonText: {
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    color: "#FFFFFF",
-    letterSpacing: 0.4,
-  },
-  resultMeta: {
-    marginTop: spacing.sm,
-    fontSize: 14,
-  },
-  dealPill: {
-    alignSelf: "flex-start",
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 1,
-    marginTop: spacing.md,
-  },
-  dealText: {
-    fontSize: 12,
-    fontWeight: "800",
   },
 });

@@ -6,17 +6,22 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
+import TextField from "../../components/ui/TextField";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 import * as userRepo from "../../database/repositories/userRepo";
 import { useAuth } from "./AuthContext";
@@ -26,7 +31,6 @@ export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async () => {
@@ -97,13 +101,13 @@ export default function LoginScreen({ navigation }) {
               style={styles.topOverlay}
             />
             <View style={styles.heroContent}>
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>Returning customer</Text>
+              <View style={[styles.heroBadge, { backgroundColor: colors.glassOnPrimary }]}>
+                <AppText style={[styles.heroBadgeText, { color: colors.onPrimary }]}>Returning customer</AppText>
               </View>
-              <Text style={styles.heroTitle}>Fast checkout starts here</Text>
-              <Text style={styles.heroText}>
+              <AppText style={[styles.heroTitle, { color: colors.onPrimary }]}>Fast checkout starts here</AppText>
+              <AppText style={[styles.heroText, { color: colors.onPrimary }]}>
                 Sign in and continue with the same premium orange flow across the app.
-              </Text>
+              </AppText>
             </View>
           </ImageBackground>
 
@@ -122,55 +126,27 @@ export default function LoginScreen({ navigation }) {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={[styles.title, { color: colors.text }]}>Welcome back</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <AppText style={[styles.title, { color: colors.text }]}>Welcome back</AppText>
+            <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
               Sign in to continue your orders and checkout flow.
-            </Text>
+            </AppText>
 
-            <Text style={[styles.label, { color: colors.text }]}>Email</Text>
-            <TextInput
+            <TextField
+              label="Email"
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email"
-              placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  borderColor: colors.border,
-                },
-              ]}
             />
 
-            <Text style={[styles.label, { color: colors.text }]}>Password</Text>
-            <View
-              style={[
-                styles.passwordWrap,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry={!showPassword}
-                style={[styles.passwordInput, { color: colors.text }]}
-              />
-              <TouchableOpacity onPress={() => setShowPassword((current) => !current)}>
-                <AntDesign
-                  name={showPassword ? "eye" : "eye-invisible"}
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
+            <TextField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter your password"
+              secure
+            />
 
             <AppButton
               label={submitting ? "Signing in..." : "Sign in"}
@@ -180,14 +156,14 @@ export default function LoginScreen({ navigation }) {
             />
 
             <View style={styles.footerRow}>
-              <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+              <AppText style={[styles.footerText, { color: colors.textSecondary }]}>
                 Don&apos;t have an account?
-              </Text>
+              </AppText>
               <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-                <Text style={[styles.footerLink, { color: colors.primaryStrong }]}>
+                <AppText style={[styles.footerLink, { color: colors.primaryStrong }]}>
                   {" "}
                   Register
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -219,26 +195,21 @@ const styles = StyleSheet.create({
   heroBadge: {
     alignSelf: "flex-start",
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.18)",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
   heroBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   heroTitle: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "900",
+    ...typeScale.h1,
     maxWidth: 220,
   },
   heroText: {
-    color: "rgba(255,255,255,0.86)",
-    fontSize: 14,
-    lineHeight: 21,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     marginTop: spacing.sm,
     maxWidth: 280,
   },
@@ -256,42 +227,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "800",
+    ...typeScale.h1,
     textAlign: "center",
   },
   subtitle: {
     marginTop: spacing.sm,
-    fontSize: 14,
-    lineHeight: 21,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     textAlign: "center",
     marginBottom: spacing.xxl,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: spacing.sm,
-  },
-  input: {
-    minHeight: 56,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    fontSize: 15,
-    marginBottom: spacing.lg,
-  },
-  passwordWrap: {
-    minHeight: 56,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  passwordInput: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: spacing.md,
   },
   cta: {
     marginTop: spacing.xl,
@@ -302,10 +246,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   footerText: {
-    fontSize: 14,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   footerLink: {
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
 });

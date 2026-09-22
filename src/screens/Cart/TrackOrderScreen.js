@@ -5,12 +5,11 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
+import { BackButton } from "../../components/ui/ScreenHeader";
 import LinearGradient from "react-native-linear-gradient";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import EmptyState from "../../components/ui/EmptyState";
 import OrderStatusStepper from "../../components/OrderStatusStepper";
@@ -18,10 +17,11 @@ import { useTheme } from "../../Context/ThemeProvider";
 import { useAuth } from "../Auth/AuthContext";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
-  typography,
+  typeScale,
 } from "../../constants/designSystem";
 import { getPaymentMethodLabel } from "../../constants/paymentMethods";
 import { appImages } from "../../constants/imageRegistry";
@@ -179,22 +179,16 @@ export default function TrackOrderScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.heroOverlay}
           />
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={goBack}
-            accessibilityLabel="Go back"
-          >
-            <AntDesign name="arrow-left" size={20} color={colors.text} />
-          </TouchableOpacity>
+          <BackButton onPress={goBack} style={styles.backButton} />
 
           <View style={styles.heroContent}>
-            <Text style={[styles.heroLabel, { color: colors.white }]}>
+            <AppText style={[styles.heroLabel, { color: colors.onPrimary }]}>
               {delivered ? "Order status" : "Estimated arrival"}
-            </Text>
-            <Text style={[styles.heroTime, { color: colors.white }]}>
+            </AppText>
+            <AppText style={[styles.heroTime, { color: colors.onPrimary }]}>
               {delivered ? "Delivered" : `${minutes} min`}
-            </Text>
-            <Text style={[styles.heroMeta, { color: colors.white }]}>{currentStep.description}</Text>
+            </AppText>
+            <AppText style={[styles.heroMeta, { color: colors.onPrimary }]}>{currentStep.description}</AppText>
           </View>
         </ImageBackground>
 
@@ -206,7 +200,7 @@ export default function TrackOrderScreen() {
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Order status</Text>
+            <AppText style={[styles.sectionTitle, { color: colors.text }]}>Order status</AppText>
             <OrderStatusStepper status={order.status} />
           </View>
 
@@ -217,47 +211,47 @@ export default function TrackOrderScreen() {
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Order #{order.id}</Text>
-            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.sectionTitle, { color: colors.text }]}>Order #{order.id}</AppText>
+            <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
               Placed {new Date(order.created_at).toLocaleString()}
-            </Text>
+            </AppText>
 
             <View style={[styles.divider, { backgroundColor: colors.borderSoft }]} />
 
             {order.items.map((item) => (
               <View key={item.id} style={styles.row}>
-                <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                <AppText style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
                   {item.quantity} × {item.name}
-                </Text>
-                <Text style={[styles.value, { color: colors.text }]}>
+                </AppText>
+                <AppText style={[styles.value, { color: colors.text }]}>
                   {formatMoney(item.price * item.quantity)}
-                </Text>
+                </AppText>
               </View>
             ))}
 
             <View style={[styles.divider, { backgroundColor: colors.borderSoft }]} />
 
             <View style={styles.row}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Subtotal</Text>
-              <Text style={[styles.value, { color: colors.text }]}>{formatMoney(subtotal)}</Text>
+              <AppText style={[styles.label, { color: colors.textSecondary }]}>Subtotal</AppText>
+              <AppText style={[styles.value, { color: colors.text }]}>{formatMoney(subtotal)}</AppText>
             </View>
             <View style={styles.row}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Delivery</Text>
-              <Text style={[styles.value, { color: colors.text }]}>{formatMoney(order.delivery_fee)}</Text>
+              <AppText style={[styles.label, { color: colors.textSecondary }]}>Delivery</AppText>
+              <AppText style={[styles.value, { color: colors.text }]}>{formatMoney(order.delivery_fee)}</AppText>
             </View>
             {order.discount > 0 ? (
               <View style={styles.row}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>
+                <AppText style={[styles.label, { color: colors.textSecondary }]}>
                   Discount{order.promo_code ? ` (${order.promo_code})` : ""}
-                </Text>
-                <Text style={[styles.value, { color: colors.success }]}>
+                </AppText>
+                <AppText style={[styles.value, { color: colors.success }]}>
                   - {formatMoney(order.discount)}
-                </Text>
+                </AppText>
               </View>
             ) : null}
             <View style={styles.row}>
-              <Text style={[styles.totalText, { color: colors.text }]}>Total</Text>
-              <Text style={[styles.totalText, { color: colors.text }]}>{formatMoney(order.total)}</Text>
+              <AppText style={[styles.totalText, { color: colors.text }]}>Total</AppText>
+              <AppText style={[styles.totalText, { color: colors.text }]}>{formatMoney(order.total)}</AppText>
             </View>
           </View>
 
@@ -268,12 +262,12 @@ export default function TrackOrderScreen() {
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Delivering to</Text>
-            <Text style={[styles.detailText, { color: colors.text }]}>{order.address}</Text>
-            <Text style={[styles.label, styles.detailGap, { color: colors.textSecondary }]}>Payment</Text>
-            <Text style={[styles.detailText, { color: colors.text }]}>
+            <AppText style={[styles.label, { color: colors.textSecondary }]}>Delivering to</AppText>
+            <AppText style={[styles.detailText, { color: colors.text }]}>{order.address}</AppText>
+            <AppText style={[styles.label, styles.detailGap, { color: colors.textSecondary }]}>Payment</AppText>
+            <AppText style={[styles.detailText, { color: colors.text }]}>
               {getPaymentMethodLabel(order.payment_method)}
-            </Text>
+            </AppText>
           </View>
         </View>
       </ScrollView>
@@ -321,18 +315,17 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     opacity: 0.8,
-    fontSize: typography.caption,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
     textTransform: "uppercase",
   },
   heroTime: {
-    fontSize: typography.hero,
-    fontWeight: "900",
+    ...typeScale.display,
     marginTop: spacing.sm,
   },
   heroMeta: {
     opacity: 0.9,
-    fontSize: typography.body,
+    ...typeScale.body,
     marginTop: spacing.sm,
   },
   content: {
@@ -347,12 +340,11 @@ const styles = StyleSheet.create({
     marginBottom: layout.cardGap + spacing.sm,
   },
   sectionTitle: {
-    fontSize: typography.h2,
-    fontWeight: "800",
+    ...typeScale.h2,
     marginBottom: spacing.md,
   },
   metaText: {
-    fontSize: typography.caption,
+    ...typeScale.caption,
   },
   divider: {
     height: 1,
@@ -367,24 +359,23 @@ const styles = StyleSheet.create({
   itemName: {
     flex: 1,
     marginRight: spacing.md,
-    fontSize: typography.body,
-    fontWeight: "600",
+    ...typeScale.body,
+    fontFamily: fontFamily.semibold,
   },
   label: {
-    fontSize: typography.caption,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   value: {
-    fontSize: typography.body,
-    fontWeight: "700",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   totalText: {
-    fontSize: typography.h2,
-    fontWeight: "800",
+    ...typeScale.h2,
   },
   detailText: {
     marginTop: spacing.xs,
-    fontSize: typography.body,
+    ...typeScale.body,
   },
   detailGap: {
     marginTop: spacing.lg,

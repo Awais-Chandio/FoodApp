@@ -3,17 +3,25 @@ import {
   Alert,
   FlatList,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import EmptyState from "../../components/ui/EmptyState";
+import { BackButton } from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, layout, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  layout,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { deleteAdminUser, getAdminUsers } from "../../database/dbs";
 
 const ManageUsers = () => {
@@ -60,9 +68,9 @@ const ManageUsers = () => {
         { backgroundColor: colors.surface, borderColor: colors.borderSoft },
       ]}
     >
-      <Text style={[styles.name, { color: colors.text }]}>
+      <AppText style={[styles.name, { color: colors.text }]}>
         {item.first_name} {item.last_name}
-      </Text>
+      </AppText>
 
       {Object.entries(item).map(([key, value]) => {
         if (key === "id") {
@@ -70,9 +78,9 @@ const ManageUsers = () => {
         }
 
         return (
-          <Text key={key} style={[styles.field, { color: colors.textSecondary }]}>
+          <AppText key={key} style={[styles.field, { color: colors.textSecondary }]}>
             {key}: {Array.isArray(value) ? value.join(", ") : value}
-          </Text>
+          </AppText>
         );
       })}
 
@@ -82,14 +90,14 @@ const ManageUsers = () => {
           onPress={() => navigation.navigate("Users", { user: item })}
         >
           <AntDesign name="edit" size={15} color={colors.text} />
-          <Text style={[styles.actionText, { color: colors.text }]}>Edit</Text>
+          <AppText style={[styles.actionText, { color: colors.text }]}>Edit</AppText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: colors.surfaceMuted }]}
           onPress={() => handleDelete(item.id)}
         >
           <AntDesign name="delete" size={15} color={colors.danger} />
-          <Text style={[styles.deleteText, { color: colors.danger }]}>Delete</Text>
+          <AppText style={[styles.deleteText, { color: colors.danger }]}>Delete</AppText>
         </TouchableOpacity>
       </View>
     </View>
@@ -106,17 +114,12 @@ const ManageUsers = () => {
         ListHeaderComponent={
           <>
             <View style={styles.topRow}>
-              <TouchableOpacity
-                style={[styles.iconButton, { backgroundColor: colors.surface }]}
-                onPress={() => navigation.goBack()}
-              >
-                <AntDesign name="arrow-left" size={20} color={colors.text} />
-              </TouchableOpacity>
+              <BackButton onPress={() => navigation.goBack()} />
               <TouchableOpacity
                 style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
                 onPress={() => navigation.navigate("Users")}
               >
-                <Text style={styles.addButtonText}>Add user</Text>
+                <AppText style={[styles.addButtonText, { color: colors.onPrimary }]}>Add user</AppText>
               </TouchableOpacity>
             </View>
             <SectionHeader
@@ -156,13 +159,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.lg,
   },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   addButton: {
     minHeight: 44,
     paddingHorizontal: spacing.lg,
@@ -171,9 +167,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   card: {
     borderWidth: 1,
@@ -182,12 +177,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   name: {
-    fontSize: 17,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
     marginBottom: spacing.sm,
   },
   field: {
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     marginTop: spacing.xs,
   },
   actions: {
@@ -205,12 +201,12 @@ const styles = StyleSheet.create({
   },
   actionText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   deleteText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
 });

@@ -1,29 +1,33 @@
 import React, { useState } from "react";
 import {
   FlatList,
-  Image,
   RefreshControl,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import { useCart } from "../../Context/CartContext";
 import EmptyState from "../../components/ui/EmptyState";
+import MenuItemCard from "../../components/ui/MenuItemCard";
+import QtyStepper from "../../components/ui/QtyStepper";
+import ScreenHeader from "../../components/ui/ScreenHeader";
+import TextField from "../../components/ui/TextField";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../Auth/AuthContext";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
 import { computeTotals, formatMoney } from "../../utils/pricing";
@@ -114,50 +118,30 @@ export default function AddToCartScreen() {
   };
 
   const renderCartItem = ({ item }) => (
-    <View
-      style={[
-        styles.itemRow,
-        createShadow(colors.shadow, 10),
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.borderSoft,
-        },
-      ]}
-    >
-      <Image
-        source={resolveFoodImage(item.image_path || item.image_key || item.name)}
-        style={styles.itemImage}
-      />
-
-      <View style={styles.itemContent}>
-        <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-        <Text style={[styles.itemMeta, { color: colors.textSecondary }]}>
-          Prepared fresh for checkout
-        </Text>
-        <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
-          Rs. {item.price}
-        </Text>
-
-        <View style={[styles.qtyRow, { backgroundColor: colors.badge }]}>
-          <TouchableOpacity onPress={() => decreaseQty(item.menu_item_id)} hitSlop={8}>
-            <AntDesign name="minus" size={16} color={colors.primaryStrong} />
-          </TouchableOpacity>
-          <Text style={[styles.qtyValue, { color: colors.text }]}>
-            {item.quantity || 1}
-          </Text>
-          <TouchableOpacity onPress={() => increaseQty(item.menu_item_id)} hitSlop={8}>
-            <AntDesign name="plus" size={16} color={colors.primaryStrong} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={[styles.removeButton, { backgroundColor: colors.surfaceMuted }]}
-        onPress={() => removeItem(item.menu_item_id)}
-      >
-        <AntDesign name="delete" size={16} color={colors.danger} />
-      </TouchableOpacity>
-    </View>
+    <MenuItemCard
+      image={resolveFoodImage(item.image_path || item.image_key || item.name)}
+      title={item.name}
+      subtitle="Prepared fresh for checkout"
+      price={`Rs. ${item.price}`}
+      footer={
+        <QtyStepper
+          value={item.quantity || 1}
+          onDecrease={() => decreaseQty(item.menu_item_id)}
+          onIncrease={() => increaseQty(item.menu_item_id)}
+          style={styles.stepper}
+        />
+      }
+      trailing={
+        <TouchableOpacity
+          style={[styles.removeButton, { backgroundColor: colors.surfaceMuted }]}
+          onPress={() => removeItem(item.menu_item_id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${item.name}`}
+        >
+          <AntDesign name="delete" size={16} color={colors.danger} />
+        </TouchableOpacity>
+      }
+    />
   );
 
   return (
@@ -177,22 +161,15 @@ export default function AddToCartScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={[styles.headerButton, { backgroundColor: colors.surface }]}
-                onPress={() => navigation.goBack()}
-              >
-                <AntDesign name="arrow-left" size={20} color={colors.text} />
-              </TouchableOpacity>
-              <View style={styles.headerContent}>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Your cart</Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-                  {cartItems.length
-                    ? `${cartItems.length} selected dishes ready for checkout`
-                    : "Add dishes to start building your order"}
-                </Text>
-              </View>
-            </View>
+            <ScreenHeader
+              title="Your cart"
+              subtitle={
+                cartItems.length
+                  ? `${cartItems.length} selected dishes ready for checkout`
+                  : "Add dishes to start building your order"
+              }
+              onBack={() => navigation.goBack()}
+            />
 
             {cartItems.length ? (
               <>
@@ -205,28 +182,28 @@ export default function AddToCartScreen() {
                   ]}
                 >
                   <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    <AppText style={[styles.summaryValue, { color: colors.text }]}>
                       {cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
-                    </Text>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    </AppText>
+                    <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                       Items
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    <AppText style={[styles.summaryValue, { color: colors.text }]}>
                       Rs. {subtotal}
-                    </Text>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    </AppText>
+                    <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                       Subtotal
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={[styles.summaryBubble, { backgroundColor: colors.badge }]}>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    <AppText style={[styles.summaryValue, { color: colors.text }]}>
                       {isLoggedIn ? "Express" : "Login"}
-                    </Text>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    </AppText>
+                    <AppText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                       Checkout
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
@@ -243,13 +220,13 @@ export default function AddToCartScreen() {
                   >
                     <AntDesign name="tag" size={18} color={colors.success} />
                     <View style={styles.appliedPromoText}>
-                      <Text style={[styles.appliedPromoCode, { color: colors.text }]}>
+                      <AppText style={[styles.appliedPromoCode, { color: colors.text }]}>
                         {appliedCode} · {promo.percent}% off
-                      </Text>
-                      <Text style={[styles.appliedPromoMeta, { color: colors.textSecondary }]}>
+                      </AppText>
+                      <AppText style={[styles.appliedPromoMeta, { color: colors.textSecondary }]}>
                         You save {formatMoney(discount)}
                         {promo.min_order > 0 ? ` · min. order ${formatMoney(promo.min_order)}` : ""}
-                      </Text>
+                      </AppText>
                     </View>
                     <TouchableOpacity
                       onPress={removePromo}
@@ -257,28 +234,20 @@ export default function AddToCartScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`Remove promo code ${appliedCode}`}
                     >
-                      <Text style={[styles.removePromoText, { color: colors.danger }]}>Remove</Text>
+                      <AppText style={[styles.removePromoText, { color: colors.danger }]}>Remove</AppText>
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={[styles.promoRow, isCompact ? styles.promoRowStack : null]}>
-                    <TextInput
+                    <TextField
                       value={promoInput}
                       onChangeText={setPromoInput}
                       placeholder="Try SAVE10, FOOD5 or WELCOME20"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[
-                        styles.promoInput,
-                        isCompact ? styles.promoInputStack : null,
-                        {
-                          backgroundColor: colors.surface,
-                          color: colors.text,
-                          borderColor: colors.border,
-                        },
-                      ]}
                       autoCapitalize="characters"
                       autoCorrect={false}
                       onSubmitEditing={applyPromoCode}
+                      accessibilityLabel="Promo code"
+                      containerStyle={[styles.promoField, isCompact ? styles.promoFieldStack : null]}
                     />
                     <TouchableOpacity
                       style={[
@@ -294,7 +263,7 @@ export default function AddToCartScreen() {
                         end={{ x: 1, y: 1 }}
                         style={styles.applyButtonGradient}
                       >
-                        <Text style={styles.applyButtonText}>Apply</Text>
+                        <AppText style={[styles.applyButtonText, { color: colors.onPrimary }]}>Apply</AppText>
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -332,32 +301,32 @@ export default function AddToCartScreen() {
         >
           <SectionHeader title="Payment summary" />
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
               Subtotal
-            </Text>
-            <Text style={[styles.summaryText, { color: colors.text }]}>Rs. {subtotal}</Text>
+            </AppText>
+            <AppText style={[styles.summaryText, { color: colors.text }]}>Rs. {subtotal}</AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
               Delivery
-            </Text>
-            <Text style={[styles.summaryText, { color: colors.text }]}>
+            </AppText>
+            <AppText style={[styles.summaryText, { color: colors.text }]}>
               Rs. {deliveryFee}
-            </Text>
+            </AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.summaryText, { color: colors.textSecondary }]}>
               {appliedCode ? `Discount (${appliedCode})` : "Discount"}
-            </Text>
-            <Text style={[styles.summaryText, { color: colors.success }]}>
+            </AppText>
+            <AppText style={[styles.summaryText, { color: colors.success }]}>
               - Rs. {discount}
-            </Text>
+            </AppText>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.text }]}>
+            <AppText style={[styles.totalLabel, { color: colors.text }]}>Total</AppText>
+            <AppText style={[styles.totalValue, { color: colors.text }]}>
               Rs. {Math.max(totalPrice, 0)}
-            </Text>
+            </AppText>
           </View>
 
           <TouchableOpacity
@@ -369,9 +338,9 @@ export default function AddToCartScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.checkoutButton}
             >
-              <Text style={styles.checkoutButtonText}>
+              <AppText style={[styles.checkoutButtonText, { color: colors.onPrimary }]}>
                 {isLoggedIn ? "Proceed to checkout" : "Login to checkout"}
-              </Text>
+              </AppText>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -388,30 +357,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.pagePadding,
     paddingTop: spacing.xxxl,
     paddingBottom: spacing.xxl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xxl,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  headerSubtitle: {
-    marginTop: spacing.xs,
-    fontSize: 13,
   },
   summaryStrip: {
     borderWidth: 1,
@@ -434,12 +379,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   summaryValue: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   summaryLabel: {
     marginTop: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   promoRow: {
     flexDirection: "row",
@@ -450,18 +395,18 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "stretch",
   },
-  promoInput: {
+  promoField: {
     flex: 1,
-    minHeight: 56,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
+    marginBottom: 0,
     marginRight: spacing.sm,
-    fontSize: 15,
   },
-  promoInputStack: {
+  promoFieldStack: {
     marginRight: 0,
     marginBottom: spacing.md,
+  },
+  stepper: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
   applyButton: {
     minHeight: 56,
@@ -478,9 +423,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   applyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   appliedPromo: {
     minHeight: 56,
@@ -497,62 +441,16 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
   },
   appliedPromoCode: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   appliedPromoMeta: {
     marginTop: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   removePromoText: {
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  itemRow: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  itemImage: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.md,
-  },
-  itemContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  itemMeta: {
-    marginTop: spacing.xs,
-    fontSize: 13,
-  },
-  itemPrice: {
-    marginTop: spacing.sm,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  qtyRow: {
-    marginTop: spacing.md,
-    alignSelf: "flex-start",
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    height: 38,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  qtyValue: {
-    minWidth: 24,
-    textAlign: "center",
-    marginHorizontal: spacing.sm,
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   removeButton: {
     width: 38,
@@ -577,20 +475,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   summaryText: {
-    fontSize: 14,
-    fontWeight: "600",
+    ...typeScale.label,
   },
   totalRow: {
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
   },
   totalLabel: {
-    fontSize: 18,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   totalValue: {
-    fontSize: 22,
-    fontWeight: "900",
+    ...typeScale.h2,
   },
   checkoutButton: {
     minHeight: 56,
@@ -599,9 +495,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkoutButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   footerLarge: {
     height: 284,

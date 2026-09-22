@@ -2,12 +2,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
-  Image,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
@@ -16,13 +15,19 @@ import * as menuRepo from "../../database/repositories/menuRepo";
 import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
 import EmptyState from "../../components/ui/EmptyState";
+import FilterChip from "../../components/ui/FilterChip";
+import MenuItemCard from "../../components/ui/MenuItemCard";
+import QtyStepper from "../../components/ui/QtyStepper";
+import ScreenHeader from "../../components/ui/ScreenHeader";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
 
@@ -131,71 +136,63 @@ export default function MenuScreen() {
 
   const renderMenuItem = ({ item }) => {
     const quantity = getQty(item.id);
+    const adminButtons = isAdmin ? (
+      <View style={styles.adminColumn}>
+        <TouchableOpacity
+          style={[styles.adminButton, { backgroundColor: colors.badge }]}
+          onPress={() => editItem(item)}
+          accessibilityLabel={`Edit ${item.name}`}
+        >
+          <AntDesign name="edit" size={16} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.adminButton, { backgroundColor: colors.surfaceMuted }]}
+          onPress={() => deleteItem(item.id)}
+          accessibilityLabel={`Delete ${item.name}`}
+        >
+          <AntDesign name="delete" size={16} color={colors.danger} />
+        </TouchableOpacity>
+      </View>
+    ) : null;
 
     return (
-      <View
-        style={[
-          styles.itemCard,
-          createShadow(colors.shadow, 10),
-          { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-        ]}
-      >
-        <Image
-          source={resolveFoodImage(item.image_key || item.name)}
-          style={styles.itemImage}
-        />
-        <View style={styles.itemContent}>
-          <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-          <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
-            Freshly prepared and balanced for quick delivery
-          </Text>
-          <Text style={[styles.itemPrice, { color: colors.primaryStrong }]}>
-            Rs. {item.price}
-          </Text>
-        </View>
-
-        {isAdmin ? (
-          <View style={styles.adminColumn}>
-            <TouchableOpacity
-              style={[styles.adminButton, { backgroundColor: colors.badge }]}
-              onPress={() => editItem(item)}
-            >
-              <AntDesign name="edit" size={16} color={colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.adminButton, { backgroundColor: colors.surfaceMuted }]}
-              onPress={() => deleteItem(item.id)}
-            >
-              <AntDesign name="delete" size={16} color={colors.danger} />
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {quantity > 0 ? (
-          <View style={[styles.qtyStepper, { backgroundColor: colors.badge }]}>
-            <TouchableOpacity onPress={() => decreaseQty(item)} hitSlop={8}>
-              <AntDesign name="minus" size={16} color={colors.primaryStrong} />
-            </TouchableOpacity>
-            <Text style={[styles.qtyValue, { color: colors.text }]}>{quantity}</Text>
-            <TouchableOpacity onPress={() => increaseQty(item)} hitSlop={8}>
-              <AntDesign name="plus" size={16} color={colors.primaryStrong} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            onPress={() => increaseQty(item)}
-          >
-            <LinearGradient
-              colors={colors.buttonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.addButton}
-            >
-              <AntDesign name="plus" size={16} color={colors.white} />
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-      </View>
+      <MenuItemCard
+        image={resolveFoodImage(item.image_key || item.name)}
+        title={item.name}
+        subtitle="Freshly prepared and balanced for quick delivery"
+        price={`Rs. ${item.price}`}
+        footer={
+          quantity > 0 ? (
+            <QtyStepper
+              value={quantity}
+              onIncrease={() => increaseQty(item)}
+              onDecrease={() => decreaseQty(item)}
+              style={styles.stepper}
+            />
+          ) : null
+        }
+        trailing={
+          <>
+            {adminButtons}
+            {quantity > 0 ? null : (
+              <TouchableOpacity
+                onPress={() => increaseQty(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${item.name} to cart`}
+              >
+                <LinearGradient
+                  colors={colors.buttonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.addButton}
+                >
+                  <AntDesign name="plus" size={16} color={colors.onPrimary} />
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </>
+        }
+      />
     );
   };
 
@@ -208,41 +205,28 @@ export default function MenuScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
-            <View style={styles.headerRow}>
-              <TouchableOpacity
-                style={[styles.headerIcon, { backgroundColor: colors.surface }]}
-                onPress={() => navigation.goBack()}
-              >
-                <AntDesign name="arrow-left" size={20} color={colors.text} />
-              </TouchableOpacity>
-
-              <View style={styles.headerCenter}>
-                <Text style={[styles.restaurantName, { color: colors.text }]}>
-                  {restaurant.name}
-                </Text>
-                <Text style={[styles.headerMeta, { color: colors.textSecondary }]}>
-                  Curated menu
-                </Text>
-              </View>
-
-              {isAdmin ? (
-                <TouchableOpacity
-                  style={[
-                    styles.headerAction,
-                    { backgroundColor: colors.primaryStrong },
-                  ]}
-                  onPress={() =>
-                    navigation.navigate("ManageMenuItems", {
-                      restaurantId: restaurant.id,
-                    })
-                  }
-                >
-                  <Text style={styles.headerActionText}>Add</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.headerPlaceholder} />
-              )}
-            </View>
+            <ScreenHeader
+              title={restaurant.name}
+              subtitle="Curated menu"
+              centered
+              onBack={() => navigation.goBack()}
+              right={
+                isAdmin ? (
+                  <TouchableOpacity
+                    style={[styles.headerAction, { backgroundColor: colors.primaryStrong }]}
+                    onPress={() =>
+                      navigation.navigate("ManageMenuItems", {
+                        restaurantId: restaurant.id,
+                      })
+                    }
+                  >
+                    <AppText variant="label" color="onPrimary">
+                      Add
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null
+              }
+            />
 
             <View
               style={[
@@ -257,28 +241,28 @@ export default function MenuScreen() {
               />
               <View style={styles.quickStatsRow}>
                 <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
                     {menuItems.length}
-                  </Text>
-                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
                     Items
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
                     {totalItems}
-                  </Text>
-                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
                     In cart
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.quickStat, { backgroundColor: colors.badge }]}>
-                  <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  <AppText style={[styles.quickStatValue, { color: colors.text }]}>
                     Rs. {totalPrice}
-                  </Text>
-                  <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
                     Running total
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </View>
@@ -288,31 +272,14 @@ export default function MenuScreen() {
               subtitle="Use the quick filters to scan the menu faster."
             />
             <View style={styles.filterRow}>
-              {filters.map((filter) => {
-                const isActive = activeFilter === filter.id;
-                return (
-                  <TouchableOpacity
-                    key={filter.id}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: isActive ? colors.primaryStrong : colors.surface,
-                        borderColor: isActive ? colors.primaryStrong : colors.border,
-                      },
-                    ]}
-                    onPress={() => setActiveFilter(filter.id)}
-                  >
-                    <Text
-                      style={[
-                        styles.filterLabel,
-                        { color: isActive ? colors.white : colors.text },
-                      ]}
-                    >
-                      {filter.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {filters.map((filter) => (
+                <FilterChip
+                  key={filter.id}
+                  label={filter.label}
+                  active={activeFilter === filter.id}
+                  onPress={() => setActiveFilter(filter.id)}
+                />
+              ))}
             </View>
           </>
         }
@@ -360,19 +327,19 @@ export default function MenuScreen() {
             style={styles.cartGradient}
           >
             <View>
-              <Text style={styles.cartTitle}>{totalItems} items selected</Text>
-              <Text style={styles.cartSubtitle}>Ready for checkout</Text>
+              <AppText style={[styles.cartTitle, { color: colors.onPrimary }]}>{totalItems} items selected</AppText>
+              <AppText style={[styles.cartSubtitle, { color: colors.onPrimary }]}>Ready for checkout</AppText>
             </View>
             <View style={styles.cartRight}>
-              <Text style={styles.cartPrice}>Rs. {totalPrice}</Text>
-              <Text style={styles.cartLink}>View cart</Text>
+              <AppText style={[styles.cartPrice, { color: colors.onPrimary }]}>Rs. {totalPrice}</AppText>
+              <AppText style={[styles.cartLink, { color: colors.onPrimary }]}>View cart</AppText>
             </View>
           </LinearGradient>
         ) : (
           <View style={styles.emptyCartState}>
-            <Text style={[styles.emptyCartPrompt, { color: colors.text }]}>
+            <AppText style={[styles.emptyCartPrompt, { color: colors.text }]}>
               Select any item you want
-            </Text>
+            </AppText>
             <AntDesign name="shopping-cart" size={20} color={colors.text} />
           </View>
         )}
@@ -390,32 +357,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxxl,
     paddingBottom: 168,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.xl,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-  },
-  restaurantName: {
-    fontSize: 21,
-    fontWeight: "800",
-  },
-  headerMeta: {
-    marginTop: spacing.xs,
-    fontSize: 13,
-  },
   headerAction: {
     minWidth: 58,
     height: 44,
@@ -423,14 +364,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.md,
-  },
-  headerActionText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  headerPlaceholder: {
-    width: 58,
   },
   heroCard: {
     borderWidth: 1,
@@ -454,12 +387,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   quickStatValue: {
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   quickStatLabel: {
     marginTop: spacing.xs,
-    fontSize: 12,
+    ...typeScale.caption,
   },
   filterRow: {
     flexDirection: "row",
@@ -467,53 +400,14 @@ const styles = StyleSheet.create({
     marginTop: -spacing.xs,
     marginBottom: spacing.lg,
   },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    marginRight: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  filterLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  itemCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  itemImage: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.md,
-  },
-  itemContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  itemSubtitle: {
-    marginTop: spacing.xs,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  itemPrice: {
-    marginTop: spacing.sm,
-    fontSize: 16,
-    fontWeight: "800",
-  },
   adminColumn: {
     justifyContent: "space-between",
     marginRight: spacing.sm,
     height: 84,
+  },
+  stepper: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
   adminButton: {
     width: 36,
@@ -528,20 +422,6 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-  },
-  qtyStepper: {
-    height: 42,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  qtyValue: {
-    minWidth: 24,
-    textAlign: "center",
-    fontSize: 15,
-    fontWeight: "800",
-    marginHorizontal: spacing.sm,
   },
   cartCard: {
     position: "absolute",
@@ -562,32 +442,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cartTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   cartSubtitle: {
     marginTop: spacing.xs,
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 13,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   cartRight: {
     alignItems: "flex-end",
   },
   cartPrice: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "800",
+    ...typeScale.h3,
+    fontFamily: fontFamily.bold,
   },
   cartLink: {
     marginTop: spacing.xs,
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 13,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   emptyCartPrompt: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   emptyCartState: {
     minHeight: 72,

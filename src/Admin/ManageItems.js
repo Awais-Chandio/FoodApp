@@ -3,16 +3,18 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
-import AntDesign from "@react-native-vector-icons/ant-design";
+import TextField from "../components/ui/TextField";
 import AppButton from "../components/ui/AppButton";
+import { BackButton } from "../components/ui/ScreenHeader";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
-import { layout, radius, spacing } from "../constants/designSystem";
+import {
+  layout,
+  radius,
+  spacing,
+} from "../constants/designSystem";
 import * as restaurantRepo from "../database/repositories/restaurantRepo";
 
 export default function ManageItems({ navigation, route }) {
@@ -74,12 +76,7 @@ export default function ManageItems({ navigation, route }) {
         contentContainerStyle={styles.content}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.goBack()}
-          >
-            <AntDesign name="arrow-left" size={20} color={colors.text} />
-          </TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
         </View>
 
         <SectionHeader
@@ -88,100 +85,46 @@ export default function ManageItems({ navigation, route }) {
         />
 
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.label, { color: colors.text }]}>Name *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Name *"
             value={name}
             onChangeText={setName}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Rating</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Rating"
             value={rating}
             onChangeText={setRating}
             keyboardType="numeric"
             placeholder="Optional"
-            placeholderTextColor={colors.textSecondary}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Time</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Time"
             value={time}
             onChangeText={setTime}
             placeholder="e.g. 20 min"
-            placeholderTextColor={colors.textSecondary}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Offer</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Offer"
             value={offer}
             onChangeText={setOffer}
             placeholder="e.g. 30% OFF"
-            placeholderTextColor={colors.textSecondary}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Category *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Category *"
             value={category}
             onChangeText={setCategory}
             placeholder="nearest or popular"
-            placeholderTextColor={colors.textSecondary}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Image key or URL</Text>
-          <TextInput
-            style={[
-              styles.input,
-              styles.textArea,
-              {
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
+          <TextField
+            label="Image key or URL"
             value={imagePath}
             onChangeText={setImagePath}
             placeholder="food1 or https://example.com/pic.jpg"
-            placeholderTextColor={colors.textSecondary}
             multiline
           />
 
@@ -208,34 +151,9 @@ const styles = StyleSheet.create({
   headerRow: {
     marginBottom: spacing.lg,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   card: {
     borderRadius: radius.lg,
     padding: spacing.xl,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
-  },
-  input: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    fontSize: 15,
-  },
-  textArea: {
-    minHeight: 84,
-    textAlignVertical: "top",
-    paddingTop: spacing.md,
   },
   saveButton: {
     marginTop: spacing.xxl,

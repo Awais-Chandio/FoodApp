@@ -10,15 +10,21 @@ import AddToCartScreen from "../screens/Cart/AddToCartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import { useTheme } from "../Context/ThemeProvider";
 import { useCart } from "../Context/CartContext";
-import { createShadow, radius } from "../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  typeScale,
+} from "../constants/designSystem";
 
 const Tab = createBottomTabNavigator();
 
 function TabBarIcon({ backgroundColor, color, name }) {
+  const { colors } = useTheme();
   if (backgroundColor === "gradient") {
     return (
       <LinearGradient
-        colors={["#FF5A3C", "#FF8B3D"]}
+        colors={colors.buttonGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.iconShell}
@@ -46,8 +52,8 @@ export default function TabNavigator() {
         tabBarShowLabel: true,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "700",
+          ...typeScale.caption,
+          fontFamily: fontFamily.bold,
           marginBottom: 4,
         },
         tabBarStyle: {
@@ -74,7 +80,7 @@ export default function TabNavigator() {
             <TabBarIcon
               name={iconMap[route.name]}
               backgroundColor={focused ? "gradient" : colors.badge}
-              color={focused ? colors.white : colors.textSecondary}
+              color={focused ? colors.onPrimary : colors.textSecondary}
             />
           );
         },
@@ -96,8 +102,8 @@ export default function TabNavigator() {
           tabBarBadge: cartCount > 0 ? cartCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: colors.primaryStrong,
-            color: colors.white,
-            fontWeight: "700",
+            color: colors.onPrimary,
+            fontFamily: fontFamily.bold,
           },
         }}
       />

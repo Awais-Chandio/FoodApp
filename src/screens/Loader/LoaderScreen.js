@@ -1,8 +1,17 @@
 import React, { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  View,
+} from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { hasSeenOnboarding } from "../../services/onboarding";
 import { resolveInitialRoute } from "../../navigation/initialRoute";
 import { useAuth } from "../Auth/AuthContext";
@@ -47,12 +56,12 @@ export default function LoaderScreen({ navigation }) {
         end={{ x: 1, y: 1 }}
         style={[styles.logoCircle, createShadow(colors.shadow, 18)]}
       >
-        <Text style={styles.logoText}>F</Text>
+        <AppText style={[styles.logoText, { color: colors.onPrimary }]}>F</AppText>
       </LinearGradient>
-      <Text style={[styles.title, { color: colors.text }]}>FoodApp</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+      <AppText style={[styles.title, { color: colors.text }]}>FoodApp</AppText>
+      <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
         Bold food visuals, smoother checkout, and one consistent orange design language.
-      </Text>
+      </AppText>
       <ActivityIndicator size="small" color={colors.primaryStrong} style={styles.loader} />
     </LinearGradient>
   );
@@ -80,18 +89,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logoText: {
-    color: "#FFFFFF",
-    fontSize: 40,
-    fontWeight: "900",
+    ...typeScale.display,
   },
   title: {
-    fontSize: 34,
-    fontWeight: "900",
+    ...typeScale.display,
     marginTop: spacing.xl,
   },
   subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+    ...typeScale.body,
     textAlign: "center",
     marginTop: spacing.sm,
     maxWidth: 280,

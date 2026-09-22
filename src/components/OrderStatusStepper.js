@@ -1,8 +1,19 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  View,
+} from "react-native";
+import AppText from "./ui/AppText";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../Context/ThemeProvider";
-import { radius, spacing, typography } from "../constants/designSystem";
+import {
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../constants/designSystem";
 import { ORDER_STEPS, statusIndex } from "../utils/orderStatus";
 
 const DOT_SIZE = 28;
@@ -91,7 +102,7 @@ export default function OrderStatusStepper({ status }) {
                     },
                   ]}
                 >
-                  {done ? <AntDesign name="check" size={14} color={colors.white} /> : null}
+                  {done ? <AntDesign name="check" size={14} color={colors.onPrimary} /> : null}
                 </View>
               </View>
 
@@ -115,17 +126,17 @@ export default function OrderStatusStepper({ status }) {
             </View>
 
             <View style={styles.text}>
-              <Text
+              <AppText
                 style={[
                   styles.label,
                   { color: done || current ? colors.text : colors.textSecondary },
                 ]}
               >
                 {step.label}
-              </Text>
-              <Text style={[styles.description, { color: colors.textSecondary }]}>
+              </AppText>
+              <AppText style={[styles.description, { color: colors.textSecondary }]}>
                 {step.description}
-              </Text>
+              </AppText>
             </View>
           </View>
         );
@@ -179,11 +190,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   label: {
-    fontSize: typography.body,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   description: {
     marginTop: 2,
-    fontSize: typography.caption,
+    ...typeScale.caption,
   },
 });

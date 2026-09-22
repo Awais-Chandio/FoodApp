@@ -1,5 +1,6 @@
 import { runStatements } from "./client";
 import { hashPassword } from "../services/passwordHash";
+import { menuBackfillStatements, MENU_SEED, RESTAURANT_SEED } from "./seedData";
 
 // Each migration runs once, in order, inside its own transaction together with
 // the PRAGMA user_version bump. Never edit a released migration: add a new one.
@@ -123,26 +124,16 @@ const MIGRATIONS = [
       "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('WELCOME20', 20, 400, 1798761599999)",
     ],
   },
+  {
+    // Full demo menus for existing installs (fresh installs get them from
+    // seed()). See menuBackfillStatements in ./seedData for the matching rules.
+    version: 7,
+    statements: menuBackfillStatements(),
+  },
 ];
 
 // The version a fully migrated database ends at.
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
-
-const RESTAURANT_SEED = [
-  [1, "Westway", 4.6, "15 min", "50% OFF", "nearest", null],
-  [2, "Fortune", 4.8, "25 min", null, "nearest", null],
-  [3, "Seafood", 4.6, "20 min", null, "nearest", null],
-  [7, "Moonland", 4.6, "15 min", null, "popular", null],
-  [8, "Starfish", 4.8, "25 min", "30% OFF", "popular", null],
-  [9, "Black Noodles", 4.9, "20 min", null, "popular", null],
-];
-
-const MENU_SEED = [
-  [1, "Moonland Special", 210, "Best Seller", "Moonland"],
-  [1, "Burger Deluxe", 170, "Best Seller", "food2"],
-  [1, "Veggie Supreme", 150, "Best Seller", "food1"],
-  [1, "Margherita Pizza", 180, "Best Seller", "food3"],
-];
 
 const ADMIN_EMAIL = "admin@foodapp.com";
 const ADMIN_PASSWORD = "admin123";
@@ -154,7 +145,10 @@ const migrate = async () => {
   for (const migration of MIGRATIONS) {
     if (migration.version > current) {
       await runStatements([
-        ...migration.statements.map((sql) => [sql]),
+        // A statement is a SQL string, or a [sql, params] pair.
+        ...migration.statements.map((statement) =>
+          Array.isArray(statement) ? statement : [statement]
+        ),
         // PRAGMA does not accept bound parameters; version is a trusted integer.
         [`PRAGMA user_version = ${migration.version}`],
       ]);

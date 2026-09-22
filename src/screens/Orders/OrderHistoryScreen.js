@@ -3,15 +3,15 @@ import {
   Alert,
   FlatList,
   StyleSheet,
-  Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import AppButton from "../../components/ui/AppButton";
+import ScreenHeader from "../../components/ui/ScreenHeader";
 import EmptyState from "../../components/ui/EmptyState";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import { useTheme } from "../../Context/ThemeProvider";
@@ -19,10 +19,11 @@ import { useCart } from "../../Context/CartContext";
 import { useAuth } from "../Auth/AuthContext";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
-  typography,
+  typeScale,
 } from "../../constants/designSystem";
 import * as orderRepo from "../../database/repositories/orderRepo";
 import { formatMoney } from "../../utils/pricing";
@@ -131,16 +132,7 @@ export default function OrderHistoryScreen() {
   const openTracking = (order) => navigation.navigate("TrackOrder", { orderId: order.id });
 
   const header = (
-    <View style={styles.header}>
-      <TouchableOpacity
-        style={[styles.headerButton, { backgroundColor: colors.surface }]}
-        onPress={() => navigation.goBack()}
-        accessibilityLabel="Go back"
-      >
-        <AntDesign name="arrow-left" size={20} color={colors.text} />
-      </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: colors.text }]}>Order history</Text>
-    </View>
+    <ScreenHeader title="Order history" onBack={() => navigation.goBack()} />
   );
 
   const renderOrder = ({ item: order }) => {
@@ -160,22 +152,22 @@ export default function OrderHistoryScreen() {
       >
         <View style={styles.cardTop}>
           <View style={styles.cardTitleWrap}>
-            <Text style={[styles.orderNumber, { color: colors.text }]}>Order #{order.id}</Text>
-            <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.orderNumber, { color: colors.text }]}>Order #{order.id}</AppText>
+            <AppText style={[styles.dateText, { color: colors.textSecondary }]}>
               {new Date(order.created_at).toLocaleString()}
-            </Text>
+            </AppText>
           </View>
           <View style={[styles.pill, { backgroundColor: statusColors.background }]}>
-            <Text style={[styles.pillText, { color: statusColors.text }]}>
+            <AppText style={[styles.pillText, { color: statusColors.text }]}>
               {getStatusLabel(order.status)}
-            </Text>
+            </AppText>
           </View>
         </View>
 
-        <Text style={[styles.itemsText, { color: colors.textSecondary }]} numberOfLines={2}>
+        <AppText style={[styles.itemsText, { color: colors.textSecondary }]} numberOfLines={2}>
           {summarizeItems(order.items)}
-        </Text>
-        <Text style={[styles.totalText, { color: colors.text }]}>{formatMoney(order.total)}</Text>
+        </AppText>
+        <AppText style={[styles.totalText, { color: colors.text }]}>{formatMoney(order.total)}</AppText>
 
         <View style={styles.actions}>
           {!delivered ? (
@@ -273,23 +265,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.huge,
     paddingBottom: spacing.huge + spacing.xl,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    marginLeft: spacing.md,
-    fontSize: typography.h1,
-    fontWeight: "800",
-  },
   skeleton: {
     marginBottom: layout.cardGap,
   },
@@ -309,12 +284,11 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   orderNumber: {
-    fontSize: typography.h2,
-    fontWeight: "800",
+    ...typeScale.h2,
   },
   dateText: {
     marginTop: spacing.xs,
-    fontSize: typography.caption,
+    ...typeScale.caption,
   },
   pill: {
     borderRadius: radius.pill,
@@ -322,17 +296,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
   },
   pillText: {
-    fontSize: typography.caption,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   itemsText: {
     marginTop: spacing.md,
-    fontSize: typography.body,
+    ...typeScale.body,
   },
   totalText: {
     marginTop: spacing.sm,
-    fontSize: typography.h2,
-    fontWeight: "800",
+    ...typeScale.h2,
   },
   actions: {
     flexDirection: "row",

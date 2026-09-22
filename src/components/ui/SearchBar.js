@@ -8,7 +8,14 @@ import {
 } from "react-native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  MAX_FONT_SCALE,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 
 export default function SearchBar({
   value,
@@ -51,6 +58,7 @@ export default function SearchBar({
         editable={editable}
         onSubmitEditing={onSubmitEditing}
         returnKeyType="search"
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
       />
       {value ? (
         <TouchableOpacity style={styles.trailingButton} onPress={onClear} hitSlop={8}>
@@ -84,8 +92,9 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginLeft: spacing.md,
-    fontSize: 15,
-    fontWeight: "600",
+    // No lineHeight: it misplaces the text inside a TextInput on iOS.
+    fontSize: typeScale.body.fontSize,
+    fontFamily: fontFamily.semibold,
     paddingVertical: spacing.md + 1,
   },
   trailingButton: {

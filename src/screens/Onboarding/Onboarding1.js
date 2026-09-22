@@ -1,9 +1,20 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  View,
+} from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AppButton from "../../components/ui/AppButton";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 import { finishOnboarding } from "../../services/onboarding";
 
@@ -19,9 +30,9 @@ export default function Onboarding1({ navigation }) {
     >
       <View style={styles.content}>
         <View style={[styles.badge, { backgroundColor: colors.badge }]}>
-          <Text style={[styles.badgeText, { color: colors.primaryStrong }]}>
+          <AppText style={[styles.badgeText, { color: colors.primaryStrong }]}>
             Step 1 of 3
-          </Text>
+          </AppText>
         </View>
         <LinearGradient
           colors={colors.heroGradientAlt}
@@ -31,12 +42,12 @@ export default function Onboarding1({ navigation }) {
         >
           <Image source={appImages.onboardingFood} style={styles.image} />
         </LinearGradient>
-        <Text style={[styles.title, { color: colors.text }]}>
+        <AppText style={[styles.title, { color: colors.text }]}>
           Discover dishes that feel worth ordering
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        </AppText>
+        <AppText style={[styles.subtitle, { color: colors.textSecondary }]}>
           Browse cleaner restaurant cards, faster filters, and stronger food visuals from the first screen.
-        </Text>
+        </AppText>
         <View style={styles.dots}>
           <View style={[styles.dot, styles.activeDot, { backgroundColor: colors.primaryStrong }]} />
           <View style={[styles.dot, { backgroundColor: colors.border }]} />
@@ -79,8 +90,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: "800",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   imageWrap: {
     width: 288,
@@ -96,14 +107,12 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: spacing.xl,
-    fontSize: 28,
-    fontWeight: "800",
+    ...typeScale.h1,
     textAlign: "center",
   },
   subtitle: {
     marginTop: spacing.md,
-    fontSize: 15,
-    lineHeight: 23,
+    ...typeScale.body,
     textAlign: "center",
     maxWidth: 300,
   },

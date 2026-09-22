@@ -1,15 +1,27 @@
 import React, { useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
+import AppText from "./AppText";
 import LinearGradient from "react-native-linear-gradient";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 
 const variantStyles = {
   primary: (colors) => ({
     gradientColors: colors.buttonGradient,
     pressedGradientColors: colors.buttonGradientPressed,
     borderColor: colors.primaryStrong,
-    textColor: colors.white,
+    textColor: colors.onPrimary,
   }),
   secondary: (colors) => ({
     backgroundColor: colors.surface,
@@ -24,7 +36,7 @@ const variantStyles = {
   ghost: (colors) => ({
     backgroundColor: colors.accentSoft,
     borderColor: colors.accentSoft,
-    textColor: colors.accent,
+    textColor: colors.accentText,
   }),
 };
 
@@ -40,6 +52,9 @@ export default function AppButton({
   const { colors } = useTheme();
   const resolvedVariant =
     (variantStyles[variant] || variantStyles.primary)(colors);
+  // A disabled gradient button turns flat, so it needs its own readable colors.
+  const flatDisabled = disabled && Boolean(resolvedVariant.gradientColors);
+  const labelColor = flatDisabled ? colors.textSecondary : resolvedVariant.textColor;
 
   const animateTo = (value) => {
     Animated.spring(scale, {
@@ -63,7 +78,9 @@ export default function AppButton({
           styles.buttonShell,
           createShadow(colors.shadow, variant === "primary" ? 16 : 8),
           {
-            backgroundColor: resolvedVariant.backgroundColor || "transparent",
+            backgroundColor: flatDisabled
+              ? colors.surfaceMuted
+              : resolvedVariant.backgroundColor || "transparent",
             borderColor: resolvedVariant.borderColor,
             transform: [{ scale }],
           },
@@ -77,15 +94,15 @@ export default function AppButton({
             end={{ x: 1, y: 1 }}
             style={styles.gradientFill}
           >
-            <Text style={[styles.label, { color: resolvedVariant.textColor }, textStyle]}>
+            <AppText style={[styles.label, { color: labelColor }, textStyle]}>
               {label}
-            </Text>
+            </AppText>
           </LinearGradient>
         ) : (
           <View style={styles.flatFill}>
-            <Text style={[styles.label, { color: resolvedVariant.textColor }, textStyle]}>
+            <AppText style={[styles.label, { color: labelColor }, textStyle]}>
               {label}
-            </Text>
+            </AppText>
           </View>
         )}
       </Animated.View>
@@ -115,8 +132,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   label: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
     letterSpacing: 0.35,
   },
 });

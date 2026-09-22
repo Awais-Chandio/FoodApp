@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useCreateTables } from "./src/database/dbs";
 import { AuthProvider } from "./src/screens/Auth/AuthContext";
-import Toast from "react-native-toast-message";
+import AppToast from "./src/components/ui/AppToast";
 import { ThemeProvider } from "./src/Context/ThemeProvider";
 import { CartProvider } from "./src/Context/CartContext";
 import { FavoritesProvider } from "./src/Context/FavoritesContext";
@@ -173,7 +173,7 @@ const AppContent = () => {
             }}
           >
             <AppNavigator />
-            <Toast />
+            <AppToast />
             <NotificationModal
               visible={!!activeNotification}
               notification={activeNotification}

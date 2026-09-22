@@ -2,14 +2,20 @@ import React from "react";
 import {
   ImageBackground,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, radius, spacing, typography } from "../../constants/designSystem";
+import {
+  createShadow,
+  fontFamily,
+  radius,
+  spacing,
+  typeScale,
+} from "../../constants/designSystem";
 import { appImages } from "../../constants/imageRegistry";
 import SearchBar from "../../components/ui/SearchBar";
 
@@ -46,53 +52,47 @@ export default function HomeHeader({
         end={{ x: 1, y: 1 }}
         style={styles.gradientOverlay}
       />
-      <LinearGradient
-        colors={["rgba(255,255,255,0.10)", "rgba(255,255,255,0.02)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.glossOverlay}
-      />
 
       <View style={styles.content}>
         <View style={styles.topRow}>
           <View style={styles.locationWrap}>
-            <View style={styles.iconBubble}>
-              <AntDesign name="environment" size={15} color={colors.white} />
+            <View style={[styles.iconBubble, { backgroundColor: colors.glassOnPrimary }]}>
+              <AntDesign name="environment" size={15} color={colors.onPrimary} />
             </View>
             <View>
-              <Text style={styles.locationLabel}>Deliver to</Text>
-              <Text style={styles.locationValue}>{location}</Text>
+              <AppText style={[styles.locationLabel, { color: colors.onPrimary }]}>Deliver to</AppText>
+              <AppText style={[styles.locationValue, { color: colors.onPrimary }]}>{location}</AppText>
             </View>
           </View>
 
           {rightActionLabel ? (
             <TouchableOpacity
-              style={styles.topAction}
+              style={[styles.topAction, { backgroundColor: colors.glassOnPrimary, borderColor: colors.glassOnPrimaryBorder }]}
               activeOpacity={0.82}
               onPress={onRightActionPress}
             >
-              <Text style={styles.topActionText}>{rightActionLabel}</Text>
+              <AppText style={[styles.topActionText, { color: colors.onPrimary }]}>{rightActionLabel}</AppText>
             </TouchableOpacity>
           ) : null}
         </View>
 
         <View style={styles.heroCopy}>
-          <View style={styles.kicker}>
-            <AntDesign name="heart" size={12} color={colors.white} />
-            <Text style={styles.kickerText}>Curated for your cravings</Text>
+          <View style={[styles.kicker, { backgroundColor: colors.glassOnPrimary, borderColor: colors.glassOnPrimaryBorder }]}>
+            <AntDesign name="heart" size={12} color={colors.onPrimary} />
+            <AppText style={[styles.kickerText, { color: colors.onPrimary }]}>Curated for your cravings</AppText>
           </View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <AppText style={[styles.title, { color: colors.onPrimary }]}>{title}</AppText>
+          <AppText style={[styles.subtitle, { color: colors.onPrimary }]}>{subtitle}</AppText>
         </View>
 
         <View style={styles.highlightRow}>
           {headerHighlights.map((item) => (
             <View
               key={item.id}
-              style={[styles.highlightPill, createShadow(colors.shadow, 8)]}
+              style={[styles.highlightPill, { backgroundColor: colors.glassOnPrimary, borderColor: colors.glassOnPrimaryBorder }, createShadow(colors.shadow, 8)]}
             >
-              <AntDesign name={item.icon} size={13} color={colors.white} />
-              <Text style={styles.highlightText}>{item.label}</Text>
+              <AntDesign name={item.icon} size={13} color={colors.onPrimary} />
+              <AppText style={[styles.highlightText, { color: colors.onPrimary }]}>{item.label}</AppText>
             </View>
           ))}
         </View>
@@ -105,7 +105,6 @@ export default function HomeHeader({
           placeholder={searchPlaceholder}
           onClear={searchValue ? () => onChangeSearch?.("") : undefined}
           containerStyle={[styles.searchBar, createShadow(colors.shadow, 14)]}
-          inputStyle={styles.searchInput}
         />
       </View>
     </ImageBackground>
@@ -121,11 +120,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xxl,
   },
   gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderBottomLeftRadius: radius.xxl,
-    borderBottomRightRadius: radius.xxl,
-  },
-  glossOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderBottomLeftRadius: radius.xxl,
     borderBottomRightRadius: radius.xxl,
@@ -152,30 +146,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.sm,
-    backgroundColor: "rgba(255,255,255,0.20)",
   },
   locationLabel: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   locationValue: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   topAction: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 1,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.16)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
   },
   topActionText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   heroCopy: {
     marginTop: spacing.xl + spacing.xs,
@@ -187,29 +175,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: "rgba(255,255,255,0.14)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
   },
   kickerText: {
     marginLeft: spacing.xs,
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   title: {
     marginTop: spacing.lg,
-    color: "#FFFFFF",
-    fontSize: typography.title,
-    fontWeight: "900",
-    lineHeight: 36,
+    ...typeScale.h1,
     maxWidth: "78%",
   },
   subtitle: {
     marginTop: spacing.sm,
-    color: "rgba(255,255,255,0.86)",
-    fontSize: 14,
-    lineHeight: 22,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
     maxWidth: "88%",
   },
   highlightRow: {
@@ -226,20 +207,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 1,
     marginRight: spacing.sm,
     marginBottom: spacing.sm,
-    backgroundColor: "rgba(255,255,255,0.16)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
   },
   highlightText: {
     marginLeft: spacing.xs,
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   searchBar: {
     marginTop: spacing.xs,
-  },
-  searchInput: {
-    color: "#18181B",
   },
 });

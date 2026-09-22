@@ -2,19 +2,19 @@ import React from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import AppText from "../../components/ui/AppText";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import AppButton from "../../components/ui/AppButton";
 import EmptyState from "../../components/ui/EmptyState";
+import RestaurantCard from "../../components/ui/RestaurantCard";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useTheme } from "../../Context/ThemeProvider";
 import { useCart } from "../../Context/CartContext";
@@ -22,11 +22,12 @@ import { useFavorites } from "../../Context/FavoritesContext";
 import { navigationRef } from "../../navigation/rootNavigation";
 import {
   createShadow,
+  fontFamily,
   layout,
   radius,
   spacing,
+  typeScale,
 } from "../../constants/designSystem";
-import { resolveRestaurantImage } from "../../constants/imageRegistry";
 import { useAuth } from "../Auth/AuthContext";
 
 const profileOptions = [
@@ -97,28 +98,28 @@ export default function ProfileScreen({ route }) {
             style={styles.heroGradient}
           >
             <View style={styles.heroTopRow}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
+              <View style={[styles.avatar, { backgroundColor: colors.glassOnPrimary }]}>
+                <AppText style={[styles.avatarText, { color: colors.onPrimary }]}>
                   {(displayName || "F").charAt(0).toUpperCase()}
-                </Text>
+                </AppText>
               </View>
-              <View style={styles.rolePill}>
-                <Text style={styles.roleText}>{role.toUpperCase()}</Text>
+              <View style={[styles.rolePill, { backgroundColor: colors.glassOnPrimary }]}>
+                <AppText style={[styles.roleText, { color: colors.onPrimary }]}>{role.toUpperCase()}</AppText>
               </View>
             </View>
-            <Text style={styles.profileName}>{displayName}</Text>
-            <Text style={styles.profileMeta}>
+            <AppText style={[styles.profileName, { color: colors.onPrimary }]}>{displayName}</AppText>
+            <AppText style={[styles.profileMeta, { color: colors.onPrimary }]}>
               {role === "admin"
                 ? "Admin controls and storefront management"
                 : "Customer profile, preferences, and app settings"}
-            </Text>
+            </AppText>
 
             <View style={styles.heroActions}>
-              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
-                <AntDesign name="bulb" size={16} color={colors.white} />
-                <Text style={styles.themeButtonText}>
+              <TouchableOpacity style={[styles.themeButton, { backgroundColor: colors.glassOnPrimary, borderColor: colors.glassOnPrimaryBorder }]} onPress={toggleTheme}>
+                <AntDesign name="bulb" size={16} color={colors.onPrimary} />
+                <AppText style={[styles.themeButtonText, { color: colors.onPrimary }]}>
                   {theme === "light" ? "Dark mode" : "Light mode"}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -145,10 +146,10 @@ export default function ProfileScreen({ route }) {
             >
               <AntDesign name="appstore" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
-                <Text style={[styles.actionTitle, { color: colors.text }]}>Manage menu</Text>
-                <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                <AppText style={[styles.actionTitle, { color: colors.text }]}>Manage menu</AppText>
+                <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                   Review restaurant items and update the storefront.
-                </Text>
+                </AppText>
               </View>
               <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -168,12 +169,12 @@ export default function ProfileScreen({ route }) {
             >
               <AntDesign name="home" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
-                <Text style={[styles.actionTitle, { color: colors.text }]}>
+                <AppText style={[styles.actionTitle, { color: colors.text }]}>
                   Review customer view
-                </Text>
-                <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                   Check the updated storefront experience as a shopper.
-                </Text>
+                </AppText>
               </View>
               <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -188,12 +189,12 @@ export default function ProfileScreen({ route }) {
             >
               <AntDesign name="team" size={20} color={colors.primaryStrong} />
               <View style={styles.actionContent}>
-                <Text style={[styles.actionTitle, { color: colors.text }]}>
+                <AppText style={[styles.actionTitle, { color: colors.text }]}>
                   Manage users
-                </Text>
-                <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                   Add, review, and edit saved admin-side user records.
-                </Text>
+                </AppText>
               </View>
               <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -214,41 +215,11 @@ export default function ProfileScreen({ route }) {
                     keyExtractor={(restaurant) => String(restaurant.id)}
                     contentContainerStyle={styles.favoritesList}
                     renderItem={({ item: restaurant }) => (
-                      <TouchableOpacity
-                        activeOpacity={0.9}
-                        style={[
-                          styles.favoriteCard,
-                          createShadow(colors.shadow, 10),
-                          {
-                            backgroundColor: colors.surface,
-                            borderColor: colors.borderSoft,
-                          },
-                        ]}
+                      <RestaurantCard
+                        restaurant={restaurant}
+                        variant="compact"
                         onPress={() => openRestaurant(restaurant)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${restaurant.name}`}
-                      >
-                        <Image
-                          source={resolveRestaurantImage(restaurant)}
-                          style={styles.favoriteImage}
-                        />
-                        <View style={styles.favoriteBody}>
-                          <Text
-                            style={[styles.favoriteName, { color: colors.text }]}
-                            numberOfLines={1}
-                          >
-                            {restaurant.name}
-                          </Text>
-                          <View style={styles.favoriteMetaRow}>
-                            <AntDesign name="star" size={12} color={colors.warning} />
-                            <Text
-                              style={[styles.favoriteMeta, { color: colors.textSecondary }]}
-                            >
-                              {restaurant.rating || "4.5"} • {restaurant.time || "20 min"}
-                            </Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
+                      />
                     )}
                   />
                 ) : (
@@ -277,16 +248,16 @@ export default function ProfileScreen({ route }) {
               >
                 <AntDesign name={option.icon} size={20} color={colors.primaryStrong} />
                 <View style={styles.actionContent}>
-                  <Text style={[styles.actionTitle, { color: colors.text }]}>
+                  <AppText style={[styles.actionTitle, { color: colors.text }]}>
                     {option.label}
-                  </Text>
-                  <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText style={[styles.actionMeta, { color: colors.textSecondary }]}>
                     {option.id === "theme"
                       ? `Currently using ${theme} appearance.`
                       : option.id === "orders"
                         ? "See your past orders, track them, or order again."
                         : "Reserved for the next UI iteration without changing your existing flows."}
-                  </Text>
+                  </AppText>
                 </View>
                 <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -339,24 +310,18 @@ const styles = StyleSheet.create({
     borderRadius: 38,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
   },
   avatarText: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    ...typeScale.h1,
   },
   profileName: {
-    fontSize: 24,
-    fontWeight: "800",
+    ...typeScale.h1,
     marginTop: spacing.lg,
-    color: "#FFFFFF",
   },
   profileMeta: {
     marginTop: spacing.sm,
-    fontSize: 14,
-    lineHeight: 21,
-    color: "rgba(255,255,255,0.84)",
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   heroActions: {
     marginTop: spacing.lg,
@@ -366,12 +331,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 1,
-    backgroundColor: "rgba(255,255,255,0.18)",
   },
   roleText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    ...typeScale.caption,
+    fontFamily: fontFamily.bold,
   },
   themeButton: {
     flexDirection: "row",
@@ -379,47 +342,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 1,
-    backgroundColor: "rgba(255,255,255,0.16)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
   },
   themeButtonText: {
     marginLeft: spacing.xs,
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    ...typeScale.label,
+    fontFamily: fontFamily.bold,
   },
   favoritesList: {
     paddingBottom: spacing.xs,
     paddingRight: spacing.xs,
     marginBottom: layout.sectionGap,
-  },
-  favoriteCard: {
-    width: 168,
-    marginRight: spacing.md,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    overflow: "hidden",
-  },
-  favoriteImage: {
-    width: "100%",
-    height: 96,
-  },
-  favoriteBody: {
-    padding: spacing.md,
-  },
-  favoriteName: {
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  favoriteMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  favoriteMeta: {
-    marginLeft: spacing.xs,
-    fontSize: 12,
   },
   actionCard: {
     borderWidth: 1,
@@ -435,13 +368,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   actionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
+    ...typeScale.body,
+    fontFamily: fontFamily.bold,
   },
   actionMeta: {
     marginTop: spacing.xs,
-    fontSize: 13,
-    lineHeight: 19,
+    ...typeScale.label,
+    fontFamily: fontFamily.regular,
   },
   logoutButton: {
     marginTop: spacing.lg,
