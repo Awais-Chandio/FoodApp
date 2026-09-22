@@ -37,6 +37,16 @@ const hint = (group) => {
   return `${group.required ? "Required" : "Optional"} · ${limit}`;
 };
 
+const optionStateStyle = (colors, selected, atLimit) => ({
+  borderColor: selected ? colors.primaryStrong : colors.borderSoft,
+  opacity: atLimit ? 0.5 : 1,
+});
+
+const indicatorStateStyle = (colors, selected, single) => ({
+  borderColor: selected ? colors.primaryStrong : colors.borderStrong,
+  backgroundColor: selected && !single ? colors.primaryStrong : "transparent",
+});
+
 /**
  * "Customize" sheet for a dish: image, name, description, its option groups
  * (radios for single, checkboxes for multi), a quantity stepper and a button
@@ -109,17 +119,14 @@ export default function DishOptionsSheet({
         accessibilityLabel={`${option.name}${deltaLabel(option.price_delta) ? `, ${deltaLabel(option.price_delta)}` : ""}`}
         style={[
           styles.option,
-          { borderColor: selected ? colors.primaryStrong : colors.borderSoft, opacity: atLimit ? 0.5 : 1 },
+          optionStateStyle(colors, selected, atLimit),
         ]}
       >
         <View
           style={[
             styles.indicator,
             single ? styles.radio : styles.checkbox,
-            {
-              borderColor: selected ? colors.primaryStrong : colors.borderStrong,
-              backgroundColor: selected && !single ? colors.primaryStrong : "transparent",
-            },
+            indicatorStateStyle(colors, selected, single),
           ]}
         >
           {selected && single ? (

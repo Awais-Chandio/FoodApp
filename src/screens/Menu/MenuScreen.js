@@ -374,7 +374,7 @@ export default function MenuScreen() {
             ? "Add a few dishes to start taking orders from this restaurant."
             : "This restaurant will show dishes here once the menu is available."
         }
-        icon="profile"
+        icon="book"
         actionLabel={isAdmin ? "Add item" : undefined}
         onActionPress={isAdmin ? addDish : undefined}
       />

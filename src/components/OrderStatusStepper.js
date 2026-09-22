@@ -86,7 +86,7 @@ export default function OrderStatusStepper({ status }) {
         const current = index === currentIndex && !finished;
         const isLast = index === lastIndex;
 
-        const dotColor = done ? colors.success : current ? colors.primaryStrong : colors.surfaceMuted;
+        const dotColor = done || current ? colors.primaryStrong : colors.surfaceMuted;
         const stateLabel = done ? "completed" : current ? "in progress" : "upcoming";
 
         return (
@@ -116,7 +116,7 @@ export default function OrderStatusStepper({ status }) {
                 <StepLine
                   index={index}
                   currentIndex={currentIndex}
-                  color={colors.success}
+                  color={colors.primaryStrong}
                   trackColor={colors.borderSoft}
                 />
               ) : null}

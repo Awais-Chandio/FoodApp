@@ -151,7 +151,7 @@ export default function OrderHistoryScreen() {
         <EmptyState
           title="Sign in to see your orders"
           message="Your order history is saved to your account."
-          icon="profile"
+          icon="user"
           actionLabel="Sign in"
           onActionPress={() => navigation.navigate("Login")}
         />

@@ -19,9 +19,9 @@ import {
 
 const Tab = createBottomTabNavigator();
 
-function TabBarIcon({ backgroundColor, color, name }) {
+function TabBarIcon({ focused, name }) {
   const { colors } = useTheme();
-  if (backgroundColor === "gradient") {
+  if (focused) {
     return (
       <LinearGradient
         colors={colors.buttonGradient}
@@ -29,17 +29,40 @@ function TabBarIcon({ backgroundColor, color, name }) {
         end={{ x: 1, y: 1 }}
         style={styles.iconShell}
       >
-        <AntDesign name={name} size={20} color={color} />
+        <AntDesign name={name} size={20} color={colors.onPrimary} />
       </LinearGradient>
     );
   }
 
   return (
-    <View style={[styles.iconShell, { backgroundColor }]}>
-      <AntDesign name={name} size={20} color={color} />
+    <View style={[styles.iconShell, { backgroundColor: colors.badge }]}>
+      <AntDesign name={name} size={20} color={colors.textSecondary} />
     </View>
   );
 }
+
+function HomeTabIcon(props) {
+  return <TabBarIcon {...props} name="home" />;
+}
+
+function SearchTabIcon(props) {
+  return <TabBarIcon {...props} name="search" />;
+}
+
+function CartTabIcon(props) {
+  return <TabBarIcon {...props} name="shopping-cart" />;
+}
+
+function ProfileTabIcon(props) {
+  return <TabBarIcon {...props} name="user" />;
+}
+
+const tabBarIcons = {
+  HomeStack: HomeTabIcon,
+  Search: SearchTabIcon,
+  AddToCartScreen: CartTabIcon,
+  Profile: ProfileTabIcon,
+};
 
 export default function TabNavigator() {
   const { colors } = useTheme();
@@ -68,22 +91,7 @@ export default function TabNavigator() {
           ...createShadow(colors.shadow, 18),
         },
         tabBarItemStyle: styles.tabBarItem,
-        tabBarIcon: ({ focused }) => {
-          const iconMap = {
-            HomeStack: "home",
-            Search: "search",
-            AddToCartScreen: "shopping-cart",
-            Profile: "user",
-          };
-
-          return (
-            <TabBarIcon
-              name={iconMap[route.name]}
-              backgroundColor={focused ? "gradient" : colors.badge}
-              color={focused ? colors.onPrimary : colors.textSecondary}
-            />
-          );
-        },
+        tabBarIcon: tabBarIcons[route.name],
         tabBarActiveTintColor: colors.primaryStrong,
         tabBarInactiveTintColor: colors.textSecondary,
       })}

@@ -275,7 +275,7 @@ export default function DetailScreen() {
             <EmptyState
               title="No dishes yet"
               message="This restaurant hasn't added any dishes. Check back soon."
-              icon="profile"
+              icon="book"
             />
           ) : filteredPreviewItems.length ? (
             filteredPreviewItems.map((item) => (
@@ -308,7 +308,7 @@ export default function DetailScreen() {
             <EmptyState
               title="No dishes for this filter"
               message="Switch to another preview filter or open the full menu."
-              icon="profile"
+              icon="book"
               actionLabel="Open menu"
               onActionPress={() => navigation.navigate("MenuScreen", { restaurant })}
             />
