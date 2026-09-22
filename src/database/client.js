@@ -47,4 +47,60 @@ export const runStatements = (statements) =>
     );
   });
 
+/**
+ * Runs `work(tx, control)` as ONE transaction and resolves with the value the
+ * work passed to control.resolve(...) once the transaction has committed.
+ *
+ * Use nested tx.executeSql callbacks (not async/await) inside `work`: a
+ * transaction commits as soon as its statement queue is empty, so awaiting a
+ * promise in the middle would end it early.
+ *
+ * Rolling back: this SQLite library CATCHES exceptions thrown inside statement
+ * callbacks and only logs them, so throwing does NOT cancel the transaction.
+ * The only thing that rolls it back is a failed statement. control.abort(error)
+ * therefore queues a statement that cannot succeed, and the promise rejects
+ * with `error`. control.guard(callback) wraps a callback so an unexpected
+ * exception becomes an abort instead of a silent partial write.
+ */
+export const runTransaction = (work) =>
+  new Promise((resolve, reject) => {
+    let result;
+    let failure = null;
+
+    db.transaction(
+      (tx) => {
+        const control = {
+          resolve: (value) => {
+            result = value;
+          },
+          abort: (error) => {
+            if (failure) {
+              return;
+            }
+            failure = toError(error);
+            tx.executeSql("SELECT 1 FROM __abort_transaction__");
+          },
+          guard:
+            (callback) =>
+            (...args) => {
+              try {
+                return callback(...args);
+              } catch (error) {
+                control.abort(error);
+                return undefined;
+              }
+            },
+        };
+
+        try {
+          work(tx, control);
+        } catch (error) {
+          control.abort(error);
+        }
+      },
+      (error) => reject(failure || toError(error)),
+      () => resolve(result)
+    );
+  });
+
 export default db;

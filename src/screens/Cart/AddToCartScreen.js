@@ -26,11 +26,7 @@ import {
   spacing,
 } from "../../constants/designSystem";
 import { resolveFoodImage } from "../../constants/imageRegistry";
-
-const VALID_PROMOS = {
-  SAVE10: 0.1,
-  FOOD5: 0.05,
-};
+import { computeTotals, isValidPromo, normalizePromo } from "../../utils/pricing";
 
 export default function AddToCartScreen() {
   const navigation = useNavigation();
@@ -73,23 +69,27 @@ export default function AddToCartScreen() {
     return updateQty(menuItemId, quantity - 1).catch(showCartError);
   };
 
-  const discount = appliedPromo
-    ? Math.round(subtotal * VALID_PROMOS[appliedPromo])
-    : 0;
-  const deliveryFee = cartItems.length ? 120 : 0;
-  const totalPrice = subtotal + deliveryFee - discount;
+  const {
+    deliveryFee,
+    discount,
+    total: totalPrice,
+  } = computeTotals({
+    subtotal,
+    itemCount: cartItems.length,
+    promoCode: appliedPromo,
+  });
   const isCompact = width < 390;
 
   const handleCheckout = () => {
     if (isLoggedIn) {
-      navigation.navigate("TrackOrder");
+      navigation.navigate("Checkout", { promoCode: appliedPromo });
     } else {
       navigation.navigate("Login");
     }
   };
 
   const applyPromoCode = () => {
-    const normalized = promoCode.trim().toUpperCase();
+    const normalized = normalizePromo(promoCode);
 
     if (!normalized) {
       Toast.show({
@@ -99,7 +99,7 @@ export default function AddToCartScreen() {
       return;
     }
 
-    if (!VALID_PROMOS[normalized]) {
+    if (!isValidPromo(normalized)) {
       Toast.show({
         type: "error",
         text1: "Promo code not valid",
@@ -342,7 +342,7 @@ export default function AddToCartScreen() {
               style={styles.checkoutButton}
             >
               <Text style={styles.checkoutButtonText}>
-                {isLoggedIn ? "Proceed to tracking" : "Login to checkout"}
+                {isLoggedIn ? "Proceed to checkout" : "Login to checkout"}
               </Text>
             </LinearGradient>
           </TouchableOpacity>

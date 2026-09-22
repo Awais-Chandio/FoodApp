@@ -48,3 +48,17 @@ export const remove = (menuItemId) =>
   execute("DELETE FROM cart WHERE menu_item_id = ?", [menuItemId]);
 
 export const clear = () => execute("DELETE FROM cart");
+
+/**
+ * Replaces the whole cart with `lines` ([{ item, quantity }], `item` being a
+ * menu_items row) in one transaction. Used by "Reorder".
+ */
+export const replaceAll = (lines) =>
+  batch([
+    ["DELETE FROM cart"],
+    ...lines.map(({ item, quantity }) => [
+      `INSERT INTO cart (menu_item_id, name, price, image_key, restaurant_id, quantity)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [item.id, item.name, item.price, item.image_key || null, item.restaurant_id ?? null, quantity],
+    ]),
+  ]);

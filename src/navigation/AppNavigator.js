@@ -8,6 +8,8 @@ import Onboarding3 from "../screens/Onboarding/Onboarding3";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import RegisterScreen from "../screens/Auth/RegisterScreen";
 import TrackOrderScreen from "../screens/Cart/TrackOrderScreen";
+import CheckoutScreen from "../screens/Checkout/CheckoutScreen";
+import OrderHistoryScreen from "../screens/Orders/OrderHistoryScreen";
 import ManageMenuItem from "../Admin/ManageMenuItems";
 import ManageUsers from "../screens/Profile/ManageUsers";
 import TabNavigator from "./TabNavigator";
@@ -31,7 +33,9 @@ export default function AppNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Tab" component={TabNavigator} />
+      <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
+      <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       {/* Admin-only routes are not registered for other roles. */}
       {role === "admin" ? (
         <>

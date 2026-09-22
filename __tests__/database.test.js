@@ -191,6 +191,7 @@ describe('schema migrations', () => {
       .mockResolvedValueOnce([]) // v1
       .mockResolvedValueOnce([]) // v2
       .mockResolvedValueOnce([]) // v3
+      .mockResolvedValueOnce([]) // v4
       .mockResolvedValueOnce([
         result([{count: 0}]),
         result([{count: 0}]),
@@ -200,13 +201,14 @@ describe('schema migrations', () => {
 
     await init();
 
-    expect(versionOf(run.mock.calls[1][0])).toBe('PRAGMA user_version = 1');
-    expect(versionOf(run.mock.calls[2][0])).toBe('PRAGMA user_version = 2');
-    expect(versionOf(run.mock.calls[3][0])).toBe('PRAGMA user_version = 3');
+    [1, 2, 3, 4].forEach(version => {
+      expect(versionOf(run.mock.calls[version][0])).toBe(`PRAGMA user_version = ${version}`);
+    });
     expect(run.mock.calls[2][0][0][0]).toMatch(/ALTER TABLE cart ADD COLUMN restaurant_id/);
     expect(run.mock.calls[3][0][0][0]).toMatch(/ALTER TABLE users ADD COLUMN password_hash/);
+    expect(run.mock.calls[4][0][0][0]).toMatch(/CREATE TABLE orders/);
 
-    const inserts = run.mock.calls[5][0];
+    const inserts = run.mock.calls[6][0];
     expect(inserts).toHaveLength(11); // 1 admin + 6 restaurants + 4 menu items
     // The seeded admin gets a hash and no plaintext password.
     const adminInsert = inserts.find(([sql]) => /INTO users/.test(sql));
@@ -217,7 +219,7 @@ describe('schema migrations', () => {
   it('skips migrations that already ran and never reseeds existing data', async () => {
     const {initDatabase: init, run} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 3}])])
+      .mockResolvedValueOnce([result([{user_version: 4}])])
       .mockResolvedValueOnce([
         result([{count: 6}]),
         result([{count: 4}]),
@@ -229,11 +231,11 @@ describe('schema migrations', () => {
     expect(run).toHaveBeenCalledTimes(2); // version read + seed counts only
   });
 
-  it('upgrades an install that only has v2: adds password_hash and nothing else', async () => {
+  it('upgrades an install that only has v3: creates the orders tables and nothing else', async () => {
     const {initDatabase: init, run} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 2}])])
-      .mockResolvedValueOnce([]) // v3
+      .mockResolvedValueOnce([result([{user_version: 3}])])
+      .mockResolvedValueOnce([]) // v4
       .mockResolvedValueOnce([
         result([{count: 6}]),
         result([{count: 4}]),
@@ -243,8 +245,11 @@ describe('schema migrations', () => {
     await init();
 
     expect(run).toHaveBeenCalledTimes(3);
-    expect(versionOf(run.mock.calls[1][0])).toBe('PRAGMA user_version = 3');
-    expect(run.mock.calls[1][0][0][0]).toMatch(/ALTER TABLE users ADD COLUMN password_hash/);
+    const statements = run.mock.calls[1][0].map(([sql]) => sql);
+    expect(statements.some(sql => /CREATE TABLE orders/.test(sql))).toBe(true);
+    expect(statements.some(sql => /CREATE TABLE order_items/.test(sql))).toBe(true);
+    expect(statements.some(sql => /idx_orders_user_created/.test(sql))).toBe(true);
+    expect(statements[statements.length - 1]).toBe('PRAGMA user_version = 4');
   });
 
   it('upgrades a pre-versioning install (user_version 0) without reseeding', async () => {
@@ -254,6 +259,7 @@ describe('schema migrations', () => {
       .mockResolvedValueOnce([]) // v1
       .mockResolvedValueOnce([]) // v2
       .mockResolvedValueOnce([]) // v3
+      .mockResolvedValueOnce([]) // v4
       .mockResolvedValueOnce([
         result([{count: 6}]),
         result([{count: 4}]),
@@ -262,13 +268,13 @@ describe('schema migrations', () => {
 
     await init();
 
-    expect(run).toHaveBeenCalledTimes(5); // no seed insert batch
+    expect(run).toHaveBeenCalledTimes(6); // no seed insert batch
   });
 
   it('runs initialisation only once for concurrent callers', async () => {
     const {initDatabase: init, run} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 3}])])
+      .mockResolvedValueOnce([result([{user_version: 4}])])
       .mockResolvedValueOnce([
         result([{count: 1}]),
         result([{count: 1}]),

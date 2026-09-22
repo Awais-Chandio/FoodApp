@@ -59,6 +59,38 @@ const MIGRATIONS = [
     version: 3,
     statements: ["ALTER TABLE users ADD COLUMN password_hash TEXT"],
   },
+  {
+    // Orders. order_items copies name/price/image at purchase time, so history
+    // stays correct after a menu item is edited or deleted; menu_item_id is
+    // kept only so an order can be reordered and has no foreign key.
+    version: 4,
+    statements: [
+      `CREATE TABLE orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        total REAL NOT NULL,
+        delivery_fee REAL NOT NULL,
+        discount REAL NOT NULL DEFAULT 0,
+        promo_code TEXT,
+        address TEXT NOT NULL,
+        payment_method TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )`,
+      `CREATE TABLE order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL,
+        menu_item_id INTEGER,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        quantity INTEGER NOT NULL,
+        image_key TEXT
+      )`,
+      "CREATE INDEX idx_orders_user_created ON orders (user_id, created_at DESC)",
+      "CREATE INDEX idx_order_items_order ON order_items (order_id)",
+    ],
+  },
 ];
 
 const RESTAURANT_SEED = [

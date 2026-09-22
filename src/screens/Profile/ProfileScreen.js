@@ -59,6 +59,12 @@ export default function ProfileScreen({ route }) {
 
   const displayName = role === "admin" ? adminName : user?.email || "Guest user";
 
+  // Preference cards that do something when tapped; the rest are placeholders.
+  const optionActions = {
+    theme: toggleTheme,
+    orders: () => navigation.navigate("OrderHistory"),
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -194,8 +200,8 @@ export default function ProfileScreen({ route }) {
                   createShadow(colors.shadow, 10),
                   { backgroundColor: colors.surface, borderColor: colors.borderSoft },
                 ]}
-                onPress={option.id === "theme" ? toggleTheme : undefined}
-                activeOpacity={option.id === "theme" ? 0.86 : 1}
+                onPress={optionActions[option.id]}
+                activeOpacity={optionActions[option.id] ? 0.86 : 1}
               >
                 <AntDesign name={option.icon} size={20} color={colors.primaryStrong} />
                 <View style={styles.actionContent}>
@@ -205,7 +211,9 @@ export default function ProfileScreen({ route }) {
                   <Text style={[styles.actionMeta, { color: colors.textSecondary }]}>
                     {option.id === "theme"
                       ? `Currently using ${theme} appearance.`
-                      : "Reserved for the next UI iteration without changing your existing flows."}
+                      : option.id === "orders"
+                        ? "See your past orders, track them, or order again."
+                        : "Reserved for the next UI iteration without changing your existing flows."}
                   </Text>
                 </View>
                 <AntDesign name="arrow-right" size={18} color={colors.textSecondary} />

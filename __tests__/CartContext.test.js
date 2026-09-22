@@ -7,6 +7,7 @@ jest.mock('../src/database/repositories/cartRepo', () => ({
   setQuantity: jest.fn(),
   remove: jest.fn(),
   clear: jest.fn(),
+  replaceAll: jest.fn(),
 }));
 
 const cartRepo = require('../src/database/repositories/cartRepo');
@@ -48,6 +49,17 @@ const setUpFakeTable = (initial = []) => {
   });
   cartRepo.clear.mockImplementation(() => {
     table = [];
+    return Promise.resolve();
+  });
+  cartRepo.replaceAll.mockImplementation(lines => {
+    table = lines.map(({item, quantity}) => ({
+      menu_item_id: item.id,
+      name: item.name,
+      price: item.price,
+      image_key: item.image_key ?? null,
+      restaurant_id: item.restaurant_id ?? null,
+      quantity,
+    }));
     return Promise.resolve();
   });
 };
@@ -154,6 +166,19 @@ it('remove() and clear() empty the cart', async () => {
   expect(cart.count).toBe(0);
   expect(cart.subtotal).toBe(0);
   expect(table).toEqual([]);
+});
+
+it('replaceAll() swaps the whole cart for the given lines', async () => {
+  await mount();
+  await run(() => cart.add(burger));
+  await run(() => cart.add(burger));
+
+  await run(() => cart.replaceAll([{item: pizza, quantity: 3}]));
+
+  expect(cart.items.map(row => [row.menu_item_id, row.quantity])).toEqual([[2, 3]]);
+  expect(cart.count).toBe(3);
+  expect(cart.subtotal).toBe(540);
+  expect(table).toHaveLength(1); // the database agrees
 });
 
 it('rejects when a write fails and resyncs from the database', async () => {

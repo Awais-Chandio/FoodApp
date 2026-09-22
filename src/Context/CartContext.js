@@ -141,6 +141,25 @@ export function CartProvider({ children }) {
     return enqueue(() => cartRepo.clear());
   }, [commit, enqueue]);
 
+  // Replaces the whole cart with `lines` ([{ item, quantity }], `item` being a
+  // menu_items row). Used by "Reorder".
+  const replaceAll = useCallback(
+    (lines) => {
+      commit(
+        lines.map(({ item, quantity }) => ({
+          menu_item_id: item.id,
+          name: item.name,
+          price: item.price,
+          image_key: item.image_key || null,
+          restaurant_id: item.restaurant_id ?? null,
+          quantity,
+        }))
+      );
+      return enqueue(() => cartRepo.replaceAll(lines));
+    },
+    [commit, enqueue]
+  );
+
   const getQty = useCallback(
     (menuItemId) =>
       itemsRef.current.find((row) => row.menu_item_id === menuItemId)?.quantity || 0,
@@ -165,9 +184,10 @@ export function CartProvider({ children }) {
       updateQty,
       remove,
       clear,
+      replaceAll,
       reload,
     };
-  }, [items, loading, error, getQty, add, updateQty, remove, clear, reload]);
+  }, [items, loading, error, getQty, add, updateQty, remove, clear, replaceAll, reload]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

@@ -1,11 +1,13 @@
 # FoodApp
 
 FoodApp is a React Native (CLI, not Expo) food-ordering demo. Users browse
-restaurants, open menus, build a cart and go through a mock checkout flow. An
-admin role can manage restaurants, menu items and a sample user list.
+restaurants, open menus, build a cart, check out, follow a simulated delivery and
+reorder past orders. An admin role can manage restaurants, menu items and a
+sample user list.
 
 **It is a local-only app.** All data lives in an on-device SQLite database.
-There is no backend, no real orders and no payments. The only network feature
+There is no backend and no real payments: orders are saved on the device and
+their delivery progress is simulated. The only network feature
 is Firebase Cloud Messaging for push notifications.
 
 ## What is implemented
@@ -23,7 +25,15 @@ is Firebase Cloud Messaging for push notifications.
 - Cart with quantity controls, a count badge on the Cart tab, a flat delivery
   fee, and the promo codes `SAVE10` (10%) and `FOOD5` (5%). Checkout requires
   login. The cart is cleared on logout.
-- Order tracking screen (static demo content, not tied to a real order).
+- Checkout: a validated delivery address (prefilled from your last order) and
+  a payment choice, Cash on delivery or Card (demo, no card details are ever
+  collected). Placing the order saves it, its items and the totals, and empties
+  the cart in one database transaction.
+- Order tracking: real order details and a status that moves Placed → Preparing
+  → On the way → Delivered (20 s, 60 s and 120 s after placing), saved in the
+  database and shown with an animated stepper.
+- Order history (Profile → Order history) with a Reorder button that replaces
+  the cart with a past order at today's prices.
 - Light, dark and system theme.
 - Push notifications (FCM): foreground modal, and routing when a
   notification is opened.
@@ -36,8 +46,9 @@ is Firebase Cloud Messaging for push notifications.
 
 ## Known limitations
 
-- No backend: data is per device and orders are never placed or stored.
-- The order tracking screen is static.
+- No backend: data is per device, and there is no real kitchen, rider or
+  payment. Order progress is simulated from the time the order was placed, and
+  only advances while the app is open or the next time you open it.
 - Favorites (hearts) are in-memory only and are lost on reload.
 - Sign-in is checked on the device. Passwords are stored as salted PBKDF2
   hashes in SQLite and the saved session holds only id, email and role, which
@@ -98,22 +109,24 @@ FoodApp/
 ├── App.js                 providers, NavigationContainer, push-notification routing
 ├── index.js               app entry + FCM background handler
 ├── android/  ios/         native projects
-├── __tests__/             Jest smoke test
+├── __tests__/             Jest tests (one suite runs the real SQL on node:sqlite, Node 22+)
+├── jest/                  test helper: SQLite adapter for those tests
 ├── .github/workflows/     CI: signed release APK on push to main
 └── src/
     ├── Admin/             ManageItems (restaurant form), ManageMenuItems (dish form)
     ├── Context/           ThemeProvider, CartContext (cart state, backed by SQLite)
     ├── assets/            images
-    ├── components/        NotificationModal
+    ├── components/        NotificationModal, OrderStatusStepper
     │   └── ui/            AppButton, EmptyState, SearchBar, SectionHeader, SkeletonCard
     ├── constants/         designSystem (colors, spacing, radius), imageRegistry
     ├── database/          client (SQLite connection), schema (versioned migrations + seed),
     │   │                  sql (promise helpers), dbs (app-start hook, admin_users helpers)
-    │   └── repositories/  restaurantRepo, menuRepo, cartRepo, userRepo
+    │   └── repositories/  restaurantRepo, menuRepo, cartRepo, userRepo, orderRepo
     ├── navigation/        AppNavigator, TabNavigator, HomeStack, rootNavigation
-    ├── screens/           Auth, Cart, Details, Home (with HomeHeader), Loader, Menu,
-    │                      Onboarding, Profile, Search
-    └── services/          notificationService (FCM)
+    ├── screens/           Auth, Cart, Checkout, Details, Home (with HomeHeader), Loader,
+    │                      Menu, Onboarding, Orders (history), Profile, Search
+    ├── services/          notificationService (FCM), passwordHash, onboarding flag
+    └── utils/             pricing (totals, promos), orderStatus (delivery schedule), validation
 ```
 
 ## Navigation
@@ -122,7 +135,9 @@ FoodApp/
 first launch shows `Onboarding1-3` once (flag `has_seen_onboarding` in
 AsyncStorage), and everyone else lands on `Tab` as a guest. `Tab` holds Home,
 Search, Cart and Profile. Inside the Home tab: `HomeScreen` → `Details` →
-`MenuScreen`. Login, Register and TrackOrder live on the root stack.
+`MenuScreen`. Login, Register, Checkout, TrackOrder and OrderHistory live on
+the root stack. Placing an order resets the stack to `[Tab, TrackOrder]`, so
+Back from tracking returns to the tabs.
 
 Login and logout use `navigation.reset`, so Back never returns to a stale
 screen. The admin routes (`ManageMenuItems`, `ManageUsers`, `Users`, and
