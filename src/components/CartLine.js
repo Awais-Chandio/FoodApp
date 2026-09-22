@@ -1,12 +1,14 @@
 import React, { useRef } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppText from "./ui/AppText";
+import FadeInItem from "./ui/FadeInItem";
 import MenuItemCard from "./ui/MenuItemCard";
 import QtyStepper from "./ui/QtyStepper";
 import { useTheme } from "../Context/ThemeProvider";
-import { radius, spacing } from "../constants/designSystem";
+import { fontFamily, radius, spacing } from "../constants/designSystem";
+import { describeOptions, parseSelectedOptions } from "../utils/cartLines";
 import { resolveFoodImage } from "../constants/imageRegistry";
 
 const DELETE_ACTION = { name: "delete", label: "Delete" };
@@ -16,9 +18,10 @@ const DELETE_ACTION = { name: "delete", label: "Delete" };
  * "Delete" accessibility action instead (swipes are not discoverable without
  * sight), and the stepper's minus removes the line at quantity 1.
  */
-export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
+export default function CartLine({ item, index = 0, onIncrease, onDecrease, onDelete, onCustomize }) {
   const { colors } = useTheme();
   const swipeRef = useRef(null);
+  const options = describeOptions(parseSelectedOptions(item.selected_options));
 
   const renderDelete = () => (
     <Pressable
@@ -38,7 +41,7 @@ export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
   );
 
   return (
-    <View style={styles.row}>
+    <FadeInItem index={index} style={styles.row}>
       <ReanimatedSwipeable
         ref={swipeRef}
         renderRightActions={renderDelete}
@@ -49,11 +52,26 @@ export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
         <MenuItemCard
           image={resolveFoodImage(item.image_path || item.image_key || item.name)}
           title={item.name}
-          subtitle="Prepared fresh for checkout"
+          subtitle={options || "Prepared fresh for checkout"}
           price={`Rs. ${item.price}`}
           style={styles.card}
+          footer={
+            onCustomize ? (
+              <Pressable
+                onPress={() => onCustomize(item)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Customize ${item.name}`}
+                style={styles.customize}
+              >
+                <AppText variant="label" color="primaryStrong" style={styles.customizeText}>
+                  Customize
+                </AppText>
+              </Pressable>
+            ) : null
+          }
           contentAccessibility={{
-            accessibilityLabel: `${item.name}, ${item.quantity || 1} in cart, Rs. ${item.price} each`,
+            accessibilityLabel: `${item.name}${options ? `, ${options}` : ""}, ${item.quantity || 1} in cart, Rs. ${item.price} each`,
             accessibilityActions: [DELETE_ACTION],
             onAccessibilityAction: (event) => {
               if (event.nativeEvent.actionName === DELETE_ACTION.name) {
@@ -71,7 +89,7 @@ export default function CartLine({ item, onIncrease, onDecrease, onDelete }) {
           }
         />
       </ReanimatedSwipeable>
-    </View>
+    </FadeInItem>
   );
 }
 
@@ -88,6 +106,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
+  },
+  customize: {
+    alignSelf: "flex-start",
+    marginTop: spacing.sm,
+  },
+  customizeText: {
+    fontFamily: fontFamily.bold,
   },
   actionText: {
     marginTop: spacing.xs,

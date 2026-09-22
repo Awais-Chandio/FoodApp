@@ -1,4 +1,6 @@
 import { execute, query, queryMany, transaction } from "../sql";
+import * as optionsRepo from "./optionsRepo";
+import { parseSelectedOptions, reconcileSelection } from "../../utils/cartLines";
 import { PAYMENT_METHOD_IDS } from "../../constants/paymentMethods";
 import { computeTotals, normalizePromo, validatePromo } from "../../utils/pricing";
 import { statusForElapsed, statusIndex } from "../../utils/orderStatus";
@@ -58,7 +60,7 @@ export const placeOrder = async ({ userId, address, paymentMethod, promoCode = n
 
   return transaction((tx, control) => {
     tx.executeSql(
-      "SELECT * FROM cart ORDER BY id",
+      "SELECT * FROM cart_items ORDER BY id",
       [],
       control.guard((_tx, cartResult) => {
         const lines = rowsOf(cartResult);
@@ -103,11 +105,13 @@ export const placeOrder = async ({ userId, address, paymentMethod, promoCode = n
               const orderId = insertResult.insertId;
 
               tx.executeSql(
-                `INSERT INTO order_items (order_id, menu_item_id, name, price, quantity, image_key)
-                 SELECT ?, menu_item_id, name, price, quantity, image_key FROM cart`,
+                `INSERT INTO order_items
+                   (order_id, menu_item_id, name, price, quantity, image_key, selected_options, restaurant_id)
+                 SELECT ?, menu_item_id, name, price, quantity, image_key, selected_options, restaurant_id
+                 FROM cart_items`,
                 [orderId]
               );
-              tx.executeSql("DELETE FROM cart");
+              tx.executeSql("DELETE FROM cart_items");
 
               control.resolve({
                 id: orderId,
@@ -219,13 +223,17 @@ export const advanceAllDue = (orders, now = Date.now()) =>
 
 /**
  * The dishes of a past order that can still be ordered, at their CURRENT
- * price, as [{ item, quantity }] for cartRepo.replaceAll. `unavailable` counts
- * dishes that were deleted from the menu since. Only for the order's owner.
+ * price, as [{ item, quantity, selectedOptions }] for cartRepo.replaceAll.
+ * The choices (size, add-ons) are re-applied to the current option groups:
+ * options that no longer exist are dropped and counted in `optionsDropped`, and
+ * a required group left empty gets its default. `unavailable` counts dishes
+ * that were deleted from the menu since. Only for the order's owner.
  */
 export const getReorderLines = async (orderId, userId) => {
   const [available, totals] = await queryMany([
     [
-      `SELECT oi.quantity AS quantity, m.id AS id, m.restaurant_id AS restaurant_id,
+      `SELECT oi.quantity AS quantity, oi.selected_options AS selected_options,
+              m.id AS id, m.restaurant_id AS restaurant_id,
               m.name AS name, m.price AS price, m.image_key AS image_key
        FROM order_items oi
        JOIN menu_items m ON m.id = oi.menu_item_id
@@ -242,6 +250,15 @@ export const getReorderLines = async (orderId, userId) => {
     ],
   ]);
 
-  const lines = available.map(({ quantity, ...item }) => ({ item, quantity }));
-  return { lines, unavailable: totals[0].count - lines.length };
+  const groupsByItem = await optionsRepo.listGroupsForItems(available.map((row) => row.id));
+  let optionsDropped = 0;
+  const lines = available.map(({ quantity, selected_options: saved, ...item }) => {
+    const { selected, dropped } = reconcileSelection(
+      groupsByItem.get(item.id) || [],
+      parseSelectedOptions(saved)
+    );
+    optionsDropped += dropped;
+    return { item, quantity, selectedOptions: selected };
+  });
+  return { lines, unavailable: totals[0].count - lines.length, optionsDropped };
 };

@@ -15,6 +15,10 @@ jest.mock('@react-native-vector-icons/ant-design', () => {
   const {Text: RNText} = require('react-native');
   return ({name}) => require('react').createElement(RNText, null, `icon:${name}`);
 });
+jest.mock('../src/database/repositories/reviewRepo', () => ({
+  listTargets: jest.fn(() => Promise.resolve([])),
+  listForRestaurant: jest.fn(() => Promise.resolve({rating: null, reviewCount: 0, reviews: []})),
+}));
 jest.mock('../src/Context/ThemeProvider', () => ({
   useTheme: () => ({colors: require('../src/constants/designSystem').lightColors}),
 }));
@@ -24,6 +28,7 @@ jest.mock('../src/database/repositories/menuRepo', () => ({listByRestaurant: jes
 const {useNavigation, useRoute} = require('@react-navigation/native');
 const {useFavorites} = require('../src/Context/FavoritesContext');
 const menuRepo = require('../src/database/repositories/menuRepo');
+const reviewRepo = require('../src/database/repositories/reviewRepo');
 const DetailScreen = require('../src/screens/Details/DetailScreen').default;
 
 const dish = (id, name, price) => ({id, name, price, image_key: 'food1'});
@@ -122,4 +127,35 @@ it('the heart shows an outline when not saved and a filled heart when saved, and
   await mount();
   expect(texts(tree)).toContain('icon:heart');
   expect(tree.root.findAll(n => n.props.accessibilityLabel === 'Remove from favorites').length).toBeGreaterThan(0);
+});
+
+it('shows the average, the count and the latest reviews with masked reviewers', async () => {
+  menuRepo.listByRestaurant.mockResolvedValue([]);
+  reviewRepo.listForRestaurant.mockResolvedValue({
+    rating: 4.3,
+    reviewCount: 2,
+    reviews: [
+      {id: 2, rating: 3, comment: 'Cold fries', created_at: Date.UTC(2026, 8, 21), reviewer_email: 'awais@x.com'},
+      {id: 1, rating: 5, comment: null, created_at: Date.UTC(2026, 8, 20), reviewer_email: null},
+    ],
+  });
+  await mount();
+  await ReactTestRenderer.act(async () => { await new Promise(r => setTimeout(r, 0)); });
+
+  const out = texts(tree);
+  expect(out).toContain('Ratings & reviews');
+  expect(out).toContain('4.3 average from 2 reviews');
+  expect(out).toContain('aw***');
+  expect(out).toContain('Guest');
+  expect(out).toContain('Cold fries');
+  expect(out).toContain('21 Sep 2026');
+  expect(out).toContain('4.3 rating'); // the fresh blended rating replaces the one passed in
+  expect(tree.root.findAllByProps({accessibilityLabel: 'Rated 3 out of 5'}).length).toBeGreaterThan(0);
+});
+
+it('shows an empty state when there are no reviews yet', async () => {
+  menuRepo.listByRestaurant.mockResolvedValue([]);
+  reviewRepo.listForRestaurant.mockResolvedValue({rating: null, reviewCount: 0, reviews: []});
+  await mount();
+  expect(texts(tree)).toContain('No reviews yet');
 });

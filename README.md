@@ -13,20 +13,25 @@ is Firebase Cloud Messaging for push notifications.
 ## What is implemented
 
 **Customer**
-- Splash, three onboarding screens (skippable), and guest browsing.
+- Splash, one swipeable onboarding (skippable), and guest browsing.
 - Email/password register and login, checked against the local database
   (hashed passwords). The session is restored from AsyncStorage.
-- Home: restaurant lists ("Nearby favorites", "Popular right now") with
-  filters (deals, quick bites, top rated), skeleton and empty states.
-- Restaurant details, menu with price filters, and an add/remove cart
-  stepper. Every seeded restaurant has a full demo menu.
+- Home: an offers carousel (active promos and restaurant offers), an "Order
+  again" row for signed-in users, restaurant lists with one row of filter chips
+  (deals, quick bites, top rated), skeleton and empty states.
+- Restaurant details (with ratings and the latest reviews) and a menu with
+  sticky category tabs, dish descriptions, veg/spice tags and price/Veg-only
+  filters. Every seeded restaurant has a full demo menu. Mains and drinks open a
+  "customize" sheet (size, add-ons) with a live total; the cart keeps each
+  combination as its own line and lets you edit it.
 - Favorites: the heart on Home and Details saves a restaurant for the signed-in
   user (stored in SQLite, per user). Saved restaurants are listed on Profile.
   Guests get a "Log in to save favorites" prompt.
 - Search across restaurants (name, offer, delivery time) and dishes (name),
   shown as Restaurants and Dishes sections, with recent searches. Tapping a
   dish opens its restaurant's menu.
-- Cart with quantity controls, a count badge on the Cart tab, a flat delivery
+- Cart with swipe-to-delete (with Undo), a free-delivery progress bar (free from
+  Rs. 800), quantity controls, a count badge on the Cart tab, a flat delivery
   fee, and promo codes read from the `promos` table: `SAVE10` (10%), `FOOD5`
   (5%) and `WELCOME20` (20%, minimum order Rs. 400, expires 31 Dec 2026). The
   applied code is shown as a chip with Remove, and is dropped with a message if
@@ -40,7 +45,10 @@ is Firebase Cloud Messaging for push notifications.
   → On the way → Delivered (20 s, 60 s and 120 s after placing), saved in the
   database and shown with an animated stepper.
 - Order history (Profile → Order history) with a Reorder button that replaces
-  the cart with a past order at today's prices.
+  the cart with a past order at today's prices (choices are re-applied to the
+  current options). Delivered orders can be rated: stars and a comment, one
+  review per restaurant per order. A restaurant's rating blends its base rating
+  with real reviews.
 - Light, dark and system theme ("Ember" palette, Plus Jakarta Sans). Colors
   come only from `src/constants/designSystem.js` (an ESLint rule rejects hex and
   rgba literals elsewhere), and a Jest test checks the contrast of every
@@ -64,9 +72,14 @@ is Firebase Cloud Messaging for push notifications.
   hashes in SQLite and the saved session holds only id, email and role, which
   protects a copied database file. It is not server-side authentication, so do
   not use real credentials.
+- Orders placed before reviews existed cannot be reviewed (their items carry no
+  restaurant). Add-to-cart haptics use the built-in `Vibration` (a crude buzz on
+  iOS); swap `src/utils/haptics.js` for a haptics library later.
 - Dish photos are reused (`food1`, `food2`, `food3`, `chicken`) until real
   ones exist, so photos repeat across menus.
-- Promo codes have no admin screen yet; they live in the `promos` table.
+- Promo codes and dish options have no admin screen yet; they live in the
+  `promos`, `option_groups` and `options` tables (options are seeded from
+  `src/database/seedData.js`).
 - Push notifications are configured for Android. iOS has no
   `GoogleService-Info.plist` or Firebase setup, so iOS push is not expected
   to work.

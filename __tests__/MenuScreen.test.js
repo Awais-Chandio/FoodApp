@@ -22,11 +22,16 @@ jest.mock('../src/Context/ThemeProvider', () => ({
 jest.mock('../src/Context/CartContext', () => ({useCart: jest.fn()}));
 jest.mock('../src/screens/Auth/AuthContext', () => ({useAuth: jest.fn()}));
 jest.mock('../src/database/repositories/menuRepo', () => ({listByRestaurant: jest.fn(), remove: jest.fn()}));
+jest.mock('../src/database/repositories/optionsRepo', () => ({
+  listCustomizableIds: jest.fn(),
+  listGroupsForItem: jest.fn(),
+}));
 
 const {useNavigation, useRoute} = require('@react-navigation/native');
 const {useCart} = require('../src/Context/CartContext');
 const {useAuth} = require('../src/screens/Auth/AuthContext');
 const menuRepo = require('../src/database/repositories/menuRepo');
+const optionsRepo = require('../src/database/repositories/optionsRepo');
 const MenuScreen = require('../src/screens/Menu/MenuScreen').default;
 const {HEADER_HEIGHT, ROW_HEIGHT} = require('../src/utils/menuLayout');
 
@@ -62,6 +67,8 @@ beforeEach(() => {
   useAuth.mockReturnValue({role: 'user'});
   useCart.mockReturnValue({count: 0, subtotal: 0, getQty: () => 0, add: jest.fn(), updateQty: jest.fn()});
   menuRepo.listByRestaurant.mockResolvedValue(MENU);
+  optionsRepo.listCustomizableIds.mockResolvedValue([]);
+  optionsRepo.listGroupsForItem.mockResolvedValue([]);
 });
 afterEach(() => console.log.mockRestore());
 
@@ -125,4 +132,64 @@ it('shows skeletons while loading, a retry state on error, and an empty state', 
   menuRepo.listByRestaurant.mockResolvedValueOnce(MENU);
   await press('Try again');
   expect(texts(tree)).toContain('Wings');
+});
+
+describe('customizable dishes', () => {
+  const GROUPS = [{id: 1, menu_item_id: 2, name: 'Size', type: 'single', required: true, max_select: 1, options: [
+    {id: 11, name: 'Regular', price_delta: 0, is_default: true},
+    {id: 12, name: 'Large', price_delta: 60, is_default: false},
+  ]}];
+  let cart;
+
+  beforeEach(() => {
+    cart = {count: 0, subtotal: 0, getQty: jest.fn(() => 0), add: jest.fn(() => Promise.resolve()), updateQty: jest.fn()};
+    useCart.mockReturnValue(cart);
+    optionsRepo.listCustomizableIds.mockResolvedValue([2]); // only the Burger
+    optionsRepo.listGroupsForItem.mockResolvedValue(GROUPS);
+  });
+
+  it('"+" on a dish with options opens the sheet instead of adding; a plain dish adds at once', async () => {
+    await mount();
+
+    await ReactTestRenderer.act(async () =>
+      tree.root.findAll(n => n.props.accessibilityLabel === 'Add Wings to cart' && typeof n.props.onPress === 'function')[0].props.onPress(),
+    );
+    expect(cart.add).toHaveBeenCalledTimes(1);
+    expect(cart.add.mock.calls[0][0]).toMatchObject({name: 'Wings'});
+
+    cart.add.mockClear();
+    await ReactTestRenderer.act(async () =>
+      tree.root.findAll(n => n.props.accessibilityLabel === 'Customize Burger' && typeof n.props.onPress === 'function')[0].props.onPress(),
+    );
+    await ReactTestRenderer.act(async () => { await new Promise(r => setTimeout(r, 0)); });
+    expect(cart.add).not.toHaveBeenCalled();
+    expect(texts(tree)).toContain('Add to cart · Rs. 170');
+  });
+
+  it('submitting the sheet adds the dish with its options and quantity', async () => {
+    await mount();
+    await ReactTestRenderer.act(async () =>
+      tree.root.findAll(n => n.props.accessibilityLabel === 'Customize Burger' && typeof n.props.onPress === 'function')[0].props.onPress(),
+    );
+    await ReactTestRenderer.act(async () => { await new Promise(r => setTimeout(r, 0)); });
+    ReactTestRenderer.act(() =>
+      tree.root.find(n => n.props.accessibilityLabel === 'Large, +Rs. 60' && typeof n.props.onPress === 'function').props.onPress(),
+    );
+    await ReactTestRenderer.act(async () =>
+      tree.root.find(n => typeof n.props.onPress === 'function' && n.findAllByType(Text).some(t => [t.props.children].flat().join('') === 'Add to cart · Rs. 230')).props.onPress(),
+    );
+
+    expect(cart.add).toHaveBeenCalledTimes(1);
+    const [item, {selectedOptions, quantity}] = cart.add.mock.calls[0];
+    expect(item).toMatchObject({name: 'Burger', price: 170});
+    expect(quantity).toBe(1);
+    expect(selectedOptions.map(o => o.name)).toEqual(['Large']);
+  });
+
+  it('a customizable dish already in the cart still opens the sheet and shows a count instead of a stepper', async () => {
+    cart.getQty.mockImplementation(id => (id === 2 ? 3 : 0));
+    await mount();
+    expect(tree.root.findAllByProps({accessibilityLabel: 'Customize Burger, 3 in cart'}).length).toBeGreaterThan(0);
+    expect(tree.root.findAllByProps({accessibilityLabel: 'Increase quantity'}).length).toBe(0);
+  });
 });

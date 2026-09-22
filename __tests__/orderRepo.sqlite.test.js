@@ -36,6 +36,8 @@ const load = () => {
       menu: require('../src/database/repositories/menuRepo'),
       restaurants: require('../src/database/repositories/restaurantRepo'),
       promos: require('../src/database/repositories/promoRepo'),
+      options: require('../src/database/repositories/optionsRepo'),
+      reviews: require('../src/database/repositories/reviewRepo'),
     };
   });
   modules.raw = modules.client.default.raw;
@@ -61,7 +63,7 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(8);
+    expect(version).toBe(10);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
@@ -90,12 +92,14 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(8);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(10);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
-    const cartRow = m.raw.prepare('SELECT * FROM cart').get();
+    const cartRow = m.raw.prepare('SELECT * FROM cart_items').get();
     expect(cartRow.quantity).toBe(3);
-    expect(cartRow.restaurant_id).toBeNull(); // new nullable column
+    expect(cartRow).toMatchObject({line_key: '1', menu_item_id: 1, name: 'Kept Dish', base_price: 99, price: 99, selected_options: '[]'});
+    expect(cartRow.restaurant_id).toBeNull();
+    expect(m.raw.prepare("SELECT name FROM sqlite_master WHERE name = 'cart'").get()).toBeUndefined(); // old table dropped
     expect(count(m.raw, 'orders')).toBe(0);
     // Legacy plaintext is still there for the later upgrade pass, and the new column exists.
     const sam = m.raw.prepare("SELECT password, password_hash FROM users WHERE email = 'sam@x.com'").get();
@@ -174,7 +178,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
       ['Burger Deluxe', 170, 2],
       ['Margherita Pizza', 180, 1],
     ]);
-    expect(count(m.raw, 'cart')).toBe(0);
+    expect(count(m.raw, 'cart_items')).toBe(0);
   });
 
   it('leaves order history intact after the menu changes', async () => {
@@ -211,7 +215,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
     ).rejects.toThrow('INVALID_PROMO');
 
     expect(count(m.raw, 'orders')).toBe(0);
-    expect(count(m.raw, 'cart')).toBe(2);
+    expect(count(m.raw, 'cart_items')).toBe(2);
   });
 
   it('re-reads the promo inside the transaction: an expired code is rejected with the reason', async () => {
@@ -226,7 +230,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
     expect(error.message).toBe('INVALID_PROMO');
     expect(error.promoMessage).toMatch(/^SAVE10 expired on \d{1,2} \w{3} \d{4}\.$/);
     expect(count(m.raw, 'orders')).toBe(0);
-    expect(count(m.raw, 'cart')).toBe(2); // cart stays intact
+    expect(count(m.raw, 'cart_items')).toBe(2); // cart stays intact
   });
 
   it('rejects a code whose minimum order is not met, naming the shortfall', async () => {
@@ -277,7 +281,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
 
     await expect(m.orders.placeOrder(input)).rejects.toThrow(message);
     expect(count(m.raw, 'orders')).toBe(0);
-    expect(count(m.raw, 'cart')).toBe(2);
+    expect(count(m.raw, 'cart_items')).toBe(2);
   });
 
   it('is atomic: if a later step fails, no order exists and the cart is untouched', async () => {
@@ -290,7 +294,7 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
     ).rejects.toThrow();
 
     expect(count(m.raw, 'orders')).toBe(0); // the order INSERT was rolled back
-    expect(count(m.raw, 'cart')).toBe(2); // cart not cleared
+    expect(count(m.raw, 'cart_items')).toBe(2); // cart not cleared
   });
 
   it('two orders in a row get their own items', async () => {
@@ -412,7 +416,7 @@ describeSqlite('reorder', () => {
 
     await m.cart.replaceAll(lines);
 
-    const cart = m.raw.prepare('SELECT name, price, quantity, restaurant_id FROM cart').all();
+    const cart = m.raw.prepare('SELECT name, price, quantity, restaurant_id FROM cart_items').all();
     expect(cart).toEqual([{name: 'Burger Deluxe', price: 200, quantity: 2, restaurant_id: 1}]); // old cart replaced
   });
 
@@ -421,7 +425,7 @@ describeSqlite('reorder', () => {
     await fillCart(m);
     const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
 
-    expect(await m.orders.getReorderLines(placed.id, 999)).toEqual({lines: [], unavailable: 0});
+    expect(await m.orders.getReorderLines(placed.id, 999)).toEqual({lines: [], unavailable: 0, optionsDropped: 0});
   });
 });
 
@@ -591,5 +595,258 @@ describeSqlite('Home data on real SQLite', () => {
     recent.forEach(o => expect(o.items.length).toBe(2));
     expect(recent.map(o => o.id)).not.toContain(first.id);
     expect(await m.orders.listRecentOrders(999, 2)).toEqual([]);
+  });
+});
+
+describeSqlite('dish options on real SQLite', () => {
+  const dishId = (m, name) => m.raw.prepare('SELECT id FROM menu_items WHERE name = ?').get(name).id;
+
+  it('seeds Size + Add-ons on mains, Size on drinks, and nothing on breads and desserts', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    const burger = await m.options.listGroupsForItem(dishId(m, 'Burger Deluxe'));
+    expect(burger.map(g => [g.name, g.type, g.required, g.max_select])).toEqual([
+      ['Size', 'single', true, 1],
+      ['Add-ons', 'multi', false, 3],
+    ]);
+    expect(burger[0].options.map(o => [o.name, o.price_delta, o.is_default])).toEqual([
+      ['Small', -30, false], ['Regular', 0, true], ['Large', 60, false],
+    ]);
+    expect((await m.options.listGroupsForItem(dishId(m, 'Sweet Lassi'))).map(g => g.name)).toEqual(['Size']);
+    expect(await m.options.listGroupsForItem(dishId(m, 'Garlic Naan'))).toEqual([]);
+    expect(await m.options.listGroupsForItem(dishId(m, 'Kheer'))).toEqual([]);
+  });
+
+  it('every seeded main has exactly one default size, and customizable ids are reported per restaurant', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const groups = m.raw.prepare("SELECT id FROM option_groups WHERE name = 'Size'").all();
+    groups.forEach(g => {
+      expect(m.raw.prepare('SELECT COUNT(*) AS n FROM options WHERE group_id = ? AND is_default = 1').get(g.id).n).toBe(1);
+    });
+    const ids = await m.options.listCustomizableIds(1);
+    expect(ids).toContain(dishId(m, 'Burger Deluxe'));
+    expect(ids).not.toContain(dishId(m, 'Loaded Fries'));
+    expect(await m.options.filterCustomizable([dishId(m, 'Burger Deluxe'), dishId(m, 'Kheer')])).toEqual([dishId(m, 'Burger Deluxe')]);
+    expect(await m.options.filterCustomizable([])).toEqual([]);
+  });
+
+  it('cart lines: same dish with different options are separate rows, identical ones merge', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size] = await m.options.listGroupsForItem(burger.id);
+    const large = {...size.options[2], group_id: size.id, group_name: 'Size'};
+    const small = {...size.options[0], group_id: size.id, group_name: 'Size'};
+
+    await m.cart.addLine(burger, [large], 1);
+    await m.cart.addLine(burger, [small], 1);
+    await m.cart.addLine(burger, [large], 2);
+
+    const rows = m.raw.prepare('SELECT line_key, price, base_price, quantity FROM cart_items ORDER BY id').all();
+    expect(rows).toEqual([
+      {line_key: `${burger.id}:${large.id}`, price: 230, base_price: 170, quantity: 3},
+      {line_key: `${burger.id}:${small.id}`, price: 140, base_price: 170, quantity: 1},
+    ]);
+  });
+
+  it('replaceLine swaps one line and merges into an existing identical one', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size] = await m.options.listGroupsForItem(burger.id);
+    const opt = i => ({...size.options[i], group_id: size.id, group_name: 'Size'});
+    await m.cart.addLine(burger, [opt(2)], 1);
+    await m.cart.addLine(burger, [opt(0)], 1);
+
+    await m.cart.replaceLine(`${burger.id}:${opt(2).id}`, burger, [opt(0)], 2);
+
+    expect(m.raw.prepare('SELECT line_key, quantity FROM cart_items').all()).toEqual([
+      {line_key: `${burger.id}:${opt(0).id}`, quantity: 3},
+    ]);
+  });
+
+  it('placeOrder snapshots the chosen options and restaurant on the order item', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size, addons] = await m.options.listGroupsForItem(burger.id);
+    const large = {...size.options[2], group_id: size.id, group_name: 'Size'};
+    const cheese = {...addons.options[0], group_id: addons.id, group_name: 'Add-ons'};
+    await m.cart.addLine(burger, [large, cheese], 2);
+
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    expect(placed.total).toBe(2 * 260 + 120);
+    const item = m.raw.prepare('SELECT * FROM order_items WHERE order_id = ?').get(placed.id);
+    expect(item).toMatchObject({name: 'Burger Deluxe', price: 260, quantity: 2, restaurant_id: 1});
+    expect(JSON.parse(item.selected_options).map(o => o.name)).toEqual(['Large', 'Extra cheese']);
+  });
+
+  it('reorder re-applies the choices to the CURRENT options: drops removed ones, uses new prices', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const burger = m.raw.prepare("SELECT * FROM menu_items WHERE name = 'Burger Deluxe'").get();
+    const [size, addons] = await m.options.listGroupsForItem(burger.id);
+    const large = {...size.options[2], group_id: size.id, group_name: 'Size'};
+    const cheese = {...addons.options[0], group_id: addons.id, group_name: 'Add-ons'};
+    await m.cart.addLine(burger, [large, cheese], 1);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+
+    m.raw.prepare('DELETE FROM options WHERE id = ?').run(cheese.id); // the menu changed
+    m.raw.prepare('UPDATE options SET price_delta = 80 WHERE id = ?').run(large.id);
+    m.raw.prepare('UPDATE menu_items SET price = 200 WHERE id = ?').run(burger.id);
+
+    const {lines, optionsDropped} = await m.orders.getReorderLines(placed.id, USER);
+    expect(optionsDropped).toBe(1);
+    expect(lines).toHaveLength(1);
+    expect(lines[0].selectedOptions.map(o => o.name)).toEqual(['Large']);
+    expect(lines[0].item.price).toBe(200);
+
+    await m.cart.replaceAll(lines);
+    expect(m.raw.prepare('SELECT price FROM cart_items').get().price).toBe(280); // 200 + 80
+  });
+
+  it('reordering an order from before options existed gives required groups their default', async () => {
+    const m = load();
+    await fillCart(m); // plain lines, no options chosen
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    const {lines, optionsDropped} = await m.orders.getReorderLines(placed.id, USER);
+    expect(optionsDropped).toBe(0);
+    expect(lines[0].selectedOptions.map(o => o.name)).toEqual(['Regular']);
+    expect(lines[0].item.price).toBe(170);
+  });
+});
+
+describeSqlite('reviews on real SQLite', () => {
+  // Places a delivered order for USER containing one Westway dish (restaurant 1).
+  const deliveredOrder = async m => {
+    await m.schema.initDatabase();
+    const menu = await m.menu.listByRestaurant(1);
+    await m.cart.addItem(menu[1]);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    m.raw.prepare('UPDATE orders SET status = ?, created_at = ? WHERE id = ?').run('delivered', Date.now() - 600000, placed.id);
+    return placed;
+  };
+  const restaurant = (m, id = 1) => m.raw.prepare('SELECT rating, base_rating, review_count FROM restaurants WHERE id = ?').get(id);
+
+  it('the migration keeps each restaurant rating as its base rating with zero reviews', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    expect(restaurant(m)).toEqual({rating: 4.6, base_rating: 4.6, review_count: 0});
+    expect(m.raw.prepare("SELECT name FROM sqlite_master WHERE name = 'reviews'").get()).toBeTruthy();
+  });
+
+  it('adds a review and updates the blended rating and count in one transaction', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+
+    const result = await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 3, comment: '  Cold fries  '});
+
+    // (4.6 * 5 + 3) / 6 = 4.3, not 3.0
+    expect(result).toMatchObject({rating: 4.3, reviewCount: 1});
+    expect(restaurant(m)).toEqual({rating: 4.3, base_rating: 4.6, review_count: 1});
+    expect(m.raw.prepare('SELECT comment, rating FROM reviews').get()).toEqual({comment: 'Cold fries', rating: 3});
+  });
+
+  it('a second review for the same order and restaurant is rejected and changes nothing', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5});
+
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 1})).rejects.toThrow('ALREADY_REVIEWED');
+
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(1);
+    expect(restaurant(m).review_count).toBe(1);
+  });
+
+  it.each([
+    ['someone else\'s order', o => ({userId: 999}), 'NOT_YOUR_ORDER'],
+    ['a restaurant that is not in the order', o => ({restaurantId: 2}), 'RESTAURANT_NOT_IN_ORDER'],
+    ['an unknown order', o => ({orderId: 12345}), 'NOT_YOUR_ORDER'],
+    ['a rating of 0', o => ({rating: 0}), 'INVALID_REVIEW'],
+    ['a rating of 6', o => ({rating: 6}), 'INVALID_REVIEW'],
+    ['no user', o => ({userId: null}), 'NOT_LOGGED_IN'],
+  ])('rejects %s and writes nothing', async (_name, override, message) => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    await expect(
+      m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5, ...override(placed)}),
+    ).rejects.toThrow(message);
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(0);
+    expect(restaurant(m)).toEqual({rating: 4.6, base_rating: 4.6, review_count: 0});
+  });
+
+  it('an order that is not delivered yet cannot be reviewed', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const menu = await m.menu.listByRestaurant(1);
+    await m.cart.addItem(menu[0]);
+    const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5})).rejects.toThrow('NOT_DELIVERED');
+  });
+
+  it('orders from before reviews existed (no restaurant on their items) cannot be reviewed', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    m.raw.prepare('UPDATE order_items SET restaurant_id = NULL').run();
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5})).rejects.toThrow('RESTAURANT_NOT_IN_ORDER');
+    expect(await m.reviews.listTargets(placed.id, USER)).toEqual([]);
+  });
+
+  it('a rollback leaves neither the review nor a changed rating', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    m.raw.exec('CREATE TRIGGER fail_update BEFORE UPDATE ON restaurants BEGIN SELECT RAISE(ABORT, \'boom\'); END');
+    await expect(m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5})).rejects.toThrow();
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(0);
+    expect(restaurant(m)).toEqual({rating: 4.6, base_rating: 4.6, review_count: 0});
+  });
+
+  it('listTargets shows which restaurants are reviewed; listForRestaurant returns newest first with the summary', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    expect(await m.reviews.listTargets(placed.id, USER)).toEqual([{restaurant_id: 1, name: 'Westway', review: null}]);
+    expect(await m.reviews.listTargets(placed.id, 999)).toEqual([]);
+
+    await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 4, comment: 'Nice'});
+    expect((await m.reviews.listTargets(placed.id, USER))[0].review).toEqual({rating: 4, comment: 'Nice'});
+
+    m.raw.prepare("INSERT INTO users (id, email, role) VALUES (?, 'sam@x.com', 'user')").run(USER);
+    const list = await m.reviews.listForRestaurant(1, 5);
+    expect(list).toMatchObject({rating: 4.5, reviewCount: 1}); // (23 + 4) / 6
+    expect(list.reviews).toHaveLength(1);
+    expect(list.reviews[0]).toMatchObject({rating: 4, comment: 'Nice', reviewer_email: 'sam@x.com'});
+  });
+
+  it('listForRestaurant limits to the newest N', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    for (let i = 1; i <= 7; i += 1) {
+      m.raw.prepare('INSERT INTO reviews (order_id, restaurant_id, user_id, rating, comment, created_at) VALUES (?,?,?,?,?,?)').run(i, 1, USER, 5, `c${i}`, i * 1000);
+    }
+    const list = await m.reviews.listForRestaurant(1, 5);
+    expect(list.reviews.map(r => r.comment)).toEqual(['c7', 'c6', 'c5', 'c4', 'c3']);
+  });
+
+  it('changing the base rating recomputes the blend from existing reviews; deleting the restaurant deletes its reviews', async () => {
+    const m = load();
+    const placed = await deliveredOrder(m);
+    await m.reviews.add({orderId: placed.id, restaurantId: 1, userId: USER, rating: 5}); // (23 + 5) / 6 = 4.7
+    expect(restaurant(m).rating).toBe(4.7);
+
+    await m.restaurants.update(1, {name: 'Westway', rating: 3.0, time: '15 min', offer: null, category: 'nearest', imagePath: null});
+    expect(restaurant(m)).toEqual({rating: 3.3, base_rating: 3, review_count: 1}); // (15 + 5) / 6 = 3.33
+
+    await m.restaurants.remove(1);
+    expect(m.raw.prepare('SELECT COUNT(*) AS n FROM reviews').get().n).toBe(0);
+  });
+
+  it('a restaurant an admin creates starts with base = rating and no reviews', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    await m.restaurants.insert({name: 'New Place', rating: 4.2, time: '10 min', offer: null, category: 'nearest', imagePath: null});
+    expect(m.raw.prepare("SELECT rating, base_rating, review_count FROM restaurants WHERE name = 'New Place'").get()).toEqual({rating: 4.2, base_rating: 4.2, review_count: 0});
   });
 });

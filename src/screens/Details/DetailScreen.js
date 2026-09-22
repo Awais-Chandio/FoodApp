@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
   ScrollView,
@@ -29,6 +29,10 @@ import {
   withAlpha,
 } from "../../constants/designSystem";
 import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
+import useAsyncData from "../../hooks/useAsyncData";
+import * as reviewRepo from "../../database/repositories/reviewRepo";
+import StarRating from "../../components/ui/StarRating";
+import { formatReviewDate, maskReviewer } from "../../utils/ratings";
 import * as menuRepo from "../../database/repositories/menuRepo";
 import { useFavorites } from "../../Context/FavoritesContext";
 
@@ -45,10 +49,6 @@ export default function DetailScreen() {
   const { width } = useWindowDimensions();
   const [activeFilter, setActiveFilter] = useState("all");
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
-  // null until the menu has been read from the database.
-  const [loadedMenu, setLoadedMenu] = useState(null);
-  const [menuFailed, setMenuFailed] = useState(false);
-
   const restaurant = route?.params?.restaurant;
   const restaurantId = restaurant?.id;
   const favorite = isFavorite(restaurantId);
@@ -56,28 +56,43 @@ export default function DetailScreen() {
 
   // The menu is read by restaurant id, so it is fresh and also works when the
   // restaurant arrives without nested items (for example from Profile favorites).
-  const loadMenu = useCallback(() => {
-    if (!restaurantId) {
-      return;
-    }
-    setMenuFailed(false);
-    menuRepo
-      .listByRestaurant(restaurantId)
-      .then(setLoadedMenu)
-      .catch((error) => {
-        console.log("detail menu load error", error);
-        setMenuFailed(true);
-      });
-  }, [restaurantId]);
-
-  useFocusEffect(loadMenu);
+  const {
+    data: loadedMenu,
+    loading: menuLoadingNow,
+    error: menuError,
+    reload: reloadMenu,
+  } = useAsyncData(
+    () => (restaurantId ? menuRepo.listByRestaurant(restaurantId) : Promise.resolve([])),
+    [restaurantId]
+  );
+  const { data: reviewData, reload: reloadReviews } = useAsyncData(
+    () =>
+      restaurantId
+        ? reviewRepo.listForRestaurant(restaurantId, 5)
+        : Promise.resolve({ rating: null, reviewCount: 0, reviews: [] }),
+    [restaurantId]
+  );
+  // The fresh blended rating wins over the (possibly stale) one passed in.
+  const displayRating = reviewData?.rating ?? restaurant?.rating;
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      reloadMenu({ quiet: true });
+      reloadReviews({ quiet: true });
+    }, [reloadMenu, reloadReviews])
+  );
+  const menuFailed = Boolean(menuError);
 
   const menuPreview = useMemo(
     () => loadedMenu ?? restaurant?.menu_items ?? [],
     [loadedMenu, restaurant]
   );
   // Nothing to show yet: not loaded, and no nested items passed in.
-  const menuLoading = loadedMenu === null && !menuFailed && menuPreview.length === 0;
+  const menuLoading = menuLoadingNow && menuPreview.length === 0;
   const filteredPreviewItems = useMemo(() => {
     switch (activeFilter) {
       case "budget":
@@ -149,7 +164,7 @@ export default function DetailScreen() {
             <View style={styles.heroChips}>
               <View style={[styles.heroChip, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
                 <AntDesign name="star" size={12} color={colors.onImage} />
-                <AppText style={[styles.heroChipText, { color: colors.onImage }]}>{restaurant.rating || "4.6"} rating</AppText>
+                <AppText style={[styles.heroChipText, { color: colors.onImage }]}>{displayRating || "4.6"} rating</AppText>
               </View>
               <View style={[styles.heroChip, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
                 <AntDesign name="clockcircleo" size={12} color={colors.onImage} />
@@ -169,7 +184,7 @@ export default function DetailScreen() {
           >
             <View style={styles.statBlock}>
               <AppText style={[styles.statValue, { color: colors.text }]}>
-                {restaurant.rating || "4.6"}
+                {displayRating || "4.6"}
               </AppText>
               <AppText style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Rating
@@ -251,7 +266,7 @@ export default function DetailScreen() {
               message="Check your connection and try again."
               icon="warning"
               actionLabel="Try again"
-              onActionPress={loadMenu}
+              onActionPress={() => reloadMenu()}
             />
           ) : menuPreview.length === 0 ? (
             <EmptyState
@@ -293,6 +308,48 @@ export default function DetailScreen() {
               icon="profile"
               actionLabel="Open menu"
               onActionPress={() => navigation.navigate("MenuScreen", { restaurant })}
+            />
+          )}
+
+          <SectionHeader
+            title="Ratings & reviews"
+            subtitle={
+              reviewData?.reviewCount
+                ? `${displayRating} average from ${reviewData.reviewCount} ${reviewData.reviewCount === 1 ? "review" : "reviews"}`
+                : "What customers say after their order arrives."
+            }
+          />
+          {reviewData?.reviews?.length ? (
+            reviewData.reviews.map((review) => (
+              <View
+                key={review.id}
+                style={[
+                  styles.reviewCard,
+                  createShadow(colors.shadow, 8),
+                  { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+                ]}
+              >
+                <View style={styles.reviewTop}>
+                  <AppText variant="label" style={styles.reviewer}>
+                    {maskReviewer(review.reviewer_email)}
+                  </AppText>
+                  <AppText variant="caption" muted>
+                    {formatReviewDate(review.created_at)}
+                  </AppText>
+                </View>
+                <StarRating value={review.rating} size={16} />
+                {review.comment ? (
+                  <AppText variant="body" style={styles.reviewComment}>
+                    {review.comment}
+                  </AppText>
+                ) : null}
+              </View>
+            ))
+          ) : (
+            <EmptyState
+              title="No reviews yet"
+              message="Order from here and be the first to leave a review."
+              icon="star"
             />
           )}
         </View>
@@ -438,6 +495,24 @@ const styles = StyleSheet.create({
   filterRow: {
     paddingBottom: spacing.md,
     paddingRight: spacing.xs,
+  },
+  reviewCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  reviewTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  reviewer: {
+    fontFamily: fontFamily.bold,
+  },
+  reviewComment: {
+    marginTop: spacing.sm,
   },
   itemSkeleton: {
     width: "100%",

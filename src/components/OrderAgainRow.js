@@ -5,10 +5,11 @@ import AppText from "./ui/AppText";
 import SectionHeader from "./ui/SectionHeader";
 import { useTheme } from "../Context/ThemeProvider";
 import { createShadow, fontFamily, layout, radius, spacing } from "../constants/designSystem";
+import { lineLabel } from "../utils/cartLines";
 import { formatMoney } from "../utils/pricing";
 
 export const summarizeOrder = (order) =>
-  order.items.map((item) => `${item.quantity}× ${item.name}`).join(", ");
+  order.items.map((item) => `${item.quantity}× ${lineLabel(item)}`).join(", ");
 
 /** Home's "Order again": a card per recent order with its total and a Reorder button. */
 export default function OrderAgainRow({ orders, onReorder, reorderingId }) {

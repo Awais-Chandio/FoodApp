@@ -112,3 +112,59 @@ export const menuDetailsBackfillStatements = () =>
       [description, category, isVeg, spice, name, restaurantName],
     ])
   );
+
+// ---- Option groups (size, add-ons) ----------------------------------------
+// Mains get a required Size group and optional Add-ons; drinks get a Size
+// group; everything else (naan, raita, desserts, ...) has no options. Options
+// are managed here for now, there is no admin screen for them.
+// A group: [name, type, required, max_select, [[option name, price change, is_default], ...]]
+const MAIN_SIZE = ["Size", "single", 1, 1, [["Small", -30, 0], ["Regular", 0, 1], ["Large", 60, 0]]];
+const DRINK_SIZE = ["Size", "single", 1, 1, [["Small", -20, 0], ["Regular", 0, 1], ["Large", 30, 0]]];
+const ADD_ONS = [
+  "Add-ons",
+  "multi",
+  0,
+  3,
+  [["Extra cheese", 30, 0], ["Extra sauce", 20, 0], ["Side salad", 40, 0]],
+];
+
+export const optionGroupsForCategory = (category) => {
+  if (category === "Mains") {
+    return [MAIN_SIZE, ADD_ONS];
+  }
+  if (category === "Drinks") {
+    return [DRINK_SIZE];
+  }
+  return [];
+};
+
+// Inserts every seeded dish's groups and options, matching the dish by its
+// restaurant NAME and dish name (like the menu back-fill), so it works for a
+// fresh install (after the menu rows) and for an upgrade alike.
+export const optionSeedStatements = () =>
+  Object.entries(MENU_BY_RESTAURANT).flatMap(([restaurantName, dishes]) =>
+    dishes.flatMap(([dishName, , , , , category]) =>
+      optionGroupsForCategory(category).flatMap(
+        ([groupName, type, required, maxSelect, options], sort) => [
+          [
+            `INSERT INTO option_groups (menu_item_id, name, type, required, max_select, sort)
+             SELECT m.id, ?, ?, ?, ?, ?
+             FROM menu_items m
+             WHERE m.name = ?
+               AND m.restaurant_id = (SELECT MIN(id) FROM restaurants WHERE name = ?)`,
+            [groupName, type, required, maxSelect, sort, dishName, restaurantName],
+          ],
+          ...options.map(([optionName, delta, isDefault]) => [
+            `INSERT INTO options (group_id, name, price_delta, is_default)
+             SELECT g.id, ?, ?, ?
+             FROM option_groups g
+             JOIN menu_items m ON m.id = g.menu_item_id
+             WHERE g.name = ?
+               AND m.name = ?
+               AND m.restaurant_id = (SELECT MIN(id) FROM restaurants WHERE name = ?)`,
+            [optionName, delta, isDefault, groupName, dishName, restaurantName],
+          ]),
+        ]
+      )
+    )
+  );

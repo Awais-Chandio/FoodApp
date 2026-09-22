@@ -22,7 +22,7 @@ export default function ManageItems({ navigation, route }) {
   const { colors } = useTheme();
 
   const [name, setName] = useState(editingItem?.name || "");
-  const [rating, setRating] = useState(String(editingItem?.rating ?? ""));
+  const [rating, setRating] = useState(String(editingItem?.base_rating ?? editingItem?.rating ?? ""));
   const [time, setTime] = useState(editingItem?.time || "");
   const [offer, setOffer] = useState(editingItem?.offer || "");
   const [category, setCategory] = useState(editingItem?.category || "");
@@ -92,11 +92,11 @@ export default function ManageItems({ navigation, route }) {
           />
 
           <TextField
-            label="Rating"
+            label="Base rating"
             value={rating}
             onChangeText={setRating}
             keyboardType="numeric"
-            placeholder="Optional"
+            placeholder="Optional (blended with customer reviews)"
           />
 
           <TextField

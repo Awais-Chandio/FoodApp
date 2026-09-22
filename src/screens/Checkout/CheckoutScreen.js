@@ -28,6 +28,7 @@ import {
 } from "../../constants/designSystem";
 import { PAYMENT_METHODS } from "../../constants/paymentMethods";
 import * as orderRepo from "../../database/repositories/orderRepo";
+import { lineLabel } from "../../utils/cartLines";
 import { computeTotals, formatMoney } from "../../utils/pricing";
 import { validateAddress } from "../../utils/validation";
 
@@ -210,9 +211,9 @@ export default function CheckoutScreen() {
           ]}
         >
           {items.map((item) => (
-            <View key={item.menu_item_id} style={styles.summaryRow}>
+            <View key={item.line_key} style={styles.summaryRow}>
               <AppText style={[styles.summaryName, { color: colors.text }]} numberOfLines={1}>
-                {item.quantity} × {item.name}
+                {item.quantity} × {lineLabel(item)}
               </AppText>
               <AppText style={[styles.summaryValue, { color: colors.text }]}>
                 {formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}

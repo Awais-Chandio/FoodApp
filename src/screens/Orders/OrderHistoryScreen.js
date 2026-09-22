@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import AppText from "../../components/ui/AppText";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import RateOrderButton from "../../components/RateOrderButton";
 import AppButton from "../../components/ui/AppButton";
 import ScreenHeader from "../../components/ui/ScreenHeader";
 import EmptyState from "../../components/ui/EmptyState";
@@ -24,6 +25,7 @@ import {
   typeScale,
 } from "../../constants/designSystem";
 import * as orderRepo from "../../database/repositories/orderRepo";
+import { lineLabel } from "../../utils/cartLines";
 import { formatMoney } from "../../utils/pricing";
 import { getStatusLabel, isDelivered, ORDER_STATUS } from "../../utils/orderStatus";
 
@@ -43,7 +45,7 @@ const getStatusColors = (status, colors) => {
 };
 
 const summarizeItems = (items) =>
-  items.map((item) => `${item.quantity}× ${item.name}`).join(", ");
+  items.map((item) => `${item.quantity}× ${lineLabel(item)}`).join(", ");
 
 export default function OrderHistoryScreen() {
   const navigation = useNavigation();
@@ -132,6 +134,12 @@ export default function OrderHistoryScreen() {
             />
           </View>
         </View>
+
+        {delivered ? (
+          <View style={styles.rateRow}>
+            <RateOrderButton order={order} delivered compact />
+          </View>
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -259,6 +267,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: spacing.lg,
     gap: spacing.md,
+  },
+  rateRow: {
+    marginTop: spacing.md,
   },
   actionCell: {
     flex: 1,

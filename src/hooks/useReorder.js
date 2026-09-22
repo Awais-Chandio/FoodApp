@@ -20,7 +20,7 @@ export default function useReorder() {
   const performReorder = async (order) => {
     setReorderingId(order.id);
     try {
-      const { lines, unavailable } = await orderRepo.getReorderLines(order.id, user.id);
+      const { lines, unavailable, optionsDropped = 0 } = await orderRepo.getReorderLines(order.id, user.id);
 
       if (!lines.length) {
         Toast.show({
@@ -35,9 +35,16 @@ export default function useReorder() {
       Toast.show({
         type: "success",
         text1: "Cart updated",
-        text2: unavailable
-          ? `${unavailable} ${unavailable === 1 ? "dish is" : "dishes are"} no longer available.`
-          : "Your previous order is back in the cart.",
+        text2: [
+          unavailable
+            ? `${unavailable} ${unavailable === 1 ? "dish is" : "dishes are"} no longer available.`
+            : null,
+          optionsDropped
+            ? `${optionsDropped} ${optionsDropped === 1 ? "option is" : "options are"} no longer offered and was dropped.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || "Your previous order is back in the cart.",
       });
       navigation.navigate("Tab", { screen: "AddToCartScreen" });
     } catch (error) {

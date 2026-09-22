@@ -8,10 +8,12 @@ import {
   View,
 } from "react-native";
 import AppText from "../../components/ui/AppText";
+import { lineLabel } from "../../utils/cartLines";
 import { BackButton } from "../../components/ui/ScreenHeader";
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import EmptyState from "../../components/ui/EmptyState";
+import RateOrderButton from "../../components/RateOrderButton";
 import OrderStatusStepper from "../../components/OrderStatusStepper";
 import { useTheme } from "../../Context/ThemeProvider";
 import { useAuth } from "../Auth/AuthContext";
@@ -202,6 +204,11 @@ export default function TrackOrderScreen() {
           >
             <AppText style={[styles.sectionTitle, { color: colors.text }]}>Order status</AppText>
             <OrderStatusStepper status={order.status} />
+            {delivered ? (
+              <View style={styles.rateWrap}>
+                <RateOrderButton order={order} delivered />
+              </View>
+            ) : null}
           </View>
 
           <View
@@ -221,7 +228,7 @@ export default function TrackOrderScreen() {
             {order.items.map((item) => (
               <View key={item.id} style={styles.row}>
                 <AppText style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                  {item.quantity} × {item.name}
+                  {item.quantity} × {lineLabel(item)}
                 </AppText>
                 <AppText style={[styles.value, { color: colors.text }]}>
                   {formatMoney(item.price * item.quantity)}
@@ -276,6 +283,9 @@ export default function TrackOrderScreen() {
 }
 
 const styles = StyleSheet.create({
+  rateWrap: {
+    marginTop: spacing.lg,
+  },
   container: {
     flex: 1,
   },

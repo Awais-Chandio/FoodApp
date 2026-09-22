@@ -14,6 +14,9 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import { useCart } from "../../Context/CartContext";
 import EmptyState from "../../components/ui/EmptyState";
+import DishOptionsSheet from "../../components/DishOptionsSheet";
+import useAsyncData from "../../hooks/useAsyncData";
+import * as optionsRepo from "../../database/repositories/optionsRepo";
 import CartLine from "../../components/CartLine";
 import FreeDeliveryBar from "../../components/FreeDeliveryBar";
 import SkeletonCard from "../../components/ui/SkeletonCard";
@@ -30,6 +33,7 @@ import {
   spacing,
   typeScale,
 } from "../../constants/designSystem";
+import { parseSelectedOptions } from "../../utils/cartLines";
 import { computeTotals, formatMoney } from "../../utils/pricing";
 
 export default function AddToCartScreen() {
@@ -50,9 +54,19 @@ export default function AddToCartScreen() {
     add,
     updateQty,
     remove,
-    getQty,
+    replaceLine,
+    getLineQty,
   } = useCart();
   const [refreshing, setRefreshing] = useState(false);
+  const [editingLine, setEditingLine] = useState(null);
+
+  // Which cart dishes have options, so those lines offer "Customize".
+  const cartDishIds = cartItems.map((line) => line.menu_item_id).join(",");
+  const { data: customizableIds } = useAsyncData(
+    () => optionsRepo.filterCustomizable(cartItems.map((line) => line.menu_item_id)),
+    [cartDishIds]
+  );
+  const customizable = new Set(customizableIds || []);
   const [promoInput, setPromoInput] = useState("");
   const [applyingPromo, setApplyingPromo] = useState(false);
 
@@ -65,43 +79,46 @@ export default function AddToCartScreen() {
   const showCartError = () =>
     Toast.show({ type: "error", text1: "Could not update your cart" });
 
-  // Deleting shows an Undo toast (tap it) that puts the line back with its quantity.
+  // Deleting shows an Undo toast (tap it) that puts the line back with its
+  // options and quantity.
   const removeItem = (line) => {
-    const { menu_item_id: id, quantity } = line;
     const restore = () => {
       Toast.hide();
-      add({
-        id,
-        name: line.name,
-        price: line.price,
-        image_key: line.image_key,
-        restaurant_id: line.restaurant_id,
-      })
-        .then(() => (quantity > 1 ? updateQty(id, quantity) : undefined))
-        .catch(showCartError);
+      add(
+        {
+          id: line.menu_item_id,
+          name: line.name,
+          price: line.base_price ?? line.price,
+          image_key: line.image_key,
+          restaurant_id: line.restaurant_id,
+        },
+        { selectedOptions: parseSelectedOptions(line.selected_options), quantity: line.quantity }
+      ).catch(showCartError);
     };
 
-    remove(id).then(() =>
-      Toast.show({
-        type: "info",
-        text1: `${line.name} removed`,
-        text2: "Tap to undo",
-        visibilityTime: 5000,
-        onPress: restore,
-      })
-    , showCartError);
+    remove(line.line_key).then(
+      () =>
+        Toast.show({
+          type: "info",
+          text1: `${line.name} removed`,
+          text2: "Tap to undo",
+          visibilityTime: 5000,
+          onPress: restore,
+        }),
+      showCartError
+    );
   };
 
   const increaseQty = (line) =>
-    updateQty(line.menu_item_id, getQty(line.menu_item_id) + 1).catch(showCartError);
+    updateQty(line.line_key, getLineQty(line.line_key) + 1).catch(showCartError);
 
   // Minus at quantity 1 removes the line (with Undo), like swiping it away.
   const decreaseQty = (line) => {
-    const quantity = getQty(line.menu_item_id);
+    const quantity = getLineQty(line.line_key);
     if (quantity <= 1) {
       return removeItem(line);
     }
-    return updateQty(line.menu_item_id, quantity - 1).catch(showCartError);
+    return updateQty(line.line_key, quantity - 1).catch(showCartError);
   };
 
   const {
@@ -145,12 +162,14 @@ export default function AddToCartScreen() {
     });
   };
 
-  const renderCartItem = ({ item }) => (
+  const renderCartItem = ({ item, index }) => (
     <CartLine
       item={item}
+      index={index}
       onIncrease={increaseQty}
       onDecrease={decreaseQty}
       onDelete={removeItem}
+      onCustomize={customizable.has(item.menu_item_id) ? setEditingLine : undefined}
     />
   );
 
@@ -158,7 +177,7 @@ export default function AddToCartScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={cartItems}
-        keyExtractor={(item) => String(item.menu_item_id)}
+        keyExtractor={(item) => item.line_key}
         renderItem={renderCartItem}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -372,6 +391,40 @@ export default function AddToCartScreen() {
           </TouchableOpacity>
         </View>
       ) : null}
+      <DishOptionsSheet
+        visible={Boolean(editingLine)}
+        mode="edit"
+        item={
+          editingLine
+            ? {
+                id: editingLine.menu_item_id,
+                name: editingLine.name,
+                price: editingLine.base_price ?? editingLine.price,
+                image_key: editingLine.image_key,
+                restaurant_id: editingLine.restaurant_id,
+              }
+            : null
+        }
+        initialOptions={editingLine ? parseSelectedOptions(editingLine.selected_options) : null}
+        initialQuantity={editingLine ? editingLine.quantity : 1}
+        onClose={() => setEditingLine(null)}
+        onSubmit={({ selectedOptions, quantity }) => {
+          const line = editingLine;
+          setEditingLine(null);
+          replaceLine(
+            line.line_key,
+            {
+              id: line.menu_item_id,
+              name: line.name,
+              price: line.base_price ?? line.price,
+              image_key: line.image_key,
+              restaurant_id: line.restaurant_id,
+            },
+            selectedOptions,
+            quantity
+          ).catch(showCartError);
+        }}
+      />
     </View>
   );
 }

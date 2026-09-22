@@ -14,6 +14,7 @@ import HomeHeader from "./HomeHeader";
 import OfferCarousel from "../../components/OfferCarousel";
 import OrderAgainRow from "../../components/OrderAgainRow";
 import EmptyState from "../../components/ui/EmptyState";
+import FadeInItem from "../../components/ui/FadeInItem";
 import FilterChip from "../../components/ui/FilterChip";
 import RestaurantCard from "../../components/ui/RestaurantCard";
 import SectionHeader from "../../components/ui/SectionHeader";
@@ -184,22 +185,24 @@ export default function HomeScreen() {
     ]);
   };
 
-  const renderRestaurantCard = ({ item }) => (
-    <RestaurantCard
-      restaurant={item}
-      width={cardWidth}
-      favorite={isFavorite(item.id)}
-      onToggleFavorite={() => toggleFavorite(item.id)}
-      onPress={() => navigation.navigate("Details", { restaurant: item })}
-      admin={
-        isAdmin
-          ? {
-              onEdit: () => navigation.navigate("ManageItems", { restaurant: item }),
-              onDelete: () => confirmDelete(item),
-            }
-          : null
-      }
-    />
+  const renderRestaurantCard = ({ item, index }) => (
+    <FadeInItem index={index}>
+      <RestaurantCard
+        restaurant={item}
+        width={cardWidth}
+        favorite={isFavorite(item.id)}
+        onToggleFavorite={() => toggleFavorite(item.id)}
+        onPress={() => navigation.navigate("Details", { restaurant: item })}
+        admin={
+          isAdmin
+            ? {
+                onEdit: () => navigation.navigate("ManageItems", { restaurant: item }),
+                onDelete: () => confirmDelete(item),
+              }
+            : null
+        }
+      />
+    </FadeInItem>
   );
 
   const renderLoadingRow = () => (

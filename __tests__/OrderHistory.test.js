@@ -16,6 +16,10 @@ jest.mock('@react-native-vector-icons/ant-design', () => {
   return () => require('react').createElement(RNText, null, 'icon');
 });
 jest.mock('react-native-toast-message', () => ({__esModule: true, default: {show: jest.fn()}}));
+jest.mock('../src/database/repositories/reviewRepo', () => ({
+  listTargets: jest.fn(() => Promise.resolve([])),
+  listForRestaurant: jest.fn(() => Promise.resolve({rating: null, reviewCount: 0, reviews: []})),
+}));
 jest.mock('../src/Context/ThemeProvider', () => ({
   useTheme: () => ({colors: require('../src/constants/designSystem').lightColors}),
 }));

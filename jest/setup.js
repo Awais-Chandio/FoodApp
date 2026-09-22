@@ -30,7 +30,7 @@ jest.mock('react-native-reanimated', () => {
     withDelay: (_delay, value) => value,
     cancelAnimation: () => {},
     interpolate: (value, input, output) => output[0] + ((value - input[0]) / (input[1] - input[0])) * (output[1] - output[0]),
-    Easing: {inOut: identity, ease: identity, linear: identity, quad: identity, out: identity, in: identity, bezier: () => identity},
+    Easing: {cubic: identity, inOut: identity, ease: identity, linear: identity, quad: identity, out: identity, in: identity, bezier: () => identity},
     FadeIn: chain(),
     FadeInDown: chain(),
     FadeInUp: chain(),
@@ -50,5 +50,14 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
       React.useImperativeHandle(ref, () => ({close: jest.fn(), openRight: jest.fn()}));
       return React.createElement(View, null, children, renderRightActions ? renderRightActions() : null);
     }),
+  };
+});
+
+// Gesture recognition cannot run in Node; render the wrapped view as-is.
+jest.mock('react-native-gesture-handler', () => {
+  const actual = jest.requireActual('react-native-gesture-handler');
+  return {
+    ...actual,
+    GestureDetector: ({children}) => children,
   };
 });
