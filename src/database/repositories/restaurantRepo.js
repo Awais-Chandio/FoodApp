@@ -52,9 +52,10 @@ export const update = (id, { name, rating, time, offer, category, imagePath }) =
     [name, rating, time, offer, category, imagePath, id]
   );
 
-/** Deletes a restaurant and its menu items atomically. */
+/** Deletes a restaurant, its menu items and everyone's favorites of it atomically. */
 export const remove = (id) =>
   batch([
     ["DELETE FROM menu_items WHERE restaurant_id = ?", [id]],
+    ["DELETE FROM favorites WHERE restaurant_id = ?", [id]],
     ["DELETE FROM restaurants WHERE id = ?", [id]],
   ]);

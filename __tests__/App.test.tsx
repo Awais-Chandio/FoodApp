@@ -34,6 +34,15 @@ jest.mock('../src/database/repositories/cartRepo', () => ({
   clear: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('../src/database/repositories/favoritesRepo', () => ({
+  listRestaurants: jest.fn(() => Promise.resolve([])),
+  toggle: jest.fn(() => Promise.resolve(true)),
+}));
+
+jest.mock('../src/database/repositories/promoRepo', () => ({
+  findByCode: jest.fn(() => Promise.resolve(null)),
+}));
+
 jest.mock('../src/services/notificationService', () => ({
   initialize: jest.fn(),
   cleanup: jest.fn(),

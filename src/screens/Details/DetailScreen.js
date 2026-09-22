@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppButton from "../../components/ui/AppButton";
 import EmptyState from "../../components/ui/EmptyState";
@@ -23,6 +23,8 @@ import {
   spacing,
 } from "../../constants/designSystem";
 import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
+import * as menuRepo from "../../database/repositories/menuRepo";
+import { useFavorites } from "../../Context/FavoritesContext";
 
 const previewFilters = [
   { id: "all", label: "All" },
@@ -41,13 +43,31 @@ export default function DetailScreen() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const [activeFilter, setActiveFilter] = useState("all");
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  // null until the menu has been read from the database.
+  const [loadedMenu, setLoadedMenu] = useState(null);
 
   const restaurant = route?.params?.restaurant;
+  const restaurantId = restaurant?.id;
+  const favorite = isFavorite(restaurantId);
   const heroHeight = Math.min(Math.max(width * 0.82, 304), 372);
-  const menuPreview = restaurant?.menu_items?.length
-    ? restaurant.menu_items
-    : fallbackItems;
+
+  // The menu is read by restaurant id, so it is fresh and also works when the
+  // restaurant arrives without nested items (for example from Profile favorites).
+  useFocusEffect(
+    useCallback(() => {
+      if (!restaurantId) {
+        return;
+      }
+      menuRepo
+        .listByRestaurant(restaurantId)
+        .then(setLoadedMenu)
+        .catch((error) => console.log("detail menu load error", error));
+    }, [restaurantId])
+  );
+
+  const menuSource = loadedMenu ?? restaurant?.menu_items;
+  const menuPreview = menuSource?.length ? menuSource : fallbackItems;
   const filteredPreviewItems = useMemo(() => {
     switch (activeFilter) {
       case "budget":
@@ -95,12 +115,14 @@ export default function DetailScreen() {
 
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={() => setIsFavorite((current) => !current)}
+            onPress={() => toggleFavorite(restaurantId)}
+            accessibilityRole="button"
+            accessibilityLabel={favorite ? "Remove from favorites" : "Save to favorites"}
           >
             <AntDesign
-              name="heart"
+              name={favorite ? "heart" : "hearto"}
               size={18}
-              color={isFavorite ? colors.danger : colors.textSecondary}
+              color={favorite ? colors.danger : colors.textSecondary}
             />
           </TouchableOpacity>
 

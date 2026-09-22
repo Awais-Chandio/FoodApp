@@ -2,8 +2,10 @@ const {
   computeTotals,
   DELIVERY_FEE,
   formatMoney,
-  isValidPromo,
+  formatPromoDate,
   normalizePromo,
+  PROMO_MESSAGES,
+  validatePromo,
 } = require('../src/utils/pricing');
 const {
   DELIVERY_DURATION_MS,
@@ -32,27 +34,33 @@ describe('pricing', () => {
     expect(totals.total).toBe(0);
   });
 
-  it('applies SAVE10 and FOOD5 to the subtotal, rounded', () => {
-    expect(computeTotals({subtotal: 525, itemCount: 1, promoCode: 'SAVE10'}).discount).toBe(53); // 52.5
-    expect(computeTotals({subtotal: 520, itemCount: 1, promoCode: 'FOOD5'}).discount).toBe(26);
+  const save10 = {code: 'SAVE10', percent: 10, min_order: 0, expires_at: null};
+  const food5 = {code: 'FOOD5', percent: 5, min_order: 0, expires_at: null};
+
+  it('applies a promo to the subtotal, rounded', () => {
+    expect(computeTotals({subtotal: 525, itemCount: 1, promo: save10}).discount).toBe(53); // 52.5
+    expect(computeTotals({subtotal: 520, itemCount: 1, promo: food5}).discount).toBe(26);
+    expect(computeTotals({subtotal: 100, itemCount: 1, promo: save10}).promoCode).toBe('SAVE10');
   });
 
-  it('accepts codes in any case and with spaces', () => {
+  it('normalizes typed codes to upper case without spaces', () => {
     expect(normalizePromo('  save10 ')).toBe('SAVE10');
-    expect(computeTotals({subtotal: 100, itemCount: 1, promoCode: ' save10 '}).promoCode).toBe('SAVE10');
+    expect(normalizePromo(null)).toBe('');
   });
 
-  it('ignores unknown codes, including names from Object.prototype', () => {
-    expect(isValidPromo('NOPE')).toBe(false);
-    expect(isValidPromo('constructor')).toBe(false);
-    expect(isValidPromo(null)).toBe(false);
-    const totals = computeTotals({subtotal: 100, itemCount: 1, promoCode: 'NOPE'});
-    expect(totals.promoCode).toBeNull();
-    expect(totals.discount).toBe(0);
+  it('ignores a promo that does not validate (below minimum or expired)', () => {
+    const welcome = {code: 'WELCOME20', percent: 20, min_order: 400, expires_at: null};
+    const below = computeTotals({subtotal: 300, itemCount: 1, promo: welcome});
+    expect(below.promoCode).toBeNull();
+    expect(below.discount).toBe(0);
+
+    const expired = {...save10, expires_at: 1000};
+    expect(computeTotals({subtotal: 300, itemCount: 1, promo: expired, now: 2000}).promoCode).toBeNull();
+    expect(computeTotals({subtotal: 300, itemCount: 1, promo: null}).promoCode).toBeNull();
   });
 
   it('never returns a negative total', () => {
-    const totals = computeTotals({subtotal: 0.4, itemCount: 1, promoCode: 'SAVE10'});
+    const totals = computeTotals({subtotal: 0.4, itemCount: 1, promo: save10});
     expect(totals.total).toBeGreaterThanOrEqual(0);
   });
 
@@ -60,6 +68,59 @@ describe('pricing', () => {
     expect(formatMoney(120)).toBe('Rs. 120');
     expect(formatMoney(120.5)).toBe('Rs. 120.50');
     expect(formatMoney(undefined)).toBe('Rs. 0');
+  });
+});
+
+describe('validatePromo', () => {
+  const EXPIRES = Date.UTC(2026, 11, 31, 23, 59, 59, 999); // 31 Dec 2026, end of day UTC
+  const welcome = {code: 'WELCOME20', percent: 20, min_order: 400, expires_at: EXPIRES};
+  const save10 = {code: 'SAVE10', percent: 10, min_order: 0, expires_at: null};
+  const NOW = Date.UTC(2026, 8, 21);
+
+  it('says the code was not found when there is no promo row', () => {
+    expect(validatePromo(null, 500, NOW)).toEqual({ok: false, message: PROMO_MESSAGES.NOT_FOUND});
+    expect(validatePromo(undefined, 500, NOW).message).toBe("We couldn't find that code.");
+  });
+
+  it('has a message for empty input', () => {
+    expect(PROMO_MESSAGES.EMPTY).toBe('Enter a promo code first.');
+  });
+
+  it('accepts a code up to and including its expiry instant, rejects it one ms later', () => {
+    expect(validatePromo(welcome, 500, EXPIRES).ok).toBe(true);
+    const late = validatePromo(welcome, 500, EXPIRES + 1);
+    expect(late).toEqual({ok: false, message: 'WELCOME20 expired on 31 Dec 2026.'});
+  });
+
+  it('never expires a code with expires_at NULL', () => {
+    expect(validatePromo(save10, 100, Date.UTC(2099, 0, 1)).ok).toBe(true);
+  });
+
+  it('tells the user how much more to add for the minimum order', () => {
+    expect(validatePromo(welcome, 280, NOW)).toEqual({
+      ok: false,
+      message: 'Add Rs. 120 more to use WELCOME20.',
+    });
+    expect(validatePromo(welcome, 399.5, NOW).message).toBe('Add Rs. 0.50 more to use WELCOME20.');
+  });
+
+  it('accepts exactly the minimum order', () => {
+    expect(validatePromo(welcome, 400, NOW)).toEqual({ok: true, discount: 80});
+  });
+
+  it('checks expiry before the minimum order', () => {
+    expect(validatePromo(welcome, 10, EXPIRES + 1).message).toMatch(/expired/);
+  });
+
+  it('rounds the discount like the old hardcoded codes (half up)', () => {
+    expect(validatePromo(save10, 525, NOW)).toEqual({ok: true, discount: 53}); // 52.5
+    expect(validatePromo(save10, 524, NOW).discount).toBe(52); // 52.4
+    expect(validatePromo({...save10, percent: 5}, 520, NOW).discount).toBe(26);
+  });
+
+  it('formats the expiry day in UTC', () => {
+    expect(formatPromoDate(EXPIRES)).toBe('31 Dec 2026');
+    expect(formatPromoDate(Date.UTC(2027, 0, 1))).toBe('1 Jan 2027');
   });
 });
 

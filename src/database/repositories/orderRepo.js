@@ -1,6 +1,6 @@
 import { execute, query, queryMany, transaction } from "../sql";
 import { PAYMENT_METHOD_IDS } from "../../constants/paymentMethods";
-import { computeTotals, normalizePromo } from "../../utils/pricing";
+import { computeTotals, normalizePromo, validatePromo } from "../../utils/pricing";
 import { statusForElapsed, statusIndex } from "../../utils/orderStatus";
 import { validateAddress } from "../../utils/validation";
 
@@ -34,8 +34,12 @@ const groupItems = (orders, items) => {
  * Turns the current cart into an order, and empties the cart, in ONE
  * transaction: either the order, its items and the emptied cart all happen, or
  * none of it does. Totals are computed here from the cart rows, never taken
- * from the caller. Resolves with { id, status, total, deliveryFee, discount,
- * promoCode, createdAt }.
+ * from the caller, and the promo is read from the promos table INSIDE the
+ * transaction, so a code that expired or no longer applies while the user was
+ * checking out is rejected. That rejection is an Error whose message is
+ * ORDER_ERRORS.INVALID_PROMO and whose `promoMessage` says why (for example
+ * "WELCOME20 expired on 31 Dec 2026."); the cart is left as it was. Resolves
+ * with { id, status, total, deliveryFee, discount, promoCode, createdAt }.
  */
 export const placeOrder = async ({ userId, address, paymentMethod, promoCode = null }) => {
   if (!userId) {
@@ -67,52 +71,75 @@ export const placeOrder = async ({ userId, address, paymentMethod, promoCode = n
           (sum, line) => sum + Number(line.price || 0) * Number(line.quantity || 0),
           0
         );
-        const totals = computeTotals({
-          subtotal,
-          itemCount: lines.length,
-          promoCode: requestedPromo,
-        });
-        if (requestedPromo && !totals.promoCode) {
-          control.abort(new Error(ORDER_ERRORS.INVALID_PROMO));
+
+        // One clock reading for the promo check, the totals and created_at.
+        const now = Date.now();
+
+        const insertOrder = (promo) => {
+          const totals = computeTotals({
+            subtotal,
+            itemCount: lines.length,
+            promo,
+            now,
+          });
+
+          tx.executeSql(
+            `INSERT INTO orders
+               (user_id, status, total, delivery_fee, discount, promo_code,
+                address, payment_method, created_at, updated_at)
+             VALUES (?, 'placed', ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              userId,
+              totals.total,
+              totals.deliveryFee,
+              totals.discount,
+              totals.promoCode,
+              cleanAddress,
+              paymentMethod,
+              now,
+              now,
+            ],
+            control.guard((_tx2, insertResult) => {
+              const orderId = insertResult.insertId;
+
+              tx.executeSql(
+                `INSERT INTO order_items (order_id, menu_item_id, name, price, quantity, image_key)
+                 SELECT ?, menu_item_id, name, price, quantity, image_key FROM cart`,
+                [orderId]
+              );
+              tx.executeSql("DELETE FROM cart");
+
+              control.resolve({
+                id: orderId,
+                status: "placed",
+                total: totals.total,
+                deliveryFee: totals.deliveryFee,
+                discount: totals.discount,
+                promoCode: totals.promoCode,
+                createdAt: now,
+              });
+            })
+          );
+        };
+
+        if (!requestedPromo) {
+          insertOrder(null);
           return;
         }
 
-        const now = Date.now();
         tx.executeSql(
-          `INSERT INTO orders
-             (user_id, status, total, delivery_fee, discount, promo_code,
-              address, payment_method, created_at, updated_at)
-           VALUES (?, 'placed', ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            userId,
-            totals.total,
-            totals.deliveryFee,
-            totals.discount,
-            totals.promoCode,
-            cleanAddress,
-            paymentMethod,
-            now,
-            now,
-          ],
-          control.guard((_tx2, insertResult) => {
-            const orderId = insertResult.insertId;
-
-            tx.executeSql(
-              `INSERT INTO order_items (order_id, menu_item_id, name, price, quantity, image_key)
-               SELECT ?, menu_item_id, name, price, quantity, image_key FROM cart`,
-              [orderId]
-            );
-            tx.executeSql("DELETE FROM cart");
-
-            control.resolve({
-              id: orderId,
-              status: "placed",
-              total: totals.total,
-              deliveryFee: totals.deliveryFee,
-              discount: totals.discount,
-              promoCode: totals.promoCode,
-              createdAt: now,
-            });
+          "SELECT * FROM promos WHERE code = ? COLLATE NOCASE",
+          [requestedPromo],
+          control.guard((_tx3, promoResult) => {
+            const promo = promoResult.rows.length ? promoResult.rows.item(0) : null;
+            const check = validatePromo(promo, subtotal, now);
+            if (!check.ok) {
+              const error = new Error(ORDER_ERRORS.INVALID_PROMO);
+              error.promoMessage = check.message;
+              control.abort(error);
+              return;
+            }
+            insertOrder(promo);
           })
         );
       })

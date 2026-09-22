@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  FlatList,
   Image,
   RefreshControl,
   ScrollView,
+  SectionList,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import HomeHeader from "../Home/HomeHeader";
@@ -23,8 +24,9 @@ import {
   radius,
   spacing,
 } from "../../constants/designSystem";
-import { resolveRestaurantImage } from "../../constants/imageRegistry";
+import { resolveFoodImage, resolveRestaurantImage } from "../../constants/imageRegistry";
 import * as restaurantRepo from "../../database/repositories/restaurantRepo";
+import { searchAll } from "../../utils/search";
 
 const STORAGE_KEY = "recent_searches";
 
@@ -54,8 +56,14 @@ export default function SearchScreen({ navigation }) {
   const [recentSearches, setRecentSearches] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const loadSearchData = useCallback(async () => {
-    setLoading(true);
+  const hasLoadedRef = useRef(false);
+
+  // Pass `quiet` to refresh in the background (no skeleton), so dishes an admin
+  // just added are searchable without a pull-to-refresh.
+  const loadSearchData = useCallback(async (quiet = false) => {
+    if (!quiet) {
+      setLoading(true);
+    }
     try {
       const savedSearches = await AsyncStorage.getItem(STORAGE_KEY);
       setRecentSearches(savedSearches ? JSON.parse(savedSearches) : []);
@@ -65,6 +73,7 @@ export default function SearchScreen({ navigation }) {
         (item, index, list) => list.findIndex((entry) => entry.id === item.id) === index
       );
       setRestaurants(allRestaurants);
+      hasLoadedRef.current = true;
     } catch (error) {
       console.log("search load error", error);
     } finally {
@@ -72,34 +81,24 @@ export default function SearchScreen({ navigation }) {
     }
   }, []);
 
-  useEffect(() => {
-    loadSearchData();
-  }, [loadSearchData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadSearchData(hasLoadedRef.current);
+    }, [loadSearchData])
+  );
 
-  const searchResults = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return restaurants.filter((item) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        item.name?.toLowerCase().includes(normalizedQuery) ||
-        item.offer?.toLowerCase().includes(normalizedQuery) ||
-        item.time?.toLowerCase().includes(normalizedQuery);
-
-      if (!matchesQuery) {
-        return false;
-      }
-
-      switch (activeFilter) {
-        case "offers":
-          return Boolean(item.offer);
-        case "top":
-          return Number(item.rating || 0) >= 4.8;
-        default:
-          return true;
-      }
-    });
-  }, [activeFilter, query, restaurants]);
+  const results = useMemo(
+    () => searchAll(restaurants, query, activeFilter),
+    [activeFilter, query, restaurants]
+  );
+  const sections = useMemo(
+    () =>
+      [
+        { key: "restaurants", title: "Restaurants", data: results.restaurants },
+        { key: "dishes", title: "Dishes", data: results.dishes },
+      ].filter((section) => section.data.length),
+    [results]
+  );
 
   const handleSearchSubmit = async () => {
     await persistRecentSearch(query);
@@ -118,7 +117,53 @@ export default function SearchScreen({ navigation }) {
     });
   };
 
-  const renderSearchResult = ({ item }) => (
+  // Tapping a dish opens its restaurant's menu.
+  const openDishMenu = async (dish) => {
+    if (query.trim()) {
+      await handleSearchSubmit();
+    }
+
+    navigation.navigate("HomeStack", {
+      screen: "MenuScreen",
+      params: { restaurant: dish.restaurant },
+    });
+  };
+
+  const renderDish = (dish) => (
+    <TouchableOpacity
+      activeOpacity={0.88}
+      style={[
+        styles.dishCard,
+        createShadow(colors.shadow, 10),
+        { backgroundColor: colors.surface, borderColor: colors.borderSoft },
+      ]}
+      onPress={() => openDishMenu(dish)}
+      accessibilityRole="button"
+      accessibilityLabel={`${dish.name} from ${dish.restaurant.name}. Open menu`}
+    >
+      <Image
+        source={resolveFoodImage(dish.image_path || dish.image_key || dish.name)}
+        style={styles.dishImage}
+      />
+      <View style={styles.dishContent}>
+        <Text style={[styles.dishName, { color: colors.text }]} numberOfLines={1}>
+          {dish.name}
+        </Text>
+        <Text style={[styles.dishRestaurant, { color: colors.textSecondary }]} numberOfLines={1}>
+          {dish.restaurant.name}
+        </Text>
+        <Text style={[styles.dishPrice, { color: colors.primaryStrong }]}>
+          Rs. {dish.price || 0}
+        </Text>
+      </View>
+      <AntDesign name="arrow-right" size={16} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+
+  const renderSearchResult = ({ item, section }) =>
+    section.key === "dishes" ? renderDish(item) : renderRestaurant(item);
+
+  const renderRestaurant = (item) => (
     <TouchableOpacity
       activeOpacity={0.88}
       style={[
@@ -169,131 +214,139 @@ export default function SearchScreen({ navigation }) {
     </TouchableOpacity>
   );
 
+  const trimmedQuery = query.trim();
+  const resultsSubtitle = trimmedQuery
+    ? `${results.restaurants.length} restaurants and ${results.dishes.length} dishes matching "${trimmedQuery}"`
+    : "Popular spots and current offers";
+
+  const header = (
+    <>
+      <HomeHeader
+        title="Search what you're craving"
+        subtitle="Find restaurants, dishes, and offers from one place."
+        searchValue={query}
+        onChangeSearch={setQuery}
+        searchPlaceholder="Search restaurants or dishes"
+      />
+
+      <View style={styles.content}>
+        <SectionHeader title="Filters" subtitle="Sharpen your search in one tap." />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filters.map((filter) => {
+            const isActive = activeFilter === filter.id;
+            return (
+              <TouchableOpacity
+                key={filter.id}
+                activeOpacity={0.8}
+                style={[
+                  styles.filterChip,
+                  {
+                    backgroundColor: isActive ? colors.primaryStrong : colors.surface,
+                    borderColor: isActive ? colors.primaryStrong : colors.border,
+                  },
+                ]}
+                onPress={() => setActiveFilter(filter.id)}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    { color: isActive ? colors.white : colors.text },
+                  ]}
+                >
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {recentSearches.length ? (
+          <>
+            <SectionHeader
+              title="Recent searches"
+              actionLabel="Clear"
+              onActionPress={async () => {
+                await AsyncStorage.removeItem(STORAGE_KEY);
+                setRecentSearches([]);
+              }}
+            />
+            <View style={styles.recentRow}>
+              {recentSearches.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[styles.recentChip, { backgroundColor: colors.surfaceMuted }]}
+                  onPress={() => setQuery(item)}
+                >
+                  <AntDesign name="clock-circle" size={13} color={colors.textSecondary} />
+                  <Text style={[styles.recentText, { color: colors.text }]}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        <SectionHeader title="Results" subtitle={resultsSubtitle} />
+      </View>
+    </>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={loadSearchData}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <HomeHeader
-          title="Search what you're craving"
-          subtitle="Find restaurants, offers, and favorites from one place."
-          searchValue={query}
-          onChangeSearch={setQuery}
-          searchPlaceholder="Search restaurant, offer, or delivery time"
-        />
-
-        <View style={styles.content}>
-          <SectionHeader title="Filters" subtitle="Sharpen your search in one tap." />
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-          >
-            {filters.map((filter) => {
-              const isActive = activeFilter === filter.id;
-              return (
-                <TouchableOpacity
-                  key={filter.id}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: isActive ? colors.primaryStrong : colors.surface,
-                      borderColor: isActive ? colors.primaryStrong : colors.border,
-                    },
-                  ]}
-                  onPress={() => setActiveFilter(filter.id)}
-                >
-                  <Text
-                    style={[
-                      styles.filterText,
-                      { color: isActive ? colors.white : colors.text },
-                    ]}
-                  >
-                    {filter.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {recentSearches.length ? (
-            <>
-              <SectionHeader
-                title="Recent searches"
-                actionLabel="Clear"
-                onActionPress={async () => {
-                  await AsyncStorage.removeItem(STORAGE_KEY);
-                  setRecentSearches([]);
-                }}
-              />
-              <View style={styles.recentRow}>
-                {recentSearches.map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    style={[styles.recentChip, { backgroundColor: colors.surfaceMuted }]}
-                    onPress={() => setQuery(item)}
-                  >
-                    <AntDesign name="clock-circle" size={13} color={colors.textSecondary} />
-                    <Text style={[styles.recentText, { color: colors.text }]}>
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          ) : null}
-
-          <SectionHeader
-            title="Results"
-            subtitle={
-              query.trim()
-                ? `${searchResults.length} places matching "${query.trim()}"`
-                : "Popular spots and current offers"
-            }
-          />
-
-          {loading ? (
-            <View>
-              {[1, 2, 3].map((item) => (
+      <SectionList
+        sections={loading ? [] : sections}
+        keyExtractor={(item, index) => `${item.restaurant ? "dish" : "restaurant"}-${item.id ?? index}`}
+        renderItem={renderSearchResult}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {section.title} ({section.data.length})
+            </Text>
+          </View>
+        )}
+        stickySectionHeadersEnabled={false}
+        ListHeaderComponent={header}
+        ListEmptyComponent={
+          <View style={styles.content}>
+            {loading ? (
+              [1, 2, 3].map((item) => (
                 <SkeletonCard
                   key={item}
                   width={null}
                   height={142}
                   style={styles.searchSkeleton}
                 />
-              ))}
-            </View>
-          ) : searchResults.length ? (
-            <FlatList
-              data={searchResults}
-              scrollEnabled={false}
-              keyExtractor={(item) => String(item.id)}
-              renderItem={renderSearchResult}
-            />
-          ) : (
-            <EmptyState
-              title="No restaurants found"
-              message="Try a different keyword or remove the current filter."
-              icon="search"
-              actionLabel="Reset search"
-              onActionPress={() => {
-                setQuery("");
-                setActiveFilter("all");
-              }}
-            />
-          )}
-        </View>
-      </ScrollView>
+              ))
+            ) : (
+              <EmptyState
+                title="No restaurants or dishes found"
+                message="Try a different keyword or remove the current filter."
+                icon="search"
+                actionLabel="Reset search"
+                onActionPress={() => {
+                  setQuery("");
+                  setActiveFilter("all");
+                }}
+              />
+            )}
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => loadSearchData()}
+            tintColor={colors.primary}
+          />
+        }
+      />
     </View>
   );
 }
@@ -349,11 +402,51 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: spacing.md,
   },
+  sectionHeader: {
+    paddingHorizontal: layout.pagePadding,
+    paddingBottom: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
   resultCard: {
+    marginHorizontal: layout.pagePadding,
     borderWidth: 1,
     borderRadius: radius.xl,
     overflow: "hidden",
     marginBottom: spacing.lg,
+  },
+  dishCard: {
+    marginHorizontal: layout.pagePadding,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  dishImage: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
+  },
+  dishContent: {
+    flex: 1,
+    marginHorizontal: spacing.md,
+  },
+  dishName: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  dishRestaurant: {
+    marginTop: spacing.xs,
+    fontSize: 13,
+  },
+  dishPrice: {
+    marginTop: spacing.xs,
+    fontSize: 14,
+    fontWeight: "800",
   },
   resultImage: {
     width: "100%",

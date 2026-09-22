@@ -6,6 +6,7 @@ import { AuthProvider } from "./src/screens/Auth/AuthContext";
 import Toast from "react-native-toast-message";
 import { ThemeProvider } from "./src/Context/ThemeProvider";
 import { CartProvider } from "./src/Context/CartContext";
+import { FavoritesProvider } from "./src/Context/FavoritesContext";
 import notificationService from "./src/services/notificationService";
 import NotificationModal from "./src/components/NotificationModal";
 import { navigationRef } from "./src/navigation/rootNavigation";
@@ -160,26 +161,28 @@ const AppContent = () => {
 
   return (
     <AuthProvider>
-      <CartProvider>
-        <NavigationContainer
-          ref={navigationRef}
-          onReady={() => {
-            if (pendingNotificationRef.current) {
-              navigateForNotification(pendingNotificationRef.current);
-              pendingNotificationRef.current = null;
-            }
-          }}
-        >
-          <AppNavigator />
-          <Toast />
-          <NotificationModal
-            visible={!!activeNotification}
-            notification={activeNotification}
-            onClose={() => setActiveNotification(null)}
-            onPrimaryPress={handlePrimaryNotificationPress}
-          />
-        </NavigationContainer>
-      </CartProvider>
+      <FavoritesProvider>
+        <CartProvider>
+          <NavigationContainer
+            ref={navigationRef}
+            onReady={() => {
+              if (pendingNotificationRef.current) {
+                navigateForNotification(pendingNotificationRef.current);
+                pendingNotificationRef.current = null;
+              }
+            }}
+          >
+            <AppNavigator />
+            <Toast />
+            <NotificationModal
+              visible={!!activeNotification}
+              notification={activeNotification}
+              onClose={() => setActiveNotification(null)}
+              onPrimaryPress={handlePrimaryNotificationPress}
+            />
+          </NavigationContainer>
+        </CartProvider>
+      </FavoritesProvider>
     </AuthProvider>
   );
 };

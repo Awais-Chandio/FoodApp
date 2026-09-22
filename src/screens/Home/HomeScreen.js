@@ -31,6 +31,7 @@ import {
   resolveRestaurantImage,
 } from "../../constants/imageRegistry";
 import * as restaurantRepo from "../../database/repositories/restaurantRepo";
+import { useFavorites } from "../../Context/FavoritesContext";
 import { useAuth } from "../Auth/AuthContext";
 
 const homeFilters = [
@@ -76,6 +77,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const { role } = useAuth();
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { width } = useWindowDimensions();
   const isAdmin = role === "admin";
 
@@ -83,7 +85,6 @@ export default function HomeScreen() {
   const [popular, setPopular] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [favoriteIds, setFavoriteIds] = useState([]);
 
   const cardWidth = Math.min(Math.max(width * 0.76, 248), 296);
   const categoryWidth = Math.min(Math.max(width * 0.36, 134), 168);
@@ -136,14 +137,6 @@ export default function HomeScreen() {
   const filteredNearest = useMemo(() => applyFilter(nearest), [applyFilter, nearest]);
   const filteredPopular = useMemo(() => applyFilter(popular), [applyFilter, popular]);
 
-  const toggleFavorite = (restaurantId) => {
-    setFavoriteIds((current) =>
-      current.includes(restaurantId)
-        ? current.filter((id) => id !== restaurantId)
-        : [...current, restaurantId]
-    );
-  };
-
   const confirmDelete = (item) => {
     Alert.alert("Delete Restaurant", `Delete "${item.name}" from the app?`, [
       { text: "Cancel", style: "cancel" },
@@ -171,7 +164,7 @@ export default function HomeScreen() {
   };
 
   const renderRestaurantCard = ({ item }) => {
-    const isFavorite = favoriteIds.includes(item.id);
+    const favorite = isFavorite(item.id);
 
     return (
       <TouchableOpacity
@@ -199,11 +192,13 @@ export default function HomeScreen() {
             style={[styles.favoriteButton, { backgroundColor: colors.white }]}
             onPress={() => toggleFavorite(item.id)}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={favorite ? "Remove from favorites" : "Save to favorites"}
           >
             <AntDesign
-              name={isFavorite ? "heart" : "hearto"}
+              name={favorite ? "heart" : "hearto"}
               size={16}
-              color={isFavorite ? colors.danger : colors.textSecondary}
+              color={favorite ? colors.danger : colors.textSecondary}
             />
           </TouchableOpacity>
           {item.offer ? (

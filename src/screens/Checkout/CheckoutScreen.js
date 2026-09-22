@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import Toast from "react-native-toast-message";
 import AppButton from "../../components/ui/AppButton";
@@ -38,7 +38,7 @@ const getPlaceOrderErrorMessage = (error) => {
     case orderRepo.ORDER_ERRORS.EMPTY_CART:
       return "Your cart is empty.";
     case orderRepo.ORDER_ERRORS.INVALID_PROMO:
-      return "That promo code is no longer valid.";
+      return error.promoMessage || "That promo code is no longer valid.";
     default:
       return "Could not place your order. Please try again.";
   }
@@ -46,12 +46,10 @@ const getPlaceOrderErrorMessage = (error) => {
 
 export default function CheckoutScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
   const { colors } = useTheme();
   const { user, isLoggedIn } = useAuth();
-  const { items, subtotal, reload } = useCart();
+  const { items, subtotal, promo, removePromo, reload } = useCart();
 
-  const promoCode = route.params?.promoCode ?? null;
   const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0].id);
   const [showAddressError, setShowAddressError] = useState(false);
@@ -83,7 +81,7 @@ export default function CheckoutScreen() {
     };
   }, [user?.id]);
 
-  const totals = computeTotals({ subtotal, itemCount: items.length, promoCode });
+  const totals = computeTotals({ subtotal, itemCount: items.length, promo });
   const addressError = validateAddress(address);
 
   const handlePlaceOrder = async () => {
@@ -98,7 +96,9 @@ export default function CheckoutScreen() {
         userId: user.id,
         address,
         paymentMethod,
-        promoCode,
+        // Send the code the user applied, not just the one that still applies
+        // now: placeOrder re-checks it and explains a rejection.
+        promoCode: promo ? promo.code : null,
       });
       await reload();
       Toast.show({ type: "success", text1: "Order placed", text2: `Order #${order.id} is on its way to the kitchen.` });
@@ -109,6 +109,10 @@ export default function CheckoutScreen() {
       });
     } catch (error) {
       console.log("place order error", error);
+      if (error?.message === orderRepo.ORDER_ERRORS.INVALID_PROMO) {
+        // The cart is untouched; drop the code so the totals match what will be charged.
+        removePromo();
+      }
       Toast.show({
         type: "error",
         text1: "Order not placed",

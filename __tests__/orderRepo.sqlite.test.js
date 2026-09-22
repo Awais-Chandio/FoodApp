@@ -34,6 +34,7 @@ const load = () => {
       cart: require('../src/database/repositories/cartRepo'),
       menu: require('../src/database/repositories/menuRepo'),
       restaurants: require('../src/database/repositories/restaurantRepo'),
+      promos: require('../src/database/repositories/promoRepo'),
     };
   });
   modules.raw = modules.client.default.raw;
@@ -59,11 +60,12 @@ describeSqlite('schema on real SQLite', () => {
     await m.schema.initDatabase();
 
     const version = m.raw.prepare('PRAGMA user_version').get().user_version;
-    expect(version).toBe(4);
+    expect(version).toBe(6);
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'order_items')).toBe(0);
     expect(count(m.raw, 'restaurants')).toBe(6);
     expect(count(m.raw, 'menu_items')).toBe(4);
+    expect(count(m.raw, 'promos')).toBe(3);
     const admin = m.raw.prepare("SELECT password, password_hash FROM users WHERE role = 'admin'").get();
     expect(admin.password).toBeNull();
     expect(admin.password_hash).toMatch(/^pbkdf2-sha256\$/);
@@ -87,7 +89,7 @@ describeSqlite('schema on real SQLite', () => {
 
     await m.schema.initDatabase();
 
-    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(4);
+    expect(m.raw.prepare('PRAGMA user_version').get().user_version).toBe(6);
     expect(count(m.raw, 'restaurants')).toBe(1); // not reseeded over existing data
     expect(count(m.raw, 'menu_items')).toBe(1);
     const cartRow = m.raw.prepare('SELECT * FROM cart').get();
@@ -209,6 +211,59 @@ describeSqlite('orderRepo.placeOrder on real SQLite', () => {
 
     expect(count(m.raw, 'orders')).toBe(0);
     expect(count(m.raw, 'cart')).toBe(2);
+  });
+
+  it('re-reads the promo inside the transaction: an expired code is rejected with the reason', async () => {
+    const m = load();
+    await fillCart(m);
+    m.raw.prepare("UPDATE promos SET expires_at = ? WHERE code = 'SAVE10'").run(Date.now() - 1000);
+
+    const error = await m.orders
+      .placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod', promoCode: 'save10'})
+      .catch(e => e);
+
+    expect(error.message).toBe('INVALID_PROMO');
+    expect(error.promoMessage).toMatch(/^SAVE10 expired on \d{1,2} \w{3} \d{4}\.$/);
+    expect(count(m.raw, 'orders')).toBe(0);
+    expect(count(m.raw, 'cart')).toBe(2); // cart stays intact
+  });
+
+  it('rejects a code whose minimum order is not met, naming the shortfall', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+    const menu = await m.menu.listByRestaurant(1);
+    await m.cart.addItem(menu.find(item => item.name === 'Margherita Pizza')); // Rs. 180
+    m.raw.prepare("UPDATE promos SET expires_at = ? WHERE code = 'WELCOME20'").run(Date.now() + 86400000);
+
+    const error = await m.orders
+      .placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod', promoCode: 'WELCOME20'})
+      .catch(e => e);
+
+    expect(error.message).toBe('INVALID_PROMO');
+    expect(error.promoMessage).toBe('Add Rs. 220 more to use WELCOME20.');
+    expect(count(m.raw, 'orders')).toBe(0);
+  });
+
+  it('applies WELCOME20 once the minimum is met and the code has not expired', async () => {
+    const m = load();
+    await fillCart(m); // 520
+    m.raw.prepare("UPDATE promos SET expires_at = ? WHERE code = 'WELCOME20'").run(Date.now() + 86400000);
+
+    const placed = await m.orders.placeOrder({
+      userId: USER, address: ADDRESS, paymentMethod: 'cod', promoCode: ' welcome20 ',
+    });
+
+    // 520 + 120 delivery - 104 (20%)
+    expect(placed).toMatchObject({total: 536, discount: 104, promoCode: 'WELCOME20'});
+  });
+
+  it('a rejected promo reports the message with an unknown code too', async () => {
+    const m = load();
+    await fillCart(m);
+    const error = await m.orders
+      .placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod', promoCode: 'NOPE'})
+      .catch(e => e);
+    expect(error.promoMessage).toBe("We couldn't find that code.");
   });
 
   it.each([
@@ -366,5 +421,29 @@ describeSqlite('reorder', () => {
     const placed = await m.orders.placeOrder({userId: USER, address: ADDRESS, paymentMethod: 'cod'});
 
     expect(await m.orders.getReorderLines(placed.id, 999)).toEqual({lines: [], unavailable: 0});
+  });
+});
+
+describeSqlite('promoRepo on real SQLite', () => {
+  it('seeds SAVE10, FOOD5 and WELCOME20 with their rules', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    expect(await m.promos.findByCode('SAVE10')).toEqual({code: 'SAVE10', percent: 10, min_order: 0, expires_at: null});
+    expect(await m.promos.findByCode('FOOD5')).toEqual({code: 'FOOD5', percent: 5, min_order: 0, expires_at: null});
+    expect(await m.promos.findByCode('WELCOME20')).toEqual({
+      code: 'WELCOME20', percent: 20, min_order: 400, expires_at: Date.UTC(2026, 11, 31, 23, 59, 59, 999),
+    });
+  });
+
+  it('finds codes in any case, ignoring spaces, and returns null for unknown or blank codes', async () => {
+    const m = load();
+    await m.schema.initDatabase();
+
+    expect((await m.promos.findByCode('  welcome20 ')).code).toBe('WELCOME20');
+    expect(await m.promos.findByCode('NOPE')).toBeNull();
+    expect(await m.promos.findByCode('')).toBeNull();
+    expect(await m.promos.findByCode(null)).toBeNull();
+    expect(await m.promos.findByCode('constructor')).toBeNull();
   });
 });

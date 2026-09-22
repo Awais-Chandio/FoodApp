@@ -91,7 +91,42 @@ const MIGRATIONS = [
       "CREATE INDEX idx_order_items_order ON order_items (order_id)",
     ],
   },
+  {
+    // Favorite restaurants, one row per (user, restaurant). The primary key
+    // makes a repeated insert a no-op instead of a duplicate. No foreign keys:
+    // restaurantRepo.remove clears a restaurant's favorites explicitly.
+    version: 5,
+    statements: [
+      `CREATE TABLE favorites (
+        user_id INTEGER NOT NULL,
+        restaurant_id INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, restaurant_id)
+      )`,
+    ],
+  },
+  {
+    // Promo codes move from a hardcoded object into a table. percent is a whole
+    // number; min_order is a subtotal in Rs. (0 = none); expires_at is epoch ms
+    // (NULL = never). SAVE10 and FOOD5 keep their old behaviour; WELCOME20 is
+    // the demo for a minimum order and an expiry (31 Dec 2026, end of day UTC).
+    version: 6,
+    statements: [
+      `CREATE TABLE promos (
+        code TEXT PRIMARY KEY COLLATE NOCASE,
+        percent INTEGER NOT NULL,
+        min_order REAL NOT NULL DEFAULT 0,
+        expires_at INTEGER
+      )`,
+      "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('SAVE10', 10, 0, NULL)",
+      "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('FOOD5', 5, 0, NULL)",
+      "INSERT INTO promos (code, percent, min_order, expires_at) VALUES ('WELCOME20', 20, 400, 1798761599999)",
+    ],
+  },
 ];
+
+// The version a fully migrated database ends at.
+export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 const RESTAURANT_SEED = [
   [1, "Westway", 4.6, "15 min", "50% OFF", "nearest", null],

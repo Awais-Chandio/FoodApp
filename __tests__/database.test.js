@@ -71,14 +71,15 @@ describe('restaurantRepo.listWithMenus', () => {
 });
 
 describe('restaurantRepo.remove', () => {
-  it('deletes menu items then the restaurant in one transaction', async () => {
-    runStatements.mockResolvedValue([result(), result()]);
+  it('deletes menu items, favorites, then the restaurant in one transaction', async () => {
+    runStatements.mockResolvedValue([result(), result(), result()]);
 
     await restaurantRepo.remove(5);
 
     expect(runStatements).toHaveBeenCalledTimes(1);
     expect(runStatements.mock.calls[0][0]).toEqual([
       ['DELETE FROM menu_items WHERE restaurant_id = ?', [5]],
+      ['DELETE FROM favorites WHERE restaurant_id = ?', [5]],
       ['DELETE FROM restaurants WHERE id = ?', [5]],
     ]);
   });
@@ -173,25 +174,31 @@ describe('schema migrations', () => {
     let loaded;
     jest.isolateModules(() => {
       jest.unmock('../src/database/schema');
+      const schema = require('../src/database/schema');
       loaded = {
-        initDatabase: require('../src/database/schema').initDatabase,
+        initDatabase: schema.initDatabase,
+        latest: schema.SCHEMA_VERSION,
         run: require('../src/database/client').runStatements,
       };
     });
     return loaded;
   };
 
+  // Queues `count` successful, empty migration batches.
+  const queueMigrations = (run, count) => {
+    for (let i = 0; i < count; i += 1) {
+      run.mockResolvedValueOnce([]);
+    }
+  };
+
   const versionOf = statements =>
     statements.find(([sql]) => /^PRAGMA user_version = /.test(sql))?.[0];
 
   it('runs every migration in order on a fresh database, then seeds', async () => {
-    const {initDatabase: init, run} = load();
+    const {initDatabase: init, run, latest} = load();
+    run.mockResolvedValueOnce([result([{user_version: 0}])]); // read version
+    queueMigrations(run, latest); // v1 .. latest
     run
-      .mockResolvedValueOnce([result([{user_version: 0}])]) // read version
-      .mockResolvedValueOnce([]) // v1
-      .mockResolvedValueOnce([]) // v2
-      .mockResolvedValueOnce([]) // v3
-      .mockResolvedValueOnce([]) // v4
       .mockResolvedValueOnce([
         result([{count: 0}]),
         result([{count: 0}]),
@@ -201,14 +208,14 @@ describe('schema migrations', () => {
 
     await init();
 
-    [1, 2, 3, 4].forEach(version => {
+    for (let version = 1; version <= latest; version += 1) {
       expect(versionOf(run.mock.calls[version][0])).toBe(`PRAGMA user_version = ${version}`);
-    });
+    }
     expect(run.mock.calls[2][0][0][0]).toMatch(/ALTER TABLE cart ADD COLUMN restaurant_id/);
     expect(run.mock.calls[3][0][0][0]).toMatch(/ALTER TABLE users ADD COLUMN password_hash/);
     expect(run.mock.calls[4][0][0][0]).toMatch(/CREATE TABLE orders/);
 
-    const inserts = run.mock.calls[6][0];
+    const inserts = run.mock.calls[latest + 2][0];
     expect(inserts).toHaveLength(11); // 1 admin + 6 restaurants + 4 menu items
     // The seeded admin gets a hash and no plaintext password.
     const adminInsert = inserts.find(([sql]) => /INTO users/.test(sql));
@@ -217,9 +224,9 @@ describe('schema migrations', () => {
   });
 
   it('skips migrations that already ran and never reseeds existing data', async () => {
-    const {initDatabase: init, run} = load();
+    const {initDatabase: init, run, latest} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 4}])])
+      .mockResolvedValueOnce([result([{user_version: latest}])])
       .mockResolvedValueOnce([
         result([{count: 6}]),
         result([{count: 4}]),
@@ -231,20 +238,19 @@ describe('schema migrations', () => {
     expect(run).toHaveBeenCalledTimes(2); // version read + seed counts only
   });
 
-  it('upgrades an install that only has v3: creates the orders tables and nothing else', async () => {
-    const {initDatabase: init, run} = load();
-    run
-      .mockResolvedValueOnce([result([{user_version: 3}])])
-      .mockResolvedValueOnce([]) // v4
-      .mockResolvedValueOnce([
-        result([{count: 6}]),
-        result([{count: 4}]),
-        result([{count: 1}]),
-      ]);
+  it('upgrades an install that only has v3: creates the orders tables, then the later migrations', async () => {
+    const {initDatabase: init, run, latest} = load();
+    run.mockResolvedValueOnce([result([{user_version: 3}])]);
+    queueMigrations(run, latest - 3); // v4 .. latest
+    run.mockResolvedValueOnce([
+      result([{count: 6}]),
+      result([{count: 4}]),
+      result([{count: 1}]),
+    ]);
 
     await init();
 
-    expect(run).toHaveBeenCalledTimes(3);
+    expect(run).toHaveBeenCalledTimes(1 + (latest - 3) + 1);
     const statements = run.mock.calls[1][0].map(([sql]) => sql);
     expect(statements.some(sql => /CREATE TABLE orders/.test(sql))).toBe(true);
     expect(statements.some(sql => /CREATE TABLE order_items/.test(sql))).toBe(true);
@@ -253,28 +259,24 @@ describe('schema migrations', () => {
   });
 
   it('upgrades a pre-versioning install (user_version 0) without reseeding', async () => {
-    const {initDatabase: init, run} = load();
-    run
-      .mockResolvedValueOnce([result([{user_version: 0}])])
-      .mockResolvedValueOnce([]) // v1
-      .mockResolvedValueOnce([]) // v2
-      .mockResolvedValueOnce([]) // v3
-      .mockResolvedValueOnce([]) // v4
-      .mockResolvedValueOnce([
-        result([{count: 6}]),
-        result([{count: 4}]),
-        result([{count: 1}]),
-      ]);
+    const {initDatabase: init, run, latest} = load();
+    run.mockResolvedValueOnce([result([{user_version: 0}])]);
+    queueMigrations(run, latest);
+    run.mockResolvedValueOnce([
+      result([{count: 6}]),
+      result([{count: 4}]),
+      result([{count: 1}]),
+    ]);
 
     await init();
 
-    expect(run).toHaveBeenCalledTimes(6); // no seed insert batch
+    expect(run).toHaveBeenCalledTimes(1 + latest + 1); // no seed insert batch
   });
 
   it('runs initialisation only once for concurrent callers', async () => {
-    const {initDatabase: init, run} = load();
+    const {initDatabase: init, run, latest} = load();
     run
-      .mockResolvedValueOnce([result([{user_version: 4}])])
+      .mockResolvedValueOnce([result([{user_version: latest}])])
       .mockResolvedValueOnce([
         result([{count: 1}]),
         result([{count: 1}]),
