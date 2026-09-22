@@ -21,7 +21,7 @@ import SearchBar from "../../components/ui/SearchBar";
 
 const headerHighlights = [
   { id: "rating", icon: "star", label: "4.8 rating" },
-  { id: "delivery", icon: "clockcircleo", label: "12-20 min" },
+  { id: "delivery", icon: "clock-circle", label: "12-20 min" },
   { id: "fresh", icon: "fire", label: "Fresh picks" },
 ];
 

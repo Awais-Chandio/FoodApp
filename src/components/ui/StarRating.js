@@ -25,7 +25,7 @@ export default function StarRating({ value = 0, onChange, size = 28 }) {
           <AntDesign
             name="star"
             size={size}
-            color={filled ? colors.warning : colors.borderStrong}
+            color={filled ? colors.accent : colors.borderStrong}
           />
         );
         return interactive ? (

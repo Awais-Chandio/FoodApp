@@ -114,10 +114,10 @@ it('uses the nested menu passed by Home while the fresh one loads', async () => 
   expect(texts(tree)).toContain('Chow Mein');
 });
 
-it('the heart shows an outline when not saved and a filled heart when saved, and toggles by restaurant id', async () => {
+it('the valid heart glyph changes state accessibly and toggles by restaurant id', async () => {
   menuRepo.listByRestaurant.mockResolvedValue([]);
   await mount();
-  expect(texts(tree)).toContain('icon:hearto');
+  expect(texts(tree)).toContain('icon:heart');
 
   const heart = tree.root.find(n => n.props.accessibilityLabel === 'Save to favorites');
   await ReactTestRenderer.act(async () => heart.props.onPress());

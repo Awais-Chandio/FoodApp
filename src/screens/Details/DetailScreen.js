@@ -137,22 +137,25 @@ export default function DetailScreen() {
           <BackButton floating style={styles.topButton} onPress={() => navigation.goBack()} />
 
           <TouchableOpacity
-            style={[styles.favoriteButton, { backgroundColor: colors.imageChip }]}
+            style={[
+              styles.favoriteButton,
+              { backgroundColor: favorite ? colors.primaryStrong : colors.imageChip },
+            ]}
             onPress={() => toggleFavorite(restaurantId)}
             accessibilityRole="button"
             accessibilityLabel={favorite ? "Remove from favorites" : "Save to favorites"}
           >
             <AntDesign
-              name={favorite ? "heart" : "hearto"}
+              name="heart"
               size={18}
-              color={favorite ? colors.danger : colors.imageChipText}
+              color={favorite ? colors.onPrimary : colors.imageChipText}
             />
           </TouchableOpacity>
 
           <View style={styles.heroContent}>
             {restaurant.offer ? (
-              <View style={[styles.offerPill, { backgroundColor: colors.secondarySoft }]}>
-                <AppText style={[styles.offerText, { color: colors.primaryDeep }]}>
+              <View style={[styles.offerPill, { backgroundColor: colors.accentSoft }]}>
+                <AppText style={[styles.offerText, { color: colors.accentText }]}>
                   {restaurant.offer}
                 </AppText>
               </View>
@@ -167,7 +170,7 @@ export default function DetailScreen() {
                 <AppText style={[styles.heroChipText, { color: colors.onImage }]}>{displayRating || "4.6"} rating</AppText>
               </View>
               <View style={[styles.heroChip, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
-                <AntDesign name="clockcircleo" size={12} color={colors.onImage} />
+                <AntDesign name="clock-circle" size={12} color={colors.onImage} />
                 <AppText style={[styles.heroChipText, { color: colors.onImage }]}>{restaurant.time || "20 min"}</AppText>
               </View>
             </View>
@@ -178,7 +181,7 @@ export default function DetailScreen() {
           <View
             style={[
               styles.statsCard,
-              createShadow(colors.shadow, 14),
+              createShadow(colors.shadow, layout.cardElevation),
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
@@ -325,7 +328,7 @@ export default function DetailScreen() {
                 key={review.id}
                 style={[
                   styles.reviewCard,
-                  createShadow(colors.shadow, 8),
+                  createShadow(colors.shadow, layout.cardElevation),
                   { backgroundColor: colors.surface, borderColor: colors.borderSoft },
                 ]}
               >
@@ -445,9 +448,8 @@ const styles = StyleSheet.create({
     marginTop: -48,
     marginBottom: layout.sectionGap,
     borderWidth: 1,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.sm,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
@@ -498,8 +500,8 @@ const styles = StyleSheet.create({
   },
   reviewCard: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     marginBottom: spacing.md,
   },
   reviewTop: {

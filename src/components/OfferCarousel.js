@@ -5,7 +5,7 @@ import AntDesign from "@react-native-vector-icons/ant-design";
 import AppText from "./ui/AppText";
 import SkeletonCard from "./ui/SkeletonCard";
 import { useTheme } from "../Context/ThemeProvider";
-import { createShadow, fontFamily, layout, radius, spacing } from "../constants/designSystem";
+import { createShadow, fontFamily, layout, spacing } from "../constants/designSystem";
 
 export const AUTO_ADVANCE_MS = 4000;
 const RESUME_DELAY_MS = 6000;
@@ -92,7 +92,7 @@ export default function OfferCarousel({ offers, loading = false, onOfferPress })
               colors={item.kind === "promo" ? colors.heroGradient : colors.heroGradientAlt}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={[styles.banner, createShadow(colors.shadow, 12)]}
+              style={[styles.banner, createShadow(colors.shadow, layout.cardElevation)]}
             >
               <View style={[styles.iconBubble, { backgroundColor: colors.glassOnPrimary }]}>
                 <AntDesign name={item.kind === "promo" ? "tag" : "fire"} size={22} color={colors.onPrimary} />
@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   },
   banner: {
     minHeight: 112,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     flexDirection: "row",
     alignItems: "center",
   },

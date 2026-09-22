@@ -471,7 +471,7 @@ export default function MenuScreen() {
         activeOpacity={totalItems ? 0.9 : 0.95}
         style={[
           styles.cartCard,
-          createShadow(colors.shadow, 14),
+          createShadow(colors.shadow, layout.cardElevation),
           {
             backgroundColor: colors.surface,
             borderColor: totalItems ? colors.primaryStrong : colors.borderSoft,
@@ -603,13 +603,13 @@ const styles = StyleSheet.create({
     right: layout.pagePadding,
     bottom: 92,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: layout.cardRadius,
     minHeight: 72,
     overflow: "hidden",
   },
   cartGradient: {
     minHeight: 72,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: layout.cardPadding,
     paddingVertical: spacing.md,
     flexDirection: "row",
     alignItems: "center",

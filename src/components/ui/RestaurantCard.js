@@ -12,7 +12,11 @@ function HeartButton({ favorite, onPress, style }) {
 
   return (
     <TouchableOpacity
-      style={[styles.heart, { backgroundColor: colors.imageChip }, style]}
+      style={[
+        styles.heart,
+        { backgroundColor: favorite ? colors.primaryStrong : colors.imageChip },
+        style,
+      ]}
       onPress={onPress}
       hitSlop={8}
       accessibilityRole="button"
@@ -21,7 +25,7 @@ function HeartButton({ favorite, onPress, style }) {
       <AntDesign
         name="heart"
         size={16}
-        color={favorite ? colors.danger : colors.imageChipText}
+        color={favorite ? colors.onPrimary : colors.imageChipText}
       />
     </TouchableOpacity>
   );
@@ -73,7 +77,7 @@ export default function RestaurantCard({
             {restaurant.name}
           </AppText>
           <View style={styles.compactMeta}>
-            <AntDesign name="star" size={12} color={colors.warning} />
+            <AntDesign name="star" size={12} color={colors.accent} />
             <AppText variant="caption" muted style={styles.compactMetaText}>
               {rating} • {time}
             </AppText>
@@ -120,7 +124,7 @@ export default function RestaurantCard({
             ) : null}
           </View>
           <View style={styles.rowMeta}>
-            <AntDesign name="star" size={13} color={colors.warning} />
+            <AntDesign name="star" size={13} color={colors.accent} />
             <AppText variant="label" muted style={styles.rowMetaText}>
               {rating} • {time}
             </AppText>
@@ -158,15 +162,15 @@ export default function RestaurantCard({
         />
         {onToggleFavorite ? <HeartButton favorite={favorite} onPress={onToggleFavorite} /> : null}
         {restaurant.offer ? (
-          <View style={[styles.offerTag, { backgroundColor: colors.secondarySoft }]}>
-            <AppText variant="caption" color="primaryDeep" style={styles.bold}>
+          <View style={[styles.offerTag, { backgroundColor: colors.accentSoft }]}>
+            <AppText variant="caption" color="accentText" style={styles.bold}>
               {restaurant.offer}
             </AppText>
           </View>
         ) : null}
         <View style={styles.imageMeta}>
           <View style={[styles.ratingPill, { backgroundColor: colors.imageChip }]}>
-            <AntDesign name="star" size={12} color={colors.warning} />
+            <AntDesign name="star" size={12} color={colors.accent} />
             <AppText variant="caption" style={[styles.bold, styles.ratingText, { color: colors.imageChipText }]}>
               {rating}
             </AppText>
