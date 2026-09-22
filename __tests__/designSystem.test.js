@@ -81,17 +81,19 @@ describe.each(Object.keys(modes))('%s palette contrast', mode => {
   });
 });
 
-it('keeps the given Ember inputs and the previous semantic colors', () => {
+it('keeps the supplied Citrus inputs, with the accessible light strong adjustment', () => {
   expect(lightColors).toMatchObject({
-    primary: '#E8590C', background: '#FFF9F3', surface: '#FFFFFF', text: '#1E1A17', accent: '#F5B93B',
-    success: '#1F9D63', warning: '#FFB703', danger: '#E63946',
+    primary: '#FF4433', primaryStrong: '#DB2E19', background: '#FCFAF7', surface: '#FFFFFF',
+    text: '#201A17', textSecondary: '#6F6660', accent: '#FFB800', border: '#EFE6DE',
+    success: '#1FAA59', warning: '#F5A623', danger: '#E5484D',
   });
   expect(darkColors).toMatchObject({
-    primary: '#FF7A45', background: '#14110F', surface: '#1F1A17',
-    success: '#37C17B', warning: '#FFB703', danger: '#FB7185',
+    primary: '#FF6B52', primaryStrong: '#FF836C', background: '#17181C', surface: '#1F2024',
+    text: '#F5F3F0', textSecondary: '#A8A6A3', accent: '#FFC94D', border: '#2A2B30',
+    success: '#34C77B', warning: '#FFB648', danger: '#FF6B6B',
   });
 });
 
 it('withAlpha turns a hex color into rgba', () => {
-  expect(withAlpha('#E8590C', 0.28)).toBe('rgba(232,89,12,0.28)');
+  expect(withAlpha('#FF4433', 0.28)).toBe('rgba(255,68,51,0.28)');
 });

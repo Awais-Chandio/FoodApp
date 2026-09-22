@@ -4,7 +4,7 @@ import LinearGradient from "react-native-linear-gradient";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppText from "./AppText";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, fontFamily, radius, spacing } from "../../constants/designSystem";
+import { createShadow, fontFamily, layout, radius, spacing } from "../../constants/designSystem";
 import { resolveRestaurantImage } from "../../constants/imageRegistry";
 
 function HeartButton({ favorite, onPress, style }) {
@@ -19,7 +19,7 @@ function HeartButton({ favorite, onPress, style }) {
       accessibilityLabel={favorite ? "Remove from favorites" : "Save to favorites"}
     >
       <AntDesign
-        name={favorite ? "heart" : "hearto"}
+        name="heart"
         size={16}
         color={favorite ? colors.danger : colors.imageChipText}
       />
@@ -59,7 +59,7 @@ export default function RestaurantCard({
         activeOpacity={0.9}
         style={[
           styles.compact,
-          createShadow(colors.shadow, 10),
+          createShadow(colors.shadow, layout.cardElevation),
           { backgroundColor: colors.surface, borderColor: colors.borderSoft },
           style,
         ]}
@@ -89,7 +89,7 @@ export default function RestaurantCard({
         activeOpacity={0.88}
         style={[
           styles.row,
-          createShadow(colors.shadow, 12),
+          createShadow(colors.shadow, layout.cardElevation),
           { backgroundColor: colors.surface, borderColor: colors.borderSoft },
           style,
         ]}
@@ -142,7 +142,7 @@ export default function RestaurantCard({
       activeOpacity={0.92}
       style={[
         styles.carousel,
-        createShadow(colors.shadow, 14),
+        createShadow(colors.shadow, layout.cardElevation),
         { backgroundColor: colors.surface, borderColor: colors.borderSoft, width },
         style,
       ]}
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   // carousel
   carousel: {
     marginRight: spacing.md,
-    borderRadius: radius.xl,
+    borderRadius: layout.cardRadius,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   carouselBody: {
-    padding: spacing.lg,
+    padding: layout.cardPadding,
   },
   metaText: {
     marginTop: spacing.xs,
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   // row
   row: {
     borderWidth: 1,
-    borderRadius: radius.xl,
+    borderRadius: layout.cardRadius,
     overflow: "hidden",
     marginBottom: spacing.lg,
   },
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     height: 182,
   },
   rowContent: {
-    padding: spacing.xl,
+    padding: layout.cardPadding,
   },
   rowTitleLine: {
     flexDirection: "row",
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     width: 168,
     marginRight: spacing.md,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: layout.cardRadius,
     overflow: "hidden",
   },
   compactImage: {

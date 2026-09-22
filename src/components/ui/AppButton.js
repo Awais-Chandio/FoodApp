@@ -34,9 +34,9 @@ const variantStyles = {
     textColor: colors.primaryStrong,
   }),
   ghost: (colors) => ({
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accentSoft,
-    textColor: colors.accentText,
+    backgroundColor: colors.badge,
+    borderColor: colors.badge,
+    textColor: colors.primaryStrong,
   }),
 };
 

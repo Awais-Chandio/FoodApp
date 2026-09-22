@@ -46,7 +46,7 @@ export default function SearchBar({
       ]}
     >
       <View style={[styles.iconWrap, { backgroundColor: colors.badge }]}>
-        <AntDesign name="search1" size={17} color={colors.primaryStrong} />
+        <AntDesign name="search" size={17} color={colors.primaryStrong} />
       </View>
       <TextInput
         value={value}

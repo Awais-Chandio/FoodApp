@@ -2,7 +2,7 @@ import React from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import AppText from "./AppText";
 import { useTheme } from "../../Context/ThemeProvider";
-import { createShadow, fontFamily, radius, spacing } from "../../constants/designSystem";
+import { createShadow, fontFamily, layout, spacing } from "../../constants/designSystem";
 
 /**
  * A dish row: photo, title, subtitle, price. Each screen supplies its own
@@ -34,7 +34,7 @@ export default function MenuItemCard({
       accessibilityLabel={accessibilityLabel}
       style={[
         styles.card,
-        createShadow(colors.shadow, 10),
+        createShadow(colors.shadow, layout.cardElevation),
         { backgroundColor: colors.surface, borderColor: colors.borderSoft },
         style,
       ]}
@@ -70,14 +70,14 @@ export default function MenuItemCard({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.lg,
   },
   image: {
-    borderRadius: radius.md,
+    borderRadius: layout.cardRadius - spacing.sm,
   },
   content: {
     flex: 1,

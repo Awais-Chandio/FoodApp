@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import AntDesign from "@react-native-vector-icons/ant-design";
 import AppText from "./ui/AppText";
 import { useTheme } from "../Context/ThemeProvider";
@@ -14,7 +14,12 @@ export default function FreeDeliveryBar({ subtotal }) {
   const progress = useSharedValue(fraction);
 
   useEffect(() => {
-    progress.value = withTiming(fraction, { duration: 450 });
+    progress.value = withSpring(fraction, {
+      damping: 18,
+      stiffness: 160,
+      mass: 0.85,
+      overshootClamping: true,
+    });
   }, [fraction, progress]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));

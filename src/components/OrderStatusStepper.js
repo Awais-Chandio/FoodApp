@@ -2,12 +2,11 @@ import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   cancelAnimation,
-  Easing,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withTiming,
+  withSpring,
 } from "react-native-reanimated";
 import AppText from "./ui/AppText";
 import AntDesign from "@react-native-vector-icons/ant-design";
@@ -32,7 +31,12 @@ function StepLine({ index, currentIndex, color, trackColor }) {
   const fill = useSharedValue(target);
 
   useEffect(() => {
-    fill.value = withTiming(target, { duration: 700, easing: Easing.out(Easing.cubic) });
+    fill.value = withSpring(target, {
+      damping: 19,
+      stiffness: 150,
+      mass: 0.9,
+      overshootClamping: true,
+    });
   }, [target, fill]);
 
   const fillStyle = useAnimatedStyle(() => ({ height: `${fill.value * 100}%` }));
@@ -49,7 +53,11 @@ function PulseRing({ color }) {
   const pulse = useSharedValue(0);
 
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 900 }), -1, true);
+    pulse.value = withRepeat(
+      withSpring(1, { damping: 8, stiffness: 75, mass: 0.9, overshootClamping: true }),
+      -1,
+      true
+    );
     return () => cancelAnimation(pulse);
   }, [pulse]);
 

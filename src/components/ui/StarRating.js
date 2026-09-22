@@ -23,7 +23,7 @@ export default function StarRating({ value = 0, onChange, size = 28 }) {
         const filled = star <= value;
         const icon = (
           <AntDesign
-            name={filled ? "star" : "staro"}
+            name="star"
             size={size}
             color={filled ? colors.warning : colors.borderStrong}
           />
