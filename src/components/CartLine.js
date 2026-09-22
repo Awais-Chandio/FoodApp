@@ -7,7 +7,7 @@ import FadeInItem from "./ui/FadeInItem";
 import MenuItemCard from "./ui/MenuItemCard";
 import QtyStepper from "./ui/QtyStepper";
 import { useTheme } from "../Context/ThemeProvider";
-import { fontFamily, radius, spacing } from "../constants/designSystem";
+import { fontFamily, layout, spacing } from "../constants/designSystem";
 import { describeOptions, parseSelectedOptions } from "../utils/cartLines";
 import { resolveFoodImage } from "../constants/imageRegistry";
 
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   action: {
     width: 88,
     marginLeft: spacing.sm,
-    borderRadius: radius.lg,
+    borderRadius: layout.cardRadius,
     alignItems: "center",
     justifyContent: "center",
   },

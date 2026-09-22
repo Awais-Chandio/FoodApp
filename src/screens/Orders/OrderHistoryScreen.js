@@ -23,6 +23,7 @@ import {
   radius,
   spacing,
   typeScale,
+  withAlpha,
 } from "../../constants/designSystem";
 import * as orderRepo from "../../database/repositories/orderRepo";
 import { lineLabel } from "../../utils/cartLines";
@@ -34,11 +35,11 @@ const SKELETON_COUNT = 3;
 const getStatusColors = (status, colors) => {
   switch (status) {
     case ORDER_STATUS.DELIVERED:
-      return { background: colors.accentSoft, text: colors.success };
+      return { background: withAlpha(colors.success, 0.14), text: colors.successText };
     case ORDER_STATUS.ON_THE_WAY:
       return { background: colors.badge, text: colors.primaryStrong };
     case ORDER_STATUS.PREPARING:
-      return { background: colors.secondarySoft, text: colors.primaryDeep };
+      return { background: colors.badge, text: colors.primaryStrong };
     default:
       return { background: colors.surfaceMuted, text: colors.textSecondary };
   }
@@ -96,7 +97,7 @@ export default function OrderHistoryScreen() {
         accessibilityLabel={`Order ${order.id}, ${getStatusLabel(order.status)}`}
         style={[
           styles.card,
-          createShadow(colors.shadow, 10),
+          createShadow(colors.shadow, layout.cardElevation),
           { backgroundColor: colors.surface, borderColor: colors.borderSoft },
         ]}
       >
@@ -226,8 +227,8 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     marginBottom: layout.cardGap,
   },
   cardTop: {

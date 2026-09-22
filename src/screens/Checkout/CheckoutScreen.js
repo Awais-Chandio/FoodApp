@@ -182,7 +182,7 @@ export default function CheckoutScreen() {
               accessibilityState={{ selected }}
               style={[
                 styles.paymentCard,
-                createShadow(colors.shadow, 8),
+                createShadow(colors.shadow, layout.cardElevation),
                 {
                   backgroundColor: colors.surface,
                   borderColor: selected ? colors.primaryStrong : colors.borderSoft,
@@ -206,7 +206,7 @@ export default function CheckoutScreen() {
         <View
           style={[
             styles.summaryCard,
-            createShadow(colors.shadow, 8),
+            createShadow(colors.shadow, layout.cardElevation),
             { backgroundColor: colors.surface, borderColor: colors.borderSoft },
           ]}
         >
@@ -281,8 +281,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderRadius: radius.md,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     marginBottom: spacing.md,
   },
   radioOuter: {
@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   summaryRow: {
     flexDirection: "row",

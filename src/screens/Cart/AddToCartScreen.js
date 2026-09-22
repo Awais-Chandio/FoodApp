@@ -206,7 +206,7 @@ export default function AddToCartScreen() {
                   style={[
                     styles.summaryStrip,
                     isCompact ? styles.summaryStripStack : null,
-                    createShadow(colors.shadow, 10),
+                    createShadow(colors.shadow, layout.cardElevation),
                     { backgroundColor: colors.surface, borderColor: colors.borderSoft },
                   ]}
                 >
@@ -244,10 +244,10 @@ export default function AddToCartScreen() {
                   <View
                     style={[
                       styles.appliedPromo,
-                      { backgroundColor: colors.accentSoft, borderColor: colors.success },
+                      { backgroundColor: colors.accentSoft, borderColor: colors.accent },
                     ]}
                   >
-                    <AntDesign name="tag" size={18} color={colors.success} />
+                    <AntDesign name="tag" size={18} color={colors.accentText} />
                     <View style={styles.appliedPromoText}>
                       <AppText style={[styles.appliedPromoCode, { color: colors.text }]}>
                         {appliedCode} · {promo.percent}% off
@@ -263,7 +263,7 @@ export default function AddToCartScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`Remove promo code ${appliedCode}`}
                     >
-                      <AppText style={[styles.removePromoText, { color: colors.danger }]}>Remove</AppText>
+                      <AppText style={[styles.removePromoText, { color: colors.primaryStrong }]}>Remove</AppText>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -340,7 +340,7 @@ export default function AddToCartScreen() {
         <View
           style={[
             styles.checkoutCard,
-            createShadow(colors.shadow, 14),
+            createShadow(colors.shadow, layout.cardElevation),
             { backgroundColor: colors.surface, borderColor: colors.borderSoft },
           ]}
         >
@@ -440,8 +440,8 @@ const styles = StyleSheet.create({
   },
   summaryStrip: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.md,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     flexDirection: "row",
     marginBottom: layout.sectionGap,
   },
@@ -509,9 +509,8 @@ const styles = StyleSheet.create({
   appliedPromo: {
     minHeight: 56,
     borderWidth: 1,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: layout.sectionGap,
@@ -538,8 +537,8 @@ const styles = StyleSheet.create({
     right: layout.pagePadding,
     bottom: 92,
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
   },
   summaryRow: {
     flexDirection: "row",

@@ -198,7 +198,7 @@ export default function TrackOrderScreen() {
           <View
             style={[
               styles.card,
-              createShadow(colors.shadow, 12),
+              createShadow(colors.shadow, layout.cardElevation),
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
@@ -214,7 +214,7 @@ export default function TrackOrderScreen() {
           <View
             style={[
               styles.card,
-              createShadow(colors.shadow, 12),
+              createShadow(colors.shadow, layout.cardElevation),
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
@@ -265,7 +265,7 @@ export default function TrackOrderScreen() {
           <View
             style={[
               styles.card,
-              createShadow(colors.shadow, 12),
+              createShadow(colors.shadow, layout.cardElevation),
               { backgroundColor: colors.surface, borderColor: colors.borderSoft },
             ]}
           >
@@ -345,8 +345,8 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderRadius: layout.cardRadius,
+    padding: layout.cardPadding,
     marginBottom: layout.cardGap + spacing.sm,
   },
   sectionTitle: {
